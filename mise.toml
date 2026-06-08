@@ -1,0 +1,19 @@
+[tools]
+tombi = "latest"
+hk = "latest"
+pkl = "latest"
+actionlint = "latest"
+betterleaks = "latest"
+editorconfig-checker = "latest"
+ghalint = "latest"
+pinact = "latest"
+rumdl = "latest"
+typos = "latest"
+zizmor = "latest"
+
+[tools.rust]
+version = "1.96.0"
+profile = "default"
+
+[hooks]
+enter = "mise outdated --local --silent"

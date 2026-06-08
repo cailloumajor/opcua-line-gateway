@@ -1,0 +1,7 @@
+[package]
+name = "opcua-traceability"
+version = "0.1.0"
+edition = "2024"
+description = "Management of traceability between machines through OPC-UA"
+
+[dependencies]
