@@ -13,6 +13,7 @@ zizmor = "latest"
 
 [tools.rust]
 version = "1.96.0"
+components = "rust-analyzer"
 profile = "default"
 
 [hooks]
