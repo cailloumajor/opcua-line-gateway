@@ -1,7 +1,17 @@
 [package]
 name = "opcua-traceability"
 version = "0.1.0"
-edition = "2024"
+edition.workspace = true
 description = "Management of traceability between machines through OPC-UA"
 
+[workspace]
+# members = ["crates/*"]
+
+[workspace.package]
+edition = "2024"
+
 [dependencies]
+anyhow = "1.0.102"
+async-opcua = { version = "0.18.0", features = ["client"] }
+env_logger = "0.11.10"
+tokio = { version = "1.52.3", features = ["macros"] }
