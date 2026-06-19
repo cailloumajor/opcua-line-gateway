@@ -1,0 +1,10 @@
+[package]
+name = "opcua-types"
+version = "0.1.0"
+edition.workspace = true
+description = "Generated types from OPC-UA nodesets"
+
+[dependencies]
+
+[build-dependencies]
+async-opcua-codegen = { git = "https://github.com/FreeOpcUa/async-opcua.git" }

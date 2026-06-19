@@ -5,7 +5,7 @@ edition.workspace = true
 description = "Management of traceability between machines through OPC-UA"
 
 [workspace]
-# members = ["crates/*"]
+members = ["crates/*"]
 
 [workspace.package]
 edition = "2024"
