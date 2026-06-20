@@ -3,5 +3,13 @@
 version = 4
 
 [[package]]
-name = "opcua-traceability"
+name = "gateway-bjc3"
+version = "0.1.0"
+
+[[package]]
+name = "gateway-core"
+version = "0.1.0"
+
+[[package]]
+name = "gateway-types-bjc3"
 version = "0.1.0"
