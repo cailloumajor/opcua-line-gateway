@@ -1,3 +1,25 @@
 [[language]]
+name = "make"
+auto-format = true
+language-servers = ["make-ls"]
+
+[[language]]
+name = "markdown"
+auto-format = true
+language-servers = ["marksman", "rumdl", "mpls"]
+formatter = { command = "rumdl", args = ["check", "--fix", "--stdin"] }
+
+[[language]]
 name = "pkl"
 auto-format = true
+
+[language-server.make-ls]
+command = "make-ls"
+
+[language-server.mpls]
+command = "mpls"
+args = ["--theme", "dark", "--enable-emoji", "--full-sync"]
+
+[language-server.rumdl]
+command = "rumdl"
+args = ["server"]

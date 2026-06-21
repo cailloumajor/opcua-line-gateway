@@ -10,6 +10,11 @@ pinact = "latest"
 rumdl = "latest"
 typos = "latest"
 zizmor = "latest"
+marksman = "latest"
+"github:mhersson/mpls" = "latest"
+checkmake = "latest"
+"github:owenrumney/make-ls" = "latest"
+make = "latest"
 
 [tools.rust]
 version = "1.96.0"
