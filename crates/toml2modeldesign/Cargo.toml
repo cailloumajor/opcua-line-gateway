@@ -1,0 +1,13 @@
+[package]
+name = "toml2modeldesign"
+version = "1.0.0"
+edition.workspace = true
+description = "Convert TOML descriptions of OPC-UA object types to UA model design"
+publish.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+askama = "0.16.0"
+clap = { workspace = true, features = ["derive"] }
+serde = { workspace = true, features = ["derive"] }
+toml = "1.1.2"
