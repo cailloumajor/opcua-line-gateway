@@ -1,4 +1,8 @@
 [[language]]
+name = "json"
+language-servers = ["biome"]
+
+[[language]]
 name = "make"
 auto-format = true
 language-servers = ["make-ls"]
@@ -12,6 +16,10 @@ formatter = { command = "rumdl", args = ["check", "--fix", "--stdin"] }
 [[language]]
 name = "pkl"
 auto-format = true
+
+[language-server.biome]
+command = "biome"
+args = ["lsp-proxy"]
 
 [language-server.make-ls]
 command = "make-ls"

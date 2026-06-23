@@ -12,6 +12,11 @@ local linters = new Mapping<String, Step> {
   }
   ["editorconfig-checker"] = Builtins.editorconfig_checker
   ["ghalint"] = Builtins.ghalint_workflow
+  ["jsonschema"] {
+    glob = "**/*.schema.json"
+    check = "jsonschema lint {{ files }}"
+    fix = "jsonschema lint {{ files }} --fix"
+  }
   ["mise"] = Builtins.mise
   ["pinact"] = Builtins.pinact
   ["pkl"] = Builtins.pkl

@@ -4,7 +4,7 @@ This directory holds the OPC-UA schemas to be used by the line gateway.
 
 It contains following subdirectories.
 
-* `source`: schema description in source format (`xslx`);
+* `source`: schema description in source format (TOML);
 * `modeldesign`: intermediate representation in [UA Model Design](https://github.com/OPCFoundation/UA-ModelCompiler/blob/master/Opc.Ua.ModelCompiler/UA%20Model%20Design.xsd) format;
 * `nodeset`: generated node set in OPC-UA NodeSet2 format.
 
@@ -21,10 +21,10 @@ config:
             bottom: 30
 ---
 flowchart TD
-    A@{ shape: document, label: "example.xlsx" }
-    B["`xls2modeldesign
+    A@{ shape: docs, label: "example/*.toml" }
+    B["`toml2modeldesign
     *Rust binary*`"]
-    C@{ shape: document, label: "Example.Model.xml" }
+    C@{ shape: document, label: "ExampleModel.xml" }
     D["Opc.Ua.ModelCompiler"]
     E@{ shape: document, label: "Example.NodeSet2.xml" }
     F["`build.rs
