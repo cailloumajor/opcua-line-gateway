@@ -4,13 +4,11 @@
   "description": "Source description of an OPC-UA ObjectType for ModelDesign XML generation",
   "type": "object",
   "additionalProperties": false,
-  "required": ["object_type", "variable"],
+  "required": ["name", "variable"],
   "examples": [
     {
-      "object_type": {
-        "name": "MotorType",
-        "description": "Represents a production line motor"
-      },
+      "name": "MotorType",
+      "description": "Represents a production line motor",
       "variable": [
         {
           "name": "Speed",
@@ -27,21 +25,14 @@
     }
   ],
   "properties": {
-    "object_type": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["name"],
-      "properties": {
-        "name": {
-          "type": "string",
-          "description": "ObjectType name (e.g. MotorType)",
-          "pattern": "^[A-Za-z][A-Za-z0-9_]*$"
-        },
-        "description": {
-          "type": "string",
-          "description": "ObjectType description"
-        }
-      }
+    "name": {
+      "type": "string",
+      "description": "ObjectType name (e.g. MotorType)",
+      "pattern": "^[A-Za-z][A-Za-z0-9_]*$"
+    },
+    "description": {
+      "type": "string",
+      "description": "ObjectType description"
     },
     "variable": {
       "type": "array",
