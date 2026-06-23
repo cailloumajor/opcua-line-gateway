@@ -31,3 +31,6 @@ args = ["--theme", "dark", "--enable-emoji", "--full-sync"]
 [language-server.rumdl]
 command = "rumdl"
 args = ["server"]
+
+[language-server.rust-analyzer.config]
+check.command = "clippy"
