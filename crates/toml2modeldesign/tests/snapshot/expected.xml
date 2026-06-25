@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<opc:ModelDesign
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  xmlns:opc="http://opcfoundation.org/UA/ModelDesign.xsd"
+  xmlns:ua="http://opcfoundation.org/UA/"
+  xmlns:uax="http://opcfoundation.org/UA/2008/02/Types.xsd"
+  xmlns="urn:test_ns:in"
+  TargetNamespace="urn:test_ns:in"
+>
+
+  <opc:Namespaces>
+    <opc:Namespace Prefix="in">urn:test_ns:in</opc:Namespace>
+  </opc:Namespaces>
+
+  <opc:ObjectType SymbolicName="MotorType" BaseType="ua:BaseObjectType">
+    <opc:Description>Represents a production line motor</opc:Description>
+    <opc:Children>
+      <opc:Property SymbolicName="Speed" DataType="ua:Double" >
+        <opc:Description>Motor speed in rpm</opc:Description>
+      </opc:Property>
+      <opc:Property SymbolicName="IsRunning" DataType="ua:Boolean" >
+        <opc:Description>True if the motor is currently engaged</opc:Description>
+      </opc:Property>
+      <opc:Property SymbolicName="AlarmCodes" DataType="ua:Int32" ValueRank="Array" ArrayDimensions="10">
+        <opc:Description>Active alarm codes</opc:Description>
+      </opc:Property>
+    </opc:Children>
+  </opc:ObjectType>
+
+  <opc:ObjectType SymbolicName="ConveyorBeltType" BaseType="ua:BaseObjectType">
+    <opc:Description>Represents a conveyor belt segment on the production line</opc:Description>
+    <opc:Children>
+      <opc:Property SymbolicName="BeltSpeed" DataType="ua:Double" >
+        <opc:Description>Belt linear speed in m/s</opc:Description>
+      </opc:Property>
+      <opc:Property SymbolicName="MotorTemperature" DataType="ua:Float" >
+        <opc:Description>Motor temperature in °C</opc:Description>
+      </opc:Property>
+      <opc:Property SymbolicName="SensorReadings" DataType="ua:Int32" ValueRank="Array" ArrayDimensions="4,2">
+        <opc:Description>Raw readings from 4 sensors, 2 samples each</opc:Description>
+      </opc:Property>
+    </opc:Children>
+  </opc:ObjectType>
+
+</opc:ModelDesign>

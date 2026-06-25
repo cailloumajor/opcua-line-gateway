@@ -6,8 +6,10 @@ description = "Convert TOML descriptions of OPC-UA object types to UA model desi
 publish.workspace = true
 
 [dependencies]
-anyhow.workspace = true
 askama = "0.16.0"
-clap = { workspace = true, features = ["derive"] }
 serde = { workspace = true, features = ["derive"] }
+thiserror = "2.0.18"
 toml = "1.1.2"
+
+[dev-dependencies]
+snapbox = "1.2.2"

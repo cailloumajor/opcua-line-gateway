@@ -1,0 +1,20 @@
+#:schema ../../../../../schemas/opc-object-type.schema.json
+
+name = "ConveyorBeltType"
+description = "Represents a conveyor belt segment on the production line"
+
+[[variable]]
+name = "BeltSpeed"
+data_type = "Double"
+description = "Belt linear speed in m/s"
+
+[[variable]]
+name = "MotorTemperature"
+description = "Motor temperature in °C"
+data_type = "Float"
+
+[[variable]]
+name = "SensorReadings"
+data_type = "Int32"
+array_dimensions = [4, 2]
+description = "Raw readings from 4 sensors, 2 samples each"

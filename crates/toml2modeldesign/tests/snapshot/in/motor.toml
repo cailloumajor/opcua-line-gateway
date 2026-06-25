@@ -1,0 +1,20 @@
+#:schema ../../../../../schemas/opc-object-type.schema.json
+
+name = "MotorType"
+description = "Represents a production line motor"
+
+[[variable]]
+name = "Speed"
+data_type = "Double"
+description = "Motor speed in rpm"
+
+[[variable]]
+name = "IsRunning"
+data_type = "Boolean"
+description = "True if the motor is currently engaged"
+
+[[variable]]
+name = "AlarmCodes"
+data_type = "Int32"
+array_dimensions = [10]
+description = "Active alarm codes"

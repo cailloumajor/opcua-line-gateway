@@ -14,11 +14,12 @@
     <opc:Namespace Prefix="{{ ns_prefix }}">{{ namespace }}</opc:Namespace>
   </opc:Namespaces>
 
-  {% for object_type in object_types -%}
+{%- for object_type in object_types %}
+
   <opc:ObjectType SymbolicName="{{ object_type.name }}" BaseType="ua:BaseObjectType">
     <opc:Description>{{ object_type.description }}</opc:Description>
     <opc:Children>
-      {%- for var in object_type.variable %}
+{%- for var in object_type.variable %}
       <opc:Property SymbolicName="{{ var.name }}" DataType="ua:{{ var.data_type }}" {# Keep the trailing space #}
         {%- if let Some(dimensions) = var.array_dimensions -%}
           ValueRank="Array" ArrayDimensions="{{ dimensions | join(',') }}"
@@ -26,10 +27,10 @@
       >
         <opc:Description>{{ var.description }}</opc:Description>
       </opc:Property>
-      {%- endfor %}
+{%- endfor %}
     </opc:Children>
   </opc:ObjectType>
+{%- endfor %}
 
-  {% endfor ~%}
 </opc:ModelDesign>
 
