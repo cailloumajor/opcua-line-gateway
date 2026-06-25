@@ -6,12 +6,12 @@
   xmlns:opc="http://opcfoundation.org/UA/ModelDesign.xsd"
   xmlns:ua="http://opcfoundation.org/UA/"
   xmlns:uax="http://opcfoundation.org/UA/2008/02/Types.xsd"
-  xmlns="urn:test_ns:in"
-  TargetNamespace="urn:test_ns:in"
+  xmlns="urn:test:snapshot"
+  TargetNamespace="urn:test:snapshot"
 >
 
   <opc:Namespaces>
-    <opc:Namespace Prefix="in">urn:test_ns:in</opc:Namespace>
+    <opc:Namespace Prefix="snapshot">urn:test:snapshot</opc:Namespace>
   </opc:Namespaces>
 
   <opc:ObjectType SymbolicName="MotorType" BaseType="ua:BaseObjectType">

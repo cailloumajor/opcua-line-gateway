@@ -1,13 +1,16 @@
 use std::path::Path;
-use std::{env, fs, io};
+use std::{fs, io};
 
 use askama::Template;
 use serde::Deserialize;
 use thiserror::Error;
+use urn::Urn;
 
 /// Represents errors that can be encountered converting TOML to Model Design.
 #[derive(Debug, Error)]
 pub enum Toml2ModelDesignError {
+    #[error("bad provided namespace URN: {0}")]
+    NamespaceUrn(urn::Error),
     #[error("error creating iterator over input directory members: {0}")]
     InputDirIterator(io::Error),
     #[error("error getting input directory name")]
@@ -52,20 +55,18 @@ struct Variable {
 #[derive(Template)]
 #[template(path = "modeldesign.xml")]
 struct ModelDesign {
-    /// UA target namespace.
-    namespace: String,
-    /// UA namespace prefix.
-    ns_prefix: String,
+    /// The namespace URN.
+    ns_urn: Urn,
     /// The list of object types.
     object_types: Vec<ObjectType>,
 }
 
 /// Convert ObjectType descriptions from TOML files in input directory to UA Model Design,
-/// provided the path to the input directory and the URN namespace to use in the generated
+/// provided the path to the input directory and the namespace URN to use in the generated
 /// contents.
 pub fn toml2modeldesign<P>(
     input_dir: &P,
-    urn_namespace: &str,
+    namespace_urn: &str,
 ) -> Result<String, Toml2ModelDesignError>
 where
     P: AsRef<Path>,
@@ -73,14 +74,9 @@ where
     let read_input_dir =
         fs::read_dir(input_dir).map_err(Toml2ModelDesignError::InputDirIterator)?;
 
-    // URN NSS (namespace-specific string).
-    let urn_nss = input_dir
-        .as_ref()
-        .file_name()
-        .and_then(|n| n.to_str())
-        .ok_or(Toml2ModelDesignError::InputDirName)?;
-    // OPC-UA namespace URN.
-    let namespace = format!("urn:{urn_namespace}:{urn_nss}");
+    let ns_urn: Urn = namespace_urn
+        .parse()
+        .map_err(Toml2ModelDesignError::NamespaceUrn)?;
 
     let mut object_types = Vec::new();
 
@@ -101,8 +97,7 @@ where
     }
 
     let model_design = ModelDesign {
-        namespace,
-        ns_prefix: urn_nss.to_string(),
+        ns_urn,
         object_types,
     };
 

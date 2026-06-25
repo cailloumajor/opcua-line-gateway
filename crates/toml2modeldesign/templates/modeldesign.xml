@@ -6,12 +6,12 @@
   xmlns:opc="http://opcfoundation.org/UA/ModelDesign.xsd"
   xmlns:ua="http://opcfoundation.org/UA/"
   xmlns:uax="http://opcfoundation.org/UA/2008/02/Types.xsd"
-  xmlns="{{ namespace }}"
-  TargetNamespace="{{ namespace }}"
+  xmlns="{{ ns_urn }}"
+  TargetNamespace="{{ ns_urn }}"
 >
 
   <opc:Namespaces>
-    <opc:Namespace Prefix="{{ ns_prefix }}">{{ namespace }}</opc:Namespace>
+    <opc:Namespace Prefix="{{ ns_urn.nss().replace(':', ".") }}">{{ ns_urn }}</opc:Namespace>
   </opc:Namespaces>
 
 {%- for object_type in object_types %}
