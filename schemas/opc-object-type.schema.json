@@ -4,7 +4,7 @@
   "description": "Source description of an OPC-UA ObjectType for ModelDesign XML generation",
   "type": "object",
   "additionalProperties": false,
-  "required": ["name", "variable"],
+  "required": ["name", "description", "variable"],
   "examples": [
     {
       "name": "MotorType",
@@ -40,7 +40,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["name", "data_type"],
+        "required": ["name", "description", "data_type"],
         "properties": {
           "name": {
             "type": "string",
