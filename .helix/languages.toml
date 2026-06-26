@@ -34,3 +34,5 @@ args = ["server"]
 
 [language-server.rust-analyzer.config]
 check.command = "clippy"
+imports.granularity.enforce = true
+imports.granularity.group = "module"
