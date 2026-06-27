@@ -23,5 +23,8 @@ version = "1.96.0"
 components = "rust-analyzer"
 profile = "default"
 
+[settings]
+minimum_release_age = "7d"
+
 [hooks]
 enter = "mise outdated --local --silent"
