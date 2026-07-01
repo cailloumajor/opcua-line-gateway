@@ -3,11 +3,6 @@ name = "json"
 language-servers = ["biome"]
 
 [[language]]
-name = "make"
-auto-format = true
-language-servers = ["make-ls"]
-
-[[language]]
 name = "markdown"
 auto-format = true
 language-servers = ["marksman", "rumdl", "mpls"]
@@ -20,9 +15,6 @@ auto-format = true
 [language-server.biome]
 command = "biome"
 args = ["lsp-proxy"]
-
-[language-server.make-ls]
-command = "make-ls"
 
 [language-server.mpls]
 command = "mpls"
