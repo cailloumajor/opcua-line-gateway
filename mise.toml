@@ -12,9 +12,6 @@ typos = "latest"
 zizmor = "latest"
 marksman = "latest"
 "github:mhersson/mpls" = "latest"
-make = "latest"
-biome = "latest"
-jsonschema = "latest"
 
 [tools.rust]
 version = "1.96.0"
