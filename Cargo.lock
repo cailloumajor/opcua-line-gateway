@@ -3,9 +3,5 @@
 version = 4
 
 [[package]]
-name = "gateway-bjc3"
-version = "0.1.0"
-
-[[package]]
-name = "gateway-core"
+name = "opcua-line-gateway"
 version = "0.1.0"
