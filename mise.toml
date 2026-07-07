@@ -14,7 +14,7 @@ marksman = "latest"
 "github:mhersson/mpls" = "latest"
 
 [tools.rust]
-version = "1.96.0"
+version = "1.96.1"
 components = "rust-analyzer"
 profile = "default"
 
