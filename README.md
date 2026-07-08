@@ -19,6 +19,10 @@ forever.
 
 This section summarizes the configuration contents.
 
+#### Common
+
+* OPC-UA PKI directory
+
 #### For each OPC-UA server
 
 * Target URL (e.g. `opc.tcp://ip-or-hostname:port`)

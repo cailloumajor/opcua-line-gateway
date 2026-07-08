@@ -1,6 +1,22 @@
 [package]
 name = "opcua-line-gateway"
+version.workspace = true
+edition.workspace = true
+description = "OPC-UA gateway for production line"
+publish.workspace = true
+
+[workspace]
+members = ["crates/*"]
+
+[workspace.package]
 version = "0.1.0"
 edition = "2024"
-description = "OPC-UA gateway for production line"
 publish = false
+
+[workspace.dependencies]
+anyhow = "1.0.103"
+thiserror = "2.0.18"
+
+[dependencies]
+async-opcua = { version = "0.18.0", features = ["client"] }
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
