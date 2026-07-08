@@ -21,6 +21,7 @@ This section summarizes the configuration contents.
 
 #### Common
 
+* Application URI
 * OPC-UA PKI directory
 
 #### For each OPC-UA server

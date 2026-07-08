@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LineGatewayConfig",
+  "description": "OPC-UA line gateway configuration.",
+  "type": "object",
+  "properties": {
+    "application_uri": {
+      "description": "The globally unique identifier for the application instance, as of OPC-UA.",
+      "type": "string"
+    },
+    "opcua_servers": {
+      "description": "Mapping of machine identifier to corresponding OPC-UA server configuration.",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/OpcUaServerConfig"
+      }
+    },
+    "pki_dir": {
+      "description": "The root directory of the OPC-UA PKI.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "application_uri",
+    "pki_dir",
+    "opcua_servers"
+  ],
+  "$defs": {
+    "OpcUaServerConfig": {
+      "description": "The configuration for an OPC-UA server to communicate with.",
+      "type": "object"
+    }
+  }
+}

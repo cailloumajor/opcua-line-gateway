@@ -12,11 +12,18 @@ typos = "latest"
 zizmor = "latest"
 marksman = "latest"
 "github:mhersson/mpls" = "latest"
+usage = "latest"
 
 [tools.rust]
 version = "1.96.1"
 components = "rust-analyzer"
 profile = "default"
+
+[tasks."generate-config-schema"]
+description = "Generate the JSON schema for the configuration file"
+run = "cargo run --package opcua-line-gateway-config --bin generate-schema >schema/config.schema.json"
+sources = ["crates/config/src/lib.rs"]
+outputs = ["schema/config.schema.json"]
 
 [settings]
 minimum_release_age = "7d"
