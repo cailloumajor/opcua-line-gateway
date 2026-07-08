@@ -11,8 +11,8 @@ use thiserror::Error;
 pub enum LineGatewayConfigError {
     #[error("error reading the configuration file")]
     ReadFile(#[source] io::Error),
-    #[error("error parsing configuration TOML")]
-    ParseToml(#[source] toml::de::Error),
+    #[error(transparent)]
+    ParseToml(toml::de::Error),
 }
 
 /// The configuration for an OPC-UA server to communicate with.
