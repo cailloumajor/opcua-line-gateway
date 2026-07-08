@@ -22,6 +22,8 @@ pub struct OpcUaServerConfig {}
 /// OPC-UA line gateway configuration.
 #[derive(Deserialize, JsonSchema)]
 pub struct LineGatewayConfig {
+    /// The globally unique identifier for the application instance, as of OPC-UA.
+    pub application_uri: String,
     /// The root directory of the OPC-UA PKI.
     pub pki_dir: PathBuf,
     /// Mapping of machine identifier to corresponding OPC-UA server configuration.
