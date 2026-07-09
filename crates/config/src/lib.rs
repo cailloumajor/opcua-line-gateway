@@ -2,8 +2,9 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::{fs, io};
 
+use opcua::client::IdentityToken;
 use opcua::crypto::SecurityPolicy;
-use opcua::types::MessageSecurityMode;
+use opcua::types::{EndpointDescription, MessageSecurityMode};
 use schemars::JsonSchema;
 use serde::Deserialize;
 use thiserror::Error;
@@ -42,6 +43,26 @@ pub struct OpcUaServerConfig {
     pub user: Option<String>,
     /// The password to use if using username/password authentication.
     pub password: Option<String>,
+}
+
+impl OpcUaServerConfig {
+    /// Create an [`EndpointDescription`] from this server configuration.
+    pub fn endpoint_description(&self) -> EndpointDescription {
+        EndpointDescription::from((
+            self.url.as_str(),
+            self.security_policy.to_str(),
+            self.security_mode,
+        ))
+    }
+
+    /// Create an [`IdentityToken`] from this server configuration.
+    pub fn identity_token(&self) -> IdentityToken {
+        self.user
+            .as_ref()
+            .zip(self.password.as_ref())
+            .map(|(user, pass)| IdentityToken::new_user_name(user, pass))
+            .unwrap_or(IdentityToken::new_anonymous())
+    }
 }
 
 /// OPC-UA line gateway configuration.
