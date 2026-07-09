@@ -19,6 +19,10 @@ pub enum LineGatewayConfigError {
     ParseToml(toml::de::Error),
     #[error("no OPC-UA server configured, running would be pointless")]
     EmptyServers,
+    #[error("missing OPC-UA username for `{0}` server configuration")]
+    MissingUsername(String),
+    #[error("missing OPC-UA password for `{0}` server configuration")]
+    MissingPassword(String),
 }
 
 /// The configuration for an OPC-UA server to communicate with.
@@ -64,6 +68,19 @@ impl LineGatewayConfig {
         // Validate that we have at least one server configured.
         if config.opcua_servers.is_empty() {
             return Err(LineGatewayConfigError::EmptyServers);
+        }
+
+        // Validate OPC-UA username and password.
+        for (server_id, server_config) in &config.opcua_servers {
+            match (&server_config.user, &server_config.password) {
+                (None, Some(_)) => {
+                    return Err(LineGatewayConfigError::MissingUsername(server_id.clone()));
+                }
+                (Some(_), None) => {
+                    return Err(LineGatewayConfigError::MissingPassword(server_id.clone()));
+                }
+                _ => {}
+            }
         }
 
         Ok(config)
