@@ -15,10 +15,11 @@ publish = false
 
 [workspace.dependencies]
 anyhow = "1.0.103"
+async-opcua = "0.18.0"
 thiserror = "2.0.18"
 
 [dependencies]
 anyhow.workspace = true
-async-opcua = { version = "0.18.0", features = ["client"] }
+async-opcua = { workspace = true, features = ["client"] }
 opcua-line-gateway-config = { path = "crates/config" }
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }

@@ -906,6 +906,7 @@ name = "opcua-line-gateway-config"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-opcua",
  "schemars",
  "serde",
  "serde_json",

@@ -2,9 +2,13 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::{fs, io};
 
+use opcua::crypto::SecurityPolicy;
+use opcua::types::MessageSecurityMode;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use thiserror::Error;
+
+mod foreign;
 
 /// Represents errors that can be encountered with configuration.
 #[derive(Debug, Error)]
@@ -19,7 +23,22 @@ pub enum LineGatewayConfigError {
 
 /// The configuration for an OPC-UA server to communicate with.
 #[derive(Deserialize, JsonSchema)]
-pub struct OpcUaServerConfig {}
+pub struct OpcUaServerConfig {
+    /// OPC-UA server URL.
+    #[schemars(url)]
+    pub url: String,
+    /// OPC_UA security policy.
+    #[serde(with = "foreign::SecurityPolicy")]
+    pub security_policy: SecurityPolicy,
+    /// OPC-UA security mode.
+    #[serde(with = "foreign::MessageSecurityMode")]
+    pub security_mode: MessageSecurityMode,
+    /// The username if authenticating to the OPC-UA server with username/password.
+    /// If not provided, anonymous authentication will be used.
+    pub user: Option<String>,
+    /// The password to use if using username/password authentication.
+    pub password: Option<String>,
+}
 
 /// OPC-UA line gateway configuration.
 #[derive(Deserialize, JsonSchema)]

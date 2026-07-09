@@ -25,10 +25,76 @@
     "pki_dir",
     "opcua_servers"
   ],
+  "x-tombi-string-formats": [
+    "uri"
+  ],
   "$defs": {
+    "MessageSecurityMode": {
+      "description": "A copy of [`opcua::crypto::MessageSecurityMode`] to allow using serde remote functionality.",
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "None",
+            "Sign",
+            "SignAndEncrypt"
+          ]
+        }
+      ]
+    },
     "OpcUaServerConfig": {
       "description": "The configuration for an OPC-UA server to communicate with.",
-      "type": "object"
+      "type": "object",
+      "properties": {
+        "password": {
+          "description": "The password to use if using username/password authentication.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "security_mode": {
+          "description": "OPC-UA security mode.",
+          "$ref": "#/$defs/MessageSecurityMode"
+        },
+        "security_policy": {
+          "description": "OPC_UA security policy.",
+          "$ref": "#/$defs/SecurityPolicy"
+        },
+        "url": {
+          "description": "OPC-UA server URL.",
+          "type": "string",
+          "format": "uri"
+        },
+        "user": {
+          "description": "The username if authenticating to the OPC-UA server with username/password.\nIf not provided, anonymous authentication will be used.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "url",
+        "security_policy",
+        "security_mode"
+      ]
+    },
+    "SecurityPolicy": {
+      "description": "A copy of [`opcua::crypto::SecurityPolicy`] to allow using serde remote functionality.",
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "None",
+            "Aes128Sha256RsaOaep",
+            "Basic256Sha256",
+            "Aes256Sha256RsaPss",
+            "Basic128Rsa15",
+            "Basic256"
+          ]
+        }
+      ]
     }
   }
 }
