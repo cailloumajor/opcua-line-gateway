@@ -13,6 +13,8 @@ pub enum LineGatewayConfigError {
     ReadFile(#[source] io::Error),
     #[error(transparent)]
     ParseToml(toml::de::Error),
+    #[error("no OPC-UA server configured, running would be pointless")]
+    EmptyServers,
 }
 
 /// The configuration for an OPC-UA server to communicate with.
@@ -37,7 +39,13 @@ impl LineGatewayConfig {
         P: AsRef<Path>,
     {
         let file_contents = fs::read_to_string(path).map_err(LineGatewayConfigError::ReadFile)?;
-        let config = toml::from_str(&file_contents).map_err(LineGatewayConfigError::ParseToml)?;
+        let config =
+            toml::from_str::<Self>(&file_contents).map_err(LineGatewayConfigError::ParseToml)?;
+
+        // Validate that we have at least one server configured.
+        if config.opcua_servers.is_empty() {
+            return Err(LineGatewayConfigError::EmptyServers);
+        }
 
         Ok(config)
     }
