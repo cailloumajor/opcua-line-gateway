@@ -4,6 +4,11 @@ use std::fmt;
 use opcua::client::{Client, ClientBuilder};
 use opcua_line_gateway_config::LineGatewayConfig;
 
+pub(crate) use session_manager::SessionManager;
+
+mod session;
+mod session_manager;
+
 /// Wraps multiple errors, as returned by [`ClientBuilder::client()`]
 #[derive(Debug)]
 pub(crate) struct ClientBuildError(Vec<String>);
