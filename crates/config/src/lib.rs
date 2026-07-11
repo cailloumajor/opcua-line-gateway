@@ -27,7 +27,7 @@ pub enum LineGatewayConfigError {
 }
 
 /// The configuration for an OPC-UA server to communicate with.
-#[derive(Deserialize, JsonSchema)]
+#[derive(Clone, Deserialize, JsonSchema)]
 pub struct OpcUaServerConfig {
     /// OPC-UA server URL.
     #[schemars(url)]
@@ -66,7 +66,7 @@ impl OpcUaServerConfig {
 }
 
 /// OPC-UA line gateway configuration.
-#[derive(Deserialize, JsonSchema)]
+#[derive(Clone, Deserialize, JsonSchema)]
 pub struct LineGatewayConfig {
     /// The globally unique identifier for the application instance, as of OPC-UA.
     pub application_uri: String,
