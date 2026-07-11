@@ -1,5 +1,6 @@
 use std::error::Error;
 use std::fmt;
+use std::time::Duration;
 
 use opcua::client::{Client, ClientBuilder};
 use opcua_line_gateway_config::LineGatewayConfig;
@@ -8,6 +9,12 @@ pub(crate) use session_manager::SessionManager;
 
 mod session;
 mod session_manager;
+
+/// Maximum time allowed for server requests.
+const REQUEST_TIMEOUT: Duration = Duration::from_secs(1);
+
+/// Maximum time allowed for publish requests to the server.
+const PUBLISH_TIMEOUT: Duration = Duration::from_millis(200);
 
 /// Wraps multiple errors, as returned by [`ClientBuilder::client()`]
 #[derive(Debug)]
@@ -42,6 +49,8 @@ pub(crate) fn create_client(config: &LineGatewayConfig) -> Result<Client, Client
         .private_key_path(concat!("private/", env!("CARGO_PKG_NAME"), "-key.pem"))
         // Retry to re-establish the session forever.
         .session_retry_limit(-1)
+        .request_timeout(REQUEST_TIMEOUT)
+        .publish_timeout(PUBLISH_TIMEOUT)
         .client()
         .map_err(ClientBuildError)
 }
