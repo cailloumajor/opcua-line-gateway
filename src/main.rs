@@ -32,6 +32,8 @@ async fn handle_signals(signals: Signals, shutdown_token: CancellationToken) {
         }
     }
     shutdown_token.cancel();
+
+    info!(msg = "signals handler terminated");
 }
 
 #[tokio::main]
