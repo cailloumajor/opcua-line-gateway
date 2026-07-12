@@ -23,7 +23,6 @@ anyhow.workspace = true
 async-opcua = { workspace = true, features = ["client"] }
 futures-util = "0.3.32"
 opcua-line-gateway-config = { path = "crates/config" }
-parking_lot = { version = "0.12.5", features = ["arc_lock"] }
 signal-hook = { version = "0.4.4", default-features = false }
 signal-hook-tokio = { version = "0.4.0", features = ["futures-v0_3"] }
 thiserror.workspace = true

@@ -13,7 +13,7 @@ use tracing_subscriber::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
-use crate::opcua::{SessionManager, create_client};
+use crate::opcua::{create_client, run_session_manager};
 
 mod opcua;
 
@@ -57,14 +57,12 @@ async fn main() -> anyhow::Result<()> {
     // Create OPC-UA client.
     let client = create_client(&config).context("Failed to create OPC-UA client")?;
 
-    let session_manager = SessionManager::new(config.opcua_servers, client.into());
-
     let signals = Signals::new(TERM_SIGNALS).context("Failed to register termination signals")?;
     let signals_handle = signals.handle();
     let shutdown_token = CancellationToken::new();
     let signals_task = tokio::spawn(handle_signals(signals, shutdown_token.clone()));
 
-    session_manager.run(shutdown_token).await;
+    run_session_manager(client.into(), config.opcua_servers, shutdown_token).await;
 
     signals_handle.close();
 

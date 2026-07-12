@@ -899,7 +899,6 @@ dependencies = [
  "async-opcua",
  "futures-util",
  "opcua-line-gateway-config",
- "parking_lot",
  "signal-hook",
  "signal-hook-tokio",
  "thiserror 2.0.18",
