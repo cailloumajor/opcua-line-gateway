@@ -6,16 +6,23 @@ use opcua::types::StatusCode;
 use opcua_line_gateway_config::OpcUaServerConfig;
 use thiserror::Error;
 use tokio::task::{JoinError, JoinHandle};
+use tokio_util::sync::CancellationToken;
 use tokio_util::task::AbortOnDropHandle;
 use tracing::{Instrument, info, info_span, instrument};
+
+use crate::opcua::traceability::{
+    TraceabilityHandler, TraceabilityInitalizeError, TraceabilityInstallError,
+};
 
 /// Errors that can occur during session stopping.
 #[derive(Debug, Error)]
 pub(super) enum SessionStopError {
     #[error("error disconnecting session")]
-    Disconnect(#[source] StatusCode),
+    Disconnect(#[source] opcua::types::Error),
     #[error("error joining session event loop task")]
     JoinLoopTask(#[source] JoinError),
+    #[error("error joining the traceability task")]
+    JoinTraceabilityTask(#[source] JoinError),
 }
 
 /// Errors that can occur during session creation.
@@ -29,6 +36,10 @@ pub(super) enum CreateSessionError {
     SessionBuild(#[source] opcua::types::Error),
     #[error("error connecting the session")]
     SessionConnect,
+    #[error("error initializing traceability handler")]
+    TraceabilityInitialize(#[from] TraceabilityInitalizeError),
+    #[error("error installing traceability handler")]
+    TraceabilityInstall(#[from] TraceabilityInstallError),
 }
 
 /// Represents an active OPC-UA session.
@@ -39,6 +50,10 @@ pub(super) struct OpcUaSession {
     session: Arc<Session>,
     /// The handle to the session runtime task.
     event_loop_handle: JoinHandle<StatusCode>,
+    /// The token to ask traceability handler to shutdown gracefully.
+    traceability_cancel: CancellationToken,
+    /// The handle to the traceability task.
+    traceability_handle: JoinHandle<()>,
 }
 
 impl OpcUaSession {
@@ -68,7 +83,17 @@ impl OpcUaSession {
             return Err(CreateSessionError::SessionConnect);
         }
 
-        // TODO: plug traceability here
+        let traceability_cancel = CancellationToken::new();
+        let traceability_handler = TraceabilityHandler::new(
+            server_id.clone(),
+            server_config.traceability,
+            Arc::clone(&session),
+        );
+        let traceability_handle = traceability_handler
+            .initialize()
+            .await?
+            .install(traceability_cancel.clone())
+            .await?;
 
         // Get back the event loop handle and disable the abort-on-drop effect.
         let event_loop_handle = loop_abort_handle.detach();
@@ -77,6 +102,8 @@ impl OpcUaSession {
             server_id,
             session,
             event_loop_handle,
+            traceability_cancel,
+            traceability_handle,
         })
     }
 
@@ -87,6 +114,13 @@ impl OpcUaSession {
     pub(super) async fn stop(self) -> Result<(), SessionStopError> {
         info!(msg = "stopping session");
 
+        // Stop the traceability handler
+        self.traceability_cancel.cancel();
+        self.traceability_handle
+            .await
+            .map_err(SessionStopError::JoinTraceabilityTask)?;
+
+        // Stop the session.
         self.session
             .disconnect()
             .await

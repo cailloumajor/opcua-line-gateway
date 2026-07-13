@@ -36,3 +36,34 @@ This section summarizes the configuration contents.
 * Request byte NodeId
 * Response byte NodeId
 * Part data sheet Objects NodeIds
+
+## Traceability Protocol
+
+```mermaid
+sequenceDiagram
+    participant PLC as PLC Program
+    participant DB as Mailbox DB
+    participant us as Traceability app
+
+    PLC->>DB:Set request code
+    critical ❗ PLC writing to mailbox DB forbidden ❗
+        DB-->>us:Get request code notification
+        alt Create request
+            us->>+DB:Read general part sheet
+            DB-->>-us:Response
+            us->>us:Generate part ID
+            us->>DB:Write general part sheet<br/>with part ID
+        else Load request
+            us->>us:Read parts sheets from cache
+            us->>DB:Write part sheets from cache
+        else Save request
+            us->>+DB:Read part sheets to cache
+            DB-->>-us:Response
+            us->>us:Write part sheets to cache
+        end
+        us->>DB:Write response code
+    end
+    PLC->>DB:Reset request code
+    DB-->>us:Get request code notification
+    us->>DB:Reset response code
+```

@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 use std::{fs, io};
 
 use opcua::client::IdentityToken;
@@ -26,6 +27,22 @@ pub enum LineGatewayConfigError {
     MissingPassword(String),
 }
 
+/// Traceability related configuration for an OPC-UA server.
+#[derive(Clone, Deserialize, JsonSchema)]
+pub struct TraceabilityConfig {
+    /// The namespace URL used for traceability.
+    #[schemars(url)]
+    pub namespace_url: String,
+    /// The publish interval to request when subscribing to request variable.
+    #[serde(with = "jiff::fmt::serde::unsigned_duration::friendly::compact::required")]
+    #[schemars(with = "String")]
+    pub publish_interval: Duration,
+    /// The node identifier of the request variable.
+    pub request_node_id: u32,
+    /// The node identifier of the response variable.
+    pub response_node_id: u32,
+}
+
 /// The configuration for an OPC-UA server to communicate with.
 #[derive(Clone, Deserialize, JsonSchema)]
 pub struct OpcUaServerConfig {
@@ -43,6 +60,8 @@ pub struct OpcUaServerConfig {
     pub user: Option<String>,
     /// The password to use if using username/password authentication.
     pub password: Option<String>,
+    /// The traceability settings for this server.
+    pub traceability: TraceabilityConfig,
 }
 
 impl OpcUaServerConfig {

@@ -15,7 +15,10 @@ publish = false
 
 [workspace.dependencies]
 anyhow = "1.0.103"
-async-opcua = "0.18.0"
+async-opcua = {
+  git = "https://github.com/FreeOpcUa/async-opcua",
+  rev = "c6dc890dd2eb8cd610b326ddb6f91e1e8bc2a332"
+}
 thiserror = "2.0.18"
 
 [dependencies]
@@ -25,8 +28,10 @@ futures-util = "0.3.32"
 opcua-line-gateway-config = { path = "crates/config" }
 signal-hook = { version = "0.4.4", default-features = false }
 signal-hook-tokio = { version = "0.4.0", features = ["futures-v0_3"] }
+strum = { version = "0.28.0", features = ["derive"] }
 thiserror.workspace = true
-tokio = { version = "1.52.3", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.52.3", features = ["macros", "rt-multi-thread", "time"] }
+tokio-stream = "0.1.18"
 tokio-util = { version = "0.7.18", features = ["rt"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
