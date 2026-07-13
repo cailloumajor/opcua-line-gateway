@@ -6,10 +6,7 @@ use opcua::client::{Client, ClientBuilder};
 use opcua_line_gateway_config::LineGatewayConfig;
 
 /// Maximum time allowed for server requests.
-const REQUEST_TIMEOUT: Duration = Duration::from_secs(1);
-
-/// Maximum time allowed for publish requests to the server.
-const PUBLISH_TIMEOUT: Duration = Duration::from_millis(200);
+const REQUEST_TIMEOUT: Duration = Duration::from_secs(5);
 
 /// Wraps multiple errors, as returned by [`ClientBuilder::client()`]
 #[derive(Debug)]
@@ -45,7 +42,7 @@ pub(crate) fn create_client(config: &LineGatewayConfig) -> Result<Client, Client
         // Retry to re-establish the session forever.
         .session_retry_limit(-1)
         .request_timeout(REQUEST_TIMEOUT)
-        .publish_timeout(PUBLISH_TIMEOUT)
+        .publish_timeout(REQUEST_TIMEOUT)
         .client()
         .map_err(ClientBuildError)
 }
