@@ -1,76 +1,21 @@
 use std::sync::Arc;
-use std::time::Duration;
 
 use futures_util::{StreamExt, pin_mut};
 use opcua::client::{DataChangeCallback, Session};
-use opcua::types::{
-    DataValue, IntoVariant, NodeId, StatusCode, TimestampsToReturn, Variant, WriteValue,
-};
+use opcua::types::{DataValue, NodeId, TimestampsToReturn, Variant, WriteValue};
 use opcua_line_gateway_config::TraceabilityConfig;
-use strum::FromRepr;
-use thiserror::Error;
 use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
 use tokio_stream::wrappers::UnboundedReceiverStream;
 use tokio_util::sync::CancellationToken;
 use tracing::{Instrument, info, info_span, instrument, warn};
 
-/// Errors that can be encountered during traceability handler initialization.
-#[derive(Debug, Error)]
-pub(super) enum TraceabilityInitializeError {}
+use self::errors::{HandleRequestError, WriteResponseError};
+pub(super) use self::errors::{TraceabilityInitializeError, TraceabilityInstallError};
+use self::protocol::{TraceabilityRequest, TraceabilityResponse};
 
-/// Errors that can be encountered during traceability handler installation.
-#[derive(Debug, Error)]
-pub(super) enum TraceabilityInstallError {
-    #[error("error creating subscription: {0}")]
-    CreateSubscription(#[source] opcua::types::Error),
-    #[error("server raised publishing interval (requested {0:?}, got {1:?})")]
-    PublishIntervalRaised(Duration, Duration),
-    #[error("error getting traceability namespace index")]
-    GetNamespaceIndex(#[source] opcua::types::Error),
-    #[error("error creating monitored items: {0}")]
-    CreateMonitoredItems(#[source] opcua::types::Error),
-    #[error("error on monitored item `{0}`: {1}")]
-    MonitoredItem(NodeId, StatusCode),
-}
-
-/// Errors that can be encountered during request handling.
-#[derive(Debug, Error)]
-enum HandleRequestError {
-    #[error("missing request value")]
-    ValueMissing,
-    #[error("invalid request value (expected Byte, got {0:?})")]
-    InvalidValue(Variant),
-    #[error("unknown request value: {0}")]
-    UnknownValue(u8),
-    #[error("error writing response code")]
-    WriteResponse(#[from] WriteResponseError),
-}
-
-impl HandleRequestError {
-    /// Convert a request handling error to a traceability response code. This is intended
-    /// to be used to generate a response code to write to the OPC-UA server in case
-    /// of failure. Return `None` if not applicable.
-    fn to_response_code(&self) -> Option<TraceabilityResponse> {
-        match self {
-            Self::ValueMissing => Some(TraceabilityResponse::ErrorValueMissing),
-            Self::InvalidValue(_) => Some(TraceabilityResponse::ErrorInvalidValue),
-            Self::UnknownValue(_) => Some(TraceabilityResponse::ErrorUnknownValue),
-            Self::WriteResponse(_) => None,
-        }
-    }
-}
-
-/// Errors that can be encountered during resetting response code.
-#[derive(Debug, Error)]
-enum WriteResponseError {
-    #[error("error getting traceability namespace index")]
-    GetNamespaceIndex(#[source] opcua::types::Error),
-    #[error("write request error")]
-    WriteRequest(#[source] opcua::types::Error),
-    #[error("write operation error: {0}")]
-    WriteStatus(StatusCode),
-}
+mod errors;
+mod protocol;
 
 /// The initial state of the traceability handler.
 pub(super) struct InitialState;
@@ -242,6 +187,7 @@ impl TraceabilityHandler<Initialized> {
 
         match req {
             TraceabilityRequest::Reset => self.write_response(TraceabilityResponse::Reset).await?,
+            _ => todo!(),
         }
 
         Ok(())
@@ -269,31 +215,5 @@ impl TraceabilityHandler<Initialized> {
         }
 
         Ok(())
-    }
-}
-
-/// Traceability request code.
-#[derive(Clone, Copy, FromRepr)]
-#[repr(u8)]
-enum TraceabilityRequest {
-    /// Reset state of the request.
-    Reset = 0,
-}
-
-/// Traceability response code.
-#[derive(Clone, Copy)]
-#[repr(u8)]
-enum TraceabilityResponse {
-    /// Reset state of the response.
-    Reset = 0,
-
-    ErrorValueMissing = 10,
-    ErrorInvalidValue = 11,
-    ErrorUnknownValue = 12,
-}
-
-impl IntoVariant for TraceabilityResponse {
-    fn into_variant(self) -> Variant {
-        (self as u8).into()
     }
 }

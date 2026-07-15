@@ -11,7 +11,7 @@ use tokio_util::task::AbortOnDropHandle;
 use tracing::{Instrument, info, info_span, instrument};
 
 use crate::opcua::traceability::{
-    TraceabilityHandler, TraceabilityInitalizeError, TraceabilityInstallError,
+    TraceabilityHandler, TraceabilityInitializeError, TraceabilityInstallError,
 };
 
 /// Errors that can occur during session stopping.
@@ -37,7 +37,7 @@ pub(super) enum CreateSessionError {
     #[error("error connecting the session")]
     SessionConnect,
     #[error("error initializing traceability handler")]
-    TraceabilityInitialize(#[from] TraceabilityInitalizeError),
+    TraceabilityInitialize(#[from] TraceabilityInitializeError),
     #[error("error installing traceability handler")]
     TraceabilityInstall(#[from] TraceabilityInstallError),
 }

@@ -28,3 +28,4 @@ args = ["server"]
 check.command = "clippy"
 imports.granularity.enforce = true
 imports.granularity.group = "module"
+imports.prefix = "self"
