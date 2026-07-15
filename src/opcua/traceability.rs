@@ -17,7 +17,7 @@ use tracing::{Instrument, info, info_span, instrument, warn};
 
 /// Errors that can be encountered during traceability handler initialization.
 #[derive(Debug, Error)]
-pub(super) enum TraceabilityInitalizeError {}
+pub(super) enum TraceabilityInitializeError {}
 
 /// Errors that can be encountered during traceability handler installation.
 #[derive(Debug, Error)]
@@ -43,13 +43,27 @@ enum HandleRequestError {
     InvalidValue(Variant),
     #[error("unknown request value: {0}")]
     UnknownValue(u8),
-    #[error("error resetting response code")]
-    ResetResponse(#[from] ResetResponseError),
+    #[error("error writing response code")]
+    WriteResponse(#[from] WriteResponseError),
+}
+
+impl HandleRequestError {
+    /// Convert a request handling error to a traceability response code. This is intended
+    /// to be used to generate a response code to write to the OPC-UA server in case
+    /// of failure. Return `None` if not applicable.
+    fn to_response_code(&self) -> Option<TraceabilityResponse> {
+        match self {
+            Self::ValueMissing => Some(TraceabilityResponse::ErrorValueMissing),
+            Self::InvalidValue(_) => Some(TraceabilityResponse::ErrorInvalidValue),
+            Self::UnknownValue(_) => Some(TraceabilityResponse::ErrorUnknownValue),
+            Self::WriteResponse(_) => None,
+        }
+    }
 }
 
 /// Errors that can be encountered during resetting response code.
 #[derive(Debug, Error)]
-enum ResetResponseError {
+enum WriteResponseError {
     #[error("error getting traceability namespace index")]
     GetNamespaceIndex(#[source] opcua::types::Error),
     #[error("write request error")]
@@ -97,7 +111,7 @@ impl TraceabilityHandler<InitialState> {
     #[instrument(name = "traceability_initialize", err, skip_all)]
     pub(super) async fn initialize(
         self,
-    ) -> Result<TraceabilityHandler<Initialized>, TraceabilityInitalizeError> {
+    ) -> Result<TraceabilityHandler<Initialized>, TraceabilityInitializeError> {
         let state = Initialized {};
 
         Ok(TraceabilityHandler {
@@ -197,9 +211,12 @@ impl TraceabilityHandler<Initialized> {
                     .skip(1);
                 pin_mut!(request_stream);
                 while let Some(request_value) = request_stream.next().await {
-                    // Ignore the result, as error logging is handled by the function
-                    // `instrument` attribute.
-                    let _ = self.handle_request(request_value).await;
+                    let result = self.handle_request(request_value).await;
+                    if let Err(Some(response)) = result.map_err(|e| e.to_response_code()) {
+                        // Ignore the result, as error logging is handled by the function
+                        // `instrument` attribute.
+                        let _ = self.write_response(response).await;
+                    }
                 }
 
                 info!(msg = "traceability handler terminated");
@@ -224,7 +241,7 @@ impl TraceabilityHandler<Initialized> {
         };
 
         match req {
-            TraceabilityRequest::Reset => self.reset_response().await?,
+            TraceabilityRequest::Reset => self.write_response(TraceabilityResponse::Reset).await?,
         }
 
         Ok(())
@@ -232,23 +249,23 @@ impl TraceabilityHandler<Initialized> {
 
     /// Reset the response code.
     #[instrument(err, skip_all)]
-    async fn reset_response(&self) -> Result<(), ResetResponseError> {
+    async fn write_response(&self, code: TraceabilityResponse) -> Result<(), WriteResponseError> {
         let ns_index = self
             .session
             .get_namespace_index(&self.config.namespace_url)
             .await
-            .map_err(ResetResponseError::GetNamespaceIndex)?;
+            .map_err(WriteResponseError::GetNamespaceIndex)?;
         let write_value = WriteValue::value_attr(
             NodeId::new(ns_index, self.config.response_node_id),
-            TraceabilityResponse::Reset.into(),
+            code.into(),
         );
         let results = self
             .session
             .write(&[write_value])
             .await
-            .map_err(ResetResponseError::WriteRequest)?;
+            .map_err(WriteResponseError::WriteRequest)?;
         if let Some(status) = results.into_iter().find(|s| !s.is_good()) {
-            return Err(ResetResponseError::WriteStatus(status));
+            return Err(WriteResponseError::WriteStatus(status));
         }
 
         Ok(())
@@ -269,6 +286,10 @@ enum TraceabilityRequest {
 enum TraceabilityResponse {
     /// Reset state of the response.
     Reset = 0,
+
+    ErrorValueMissing = 10,
+    ErrorInvalidValue = 11,
+    ErrorUnknownValue = 12,
 }
 
 impl IntoVariant for TraceabilityResponse {
