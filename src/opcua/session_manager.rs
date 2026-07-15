@@ -17,7 +17,11 @@ const SPAWN_RETRY_TIME: Duration = Duration::from_secs(5);
 /// The maximum time allowed for a session to be connected.
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(2);
 
-/// Manages starting and stopping the sessions. Runs forever until shutdown.
+/// Manages starting and stopping the sessions. Does these three things:
+///
+/// 1. Start the sessions
+/// 2. Wait until shutdown
+/// 3. Stop the sessions
 #[instrument(name = "session_manager", skip_all)]
 pub(crate) async fn run_session_manager(
     client: Arc<Client>,
@@ -26,38 +30,10 @@ pub(crate) async fn run_session_manager(
 ) {
     info!(msg = "session manager started");
 
-    // Helper closure to create the session spawning future.
-    let spawn_session_future = |server_id: String, server_config: OpcUaServerConfig| {
-        let cloned_client = Arc::clone(&client);
-
-        async move {
-            let mut interval = interval(SPAWN_RETRY_TIME);
-            interval.set_missed_tick_behavior(MissedTickBehavior::Delay);
-
-            loop {
-                interval.tick().await;
-                let spawn_fut = OpcUaSession::spawn(
-                    cloned_client.clone(),
-                    server_id.clone(),
-                    server_config.clone(),
-                );
-                match timeout(CONNECT_TIMEOUT, spawn_fut).await {
-                    Ok(Ok(session)) => {
-                        break session;
-                    }
-                    Ok(Err(_)) => {}
-                    Err(_) => {
-                        error!(msg = "timeout spawning session", server_id);
-                    }
-                }
-            }
-        }
-    };
-
     // Store sessions spawn loop tasks handles to allow joining them when stopping.
     let mut session_spawn_handles = servers
         .into_iter()
-        .map(|(id, config)| spawn_session_future(id, config))
+        .map(|(id, config)| spawn_session(Arc::clone(&client), id, config))
         .collect::<JoinSet<_>>();
 
     shutdown.cancelled().await;
@@ -71,4 +47,32 @@ pub(crate) async fn run_session_manager(
     }
 
     info!(msg = "session manager terminated");
+}
+
+/// Utility function trying to spawn a session upon success.
+async fn spawn_session(
+    client: Arc<Client>,
+    server_id: String,
+    server_config: OpcUaServerConfig,
+) -> OpcUaSession {
+    let mut interval = interval(SPAWN_RETRY_TIME);
+    interval.set_missed_tick_behavior(MissedTickBehavior::Delay);
+
+    loop {
+        interval.tick().await;
+        let spawn_fut = OpcUaSession::spawn(
+            Arc::clone(&client),
+            server_id.clone(),
+            server_config.clone(),
+        );
+        match timeout(CONNECT_TIMEOUT, spawn_fut).await {
+            Ok(Ok(session)) => {
+                break session;
+            }
+            Ok(Err(_)) => {}
+            Err(_) => {
+                error!(msg = "timeout spawning session", server_id);
+            }
+        }
+    }
 }
