@@ -24,7 +24,7 @@ local linters = new Mapping<String, Step> {
 }
 
 env {
-  ["RUSTFLAGS"] = "-D warnings"
+  ["CARGO_BUILD_WARNINGS"] = "deny"
 }
 
 exclude = "CHANGELOG.md"
