@@ -19,6 +19,8 @@ async-opcua = {
   git = "https://github.com/FreeOpcUa/async-opcua",
   rev = "c6dc890dd2eb8cd610b326ddb6f91e1e8bc2a332"
 }
+schemars = "1.2.1"
+serde = { version = "1.0.228", features = ["derive"] }
 thiserror = "2.0.18"
 
 [dependencies]

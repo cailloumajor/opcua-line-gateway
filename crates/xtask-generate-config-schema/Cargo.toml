@@ -1,0 +1,11 @@
+[package]
+name = "xtask-generate-config-schema"
+version = "0.0.0"
+edition.workspace = true
+publish = false
+
+[dependencies]
+anyhow.workspace = true
+opcua-line-gateway-config.path = "../config"
+schemars.workspace = true
+serde_json = "1.0.150"

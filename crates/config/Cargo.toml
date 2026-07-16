@@ -6,12 +6,10 @@ description = "OPC-UA line gateway configuration"
 publish.workspace = true
 
 [dependencies]
-anyhow.workspace = true
 async-opcua = { workspace = true, features = ["client"] }
 jiff = { version = "0.2.32", features = ["serde"] }
-schemars = "1.2.1"
-serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.150"
+schemars.workspace = true
+serde.workspace = true
 thiserror.workspace = true
 
 [dependencies.toml]

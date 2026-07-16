@@ -19,14 +19,21 @@ version = "1.96.1"
 components = "rust-analyzer"
 profile = "default"
 
-[tasks."generate-config-schema"]
-description = "Generate the JSON schema for the configuration file"
-run = "cargo run --package opcua-line-gateway-config --bin generate-schema >schema/config.schema.json"
-sources = ["crates/config/src/lib.rs"]
-outputs = ["schema/config.schema.json"]
-
 [settings]
 minimum_release_age = "7d"
 
 [hooks]
 enter = "mise outdated --local --silent"
+
+[tasks.test]
+description = "Run tests"
+run = "cargo test"
+
+[tasks.lint]
+description = "Run hk lints"
+run = "hk check --all"
+
+[tasks.ci]
+description = "Run CI related tasks"
+depends = ["lint", "test"]
+run = "echo 'CI completed successfully'"

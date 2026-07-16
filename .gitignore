@@ -24,4 +24,4 @@ target
 mise.local.toml
 
 # Development configuration file
-config.toml
+/config.toml
