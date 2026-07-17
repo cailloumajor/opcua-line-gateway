@@ -13,7 +13,7 @@ zizmor = "latest"
 marksman = "latest"
 "github:mhersson/mpls" = "latest"
 usage = "latest"
-rust = { version = "1.97.0", components = "rust-analyzer", profile = "default" }
+rust = { version = "1.97.1", components = "rust-analyzer", profile = "default" }
 
 [settings]
 minimum_release_age = "7d"
