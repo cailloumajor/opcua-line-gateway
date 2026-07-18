@@ -5,7 +5,7 @@ use opcua::client::{Client, Session, SessionEventLoop};
 use opcua::types::StatusCode;
 use opcua_line_gateway_config::OpcUaServerConfig;
 use thiserror::Error;
-use tokio::task::{JoinError, JoinHandle};
+use tokio::task::{JoinError, JoinHandle, JoinSet};
 use tokio_util::sync::CancellationToken;
 use tokio_util::task::AbortOnDropHandle;
 use tracing::{Instrument, info, info_span, instrument};
@@ -21,7 +21,7 @@ pub(super) enum SessionStopError {
     Disconnect(#[source] opcua::types::Error),
     #[error("error joining session event loop task")]
     JoinLoopTask(#[source] JoinError),
-    #[error("error joining the traceability task")]
+    #[error("error joining traceability task")]
     JoinTraceabilityTask(#[source] JoinError),
 }
 
@@ -52,8 +52,8 @@ pub(super) struct OpcUaSession {
     event_loop_handle: JoinHandle<StatusCode>,
     /// The token to ask traceability handler to shutdown gracefully.
     traceability_cancel: CancellationToken,
-    /// The handle to the traceability task.
-    traceability_handle: JoinHandle<()>,
+    /// The collection of traceability tasks.
+    traceability_tasks: JoinSet<()>,
 }
 
 impl OpcUaSession {
@@ -89,7 +89,7 @@ impl OpcUaSession {
             server_config.traceability,
             Arc::clone(&session),
         );
-        let traceability_handle = traceability_handler
+        let traceability_tasks = traceability_handler
             .initialize()
             .await?
             .install(traceability_cancel.clone())
@@ -103,22 +103,24 @@ impl OpcUaSession {
             session,
             event_loop_handle,
             traceability_cancel,
-            traceability_handle,
+            traceability_tasks,
         })
     }
 
     /// Ask the session to stop and wait for the operation to complete.
     ///
     /// This function takes ownership of the [`OpcUaSession`].
-    #[instrument(err, skip(self), fields(server_id = self.server_id))]
-    pub(super) async fn stop(self) -> Result<(), SessionStopError> {
+    #[instrument(err, skip_all, fields(server_id = self.server_id))]
+    pub(super) async fn stop(mut self) -> Result<(), SessionStopError> {
         info!(msg = "stopping session");
 
-        // Stop the traceability handler
+        // Stop traceability tasks.
         self.traceability_cancel.cancel();
-        self.traceability_handle
-            .await
-            .map_err(SessionStopError::JoinTraceabilityTask)?;
+        while let Some(result) = self.traceability_tasks.join_next().await {
+            if let Err(err) = result {
+                return Err(SessionStopError::JoinTraceabilityTask(err));
+            }
+        }
 
         // Stop the session.
         self.session

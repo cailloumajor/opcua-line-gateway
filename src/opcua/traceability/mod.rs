@@ -1,21 +1,29 @@
+use std::pin::pin;
 use std::sync::Arc;
+use std::time::Duration;
 
-use futures_util::{StreamExt, pin_mut};
+use futures_util::StreamExt;
 use opcua::client::{DataChangeCallback, Session};
-use opcua::types::{DataValue, NodeId, TimestampsToReturn, Variant, WriteValue};
+use opcua::types::{DataValue, IntoVariant, NodeId, TimestampsToReturn, WriteValue};
 use opcua_line_gateway_config::TraceabilityConfig;
 use tokio::sync::mpsc;
-use tokio::task::JoinHandle;
-use tokio_stream::wrappers::UnboundedReceiverStream;
+use tokio::task::JoinSet;
+use tokio::time::{MissedTickBehavior, interval};
+use tokio_stream::wrappers::{IntervalStream, UnboundedReceiverStream};
 use tokio_util::sync::CancellationToken;
 use tracing::{Instrument, info, info_span, instrument, warn};
 
-use self::errors::{HandleRequestError, WriteResponseError};
+use self::errors::{CreatePartIdError, HandleRequestError, WriteError};
 pub(super) use self::errors::{TraceabilityInitializeError, TraceabilityInstallError};
 use self::protocol::{TraceabilityRequest, TraceabilityResponse};
 
+use super::data_value::TryFromDataValue;
+
 mod errors;
 mod protocol;
+
+/// The duration between heartbeat changes.
+const HEARTBEAT_INTERVAL: Duration = Duration::from_millis(500);
 
 /// The initial state of the traceability handler.
 pub(super) struct InitialState;
@@ -72,13 +80,13 @@ impl TraceabilityHandler<Initialized> {
     /// Install this handler to allow it to handle requests. This mainly consists in
     /// subscribing to the request variable.
     ///
-    /// Returns the handle to the request handling task.
+    /// Returns the collection of traceability tasks.
     #[instrument(name = "traceability_install", err, skip_all)]
     #[must_use = "the returned handle should be used"]
     pub(super) async fn install(
         self,
         shutdown: CancellationToken,
-    ) -> Result<JoinHandle<()>, TraceabilityInstallError> {
+    ) -> Result<JoinSet<()>, TraceabilityInstallError> {
         let publish_interval = self.config.publish_interval;
 
         let (tx, rx) = mpsc::unbounded_channel();
@@ -142,25 +150,62 @@ impl TraceabilityHandler<Initialized> {
             ));
         }
 
+        // Create a collection of tasks.
+        let mut tasks = JoinSet::new();
+
+        // Spawn heartbeat task.
+        let heartbeat_shutdown = shutdown.clone();
+        let server_id = self.server_id.clone();
+        let cloned_self = self.clone();
+        tasks.spawn(
+            async move {
+                info!(msg = "heartbeat handler started");
+
+                // Heartbeat value.
+                let mut hb_value = false;
+
+                let mut hb_interval = interval(HEARTBEAT_INTERVAL);
+                hb_interval.set_missed_tick_behavior(MissedTickBehavior::Delay);
+                let stream = IntervalStream::new(hb_interval)
+                    .map(|_| {
+                        // Revert heartbeat value and return it.
+                        hb_value ^= true;
+                        hb_value
+                    })
+                    .take_until(heartbeat_shutdown.cancelled());
+                let mut pinned_stream = pin!(stream);
+                while let Some(value) = pinned_stream.next().await {
+                    let _ = cloned_self
+                        .write_value(self.config.heartbeat_node_id, value)
+                        .await;
+                }
+
+                info!(msg = "heartbeat handler terminated");
+            }
+            .instrument(info_span!(parent: None, "heartbeat_handler", server_id)),
+        );
+
         // Spawn traceability request handling task.
         let server_id = self.server_id.clone();
-        let handle = tokio::spawn(
+        tasks.spawn(
             async move {
                 info!(msg = "traceability handler started");
 
                 // Make a stream out of requests receiver, with graceful shutdown.
                 // The first value produced is discarded, to prevent handling
                 // a request code that would have been set before we started.
-                let request_stream = UnboundedReceiverStream::new(rx)
+                let stream = UnboundedReceiverStream::new(rx)
                     .take_until(shutdown.cancelled())
                     .skip(1);
-                pin_mut!(request_stream);
-                while let Some(request_value) = request_stream.next().await {
+                let mut pinned_stream = pin!(stream);
+                while let Some(request_value) = pinned_stream.next().await {
                     let result = self.handle_request(request_value).await;
                     if let Err(Some(response)) = result.map_err(|e| e.to_response_code()) {
                         // Ignore the result, as error logging is handled by the function
                         // `instrument` attribute.
-                        let _ = self.write_response(response).await;
+                        let _ = self
+                            .write_value(self.config.response_node_id, response)
+                            .await;
                     }
                 }
 
@@ -169,49 +214,56 @@ impl TraceabilityHandler<Initialized> {
             .instrument(info_span!(parent:None, "traceability_handler", server_id)),
         );
 
-        Ok(handle)
+        Ok(tasks)
     }
 
     /// Handle a request code from the OPC-UA server.
     #[instrument(err, skip_all)]
     async fn handle_request(&self, value: DataValue) -> Result<(), HandleRequestError> {
-        let Some(variant) = value.value else {
-            return Err(HandleRequestError::ValueMissing);
-        };
-        let Variant::Byte(request_code) = variant else {
-            return Err(HandleRequestError::InvalidValue(variant));
-        };
+        let request_code = u8::try_from_data_value(value)?;
         let Some(req) = TraceabilityRequest::from_repr(request_code) else {
             return Err(HandleRequestError::UnknownValue(request_code));
         };
 
         match req {
-            TraceabilityRequest::Reset => self.write_response(TraceabilityResponse::Reset).await?,
+            TraceabilityRequest::Reset => {
+                self.write_value(self.config.response_node_id, TraceabilityResponse::Reset)
+                    .await?
+            }
+            TraceabilityRequest::CreatePartId => self.create_part_id().await?,
             _ => todo!(),
         }
 
         Ok(())
     }
 
-    /// Reset the response code.
+    /// Create the part ID by getting required data from the OPC-UA server and writing back the
+    /// generated ID.
     #[instrument(err, skip_all)]
-    async fn write_response(&self, code: TraceabilityResponse) -> Result<(), WriteResponseError> {
+    async fn create_part_id(&self) -> Result<(), CreatePartIdError> {
+        todo!()
+    }
+
+    /// Write provided value to the provided node identifier.
+    #[instrument(err, skip_all)]
+    async fn write_value<T>(&self, id: u32, value: T) -> Result<(), WriteError>
+    where
+        T: IntoVariant,
+    {
         let ns_index = self
             .session
             .get_namespace_index(&self.config.namespace_url)
             .await
-            .map_err(WriteResponseError::GetNamespaceIndex)?;
-        let write_value = WriteValue::value_attr(
-            NodeId::new(ns_index, self.config.response_node_id),
-            code.into(),
-        );
+            .map_err(WriteError::GetNamespaceIndex)?;
+        let node_id = NodeId::new(ns_index, id);
+        let write_value = WriteValue::value_attr(node_id, value.into());
         let results = self
             .session
             .write(&[write_value])
             .await
-            .map_err(WriteResponseError::WriteRequest)?;
+            .map_err(WriteError::WriteRequest)?;
         if let Some(status) = results.into_iter().find(|s| !s.is_good()) {
-            return Err(WriteResponseError::WriteStatus(status));
+            return Err(WriteError::WriteStatus(status));
         }
 
         Ok(())

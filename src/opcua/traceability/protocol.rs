@@ -26,9 +26,9 @@ pub(super) enum TraceabilityResponse {
     /// Reset state of the response.
     Reset = 0,
 
-    ErrorValueMissing = 10,
-    ErrorInvalidValue = 11,
-    ErrorUnknownValue = 12,
+    // Request handling errors.
+    RequestGetValueError = 11,
+    RequestUnknownValue = 12,
 }
 
 impl IntoVariant for TraceabilityResponse {

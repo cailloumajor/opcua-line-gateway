@@ -105,6 +105,12 @@
       "description": "Traceability related configuration for an OPC-UA server.",
       "type": "object",
       "properties": {
+        "heartbeat_node_id": {
+          "description": "The node identifier of the heartbeat variable.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
         "namespace_url": {
           "description": "The namespace URL used for traceability.",
           "type": "string",
@@ -131,7 +137,8 @@
         "namespace_url",
         "publish_interval",
         "request_node_id",
-        "response_node_id"
+        "response_node_id",
+        "heartbeat_node_id"
       ]
     }
   }

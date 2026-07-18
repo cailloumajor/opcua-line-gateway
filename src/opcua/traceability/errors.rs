@@ -1,7 +1,9 @@
 use std::time::Duration;
 
-use opcua::types::{NodeId, StatusCode, Variant};
+use opcua::types::{NodeId, StatusCode};
 use thiserror::Error;
+
+use crate::opcua::data_value::TryFromDataValueError;
 
 use super::protocol::TraceabilityResponse;
 
@@ -27,14 +29,14 @@ pub(crate) enum TraceabilityInstallError {
 /// Errors that can be encountered during request handling.
 #[derive(Debug, Error)]
 pub(super) enum HandleRequestError {
-    #[error("missing request value")]
-    ValueMissing,
-    #[error("invalid request value (expected Byte, got {0:?})")]
-    InvalidValue(Variant),
+    #[error("error getting request value")]
+    ValueError(#[from] TryFromDataValueError),
     #[error("unknown request value: {0}")]
     UnknownValue(u8),
     #[error("error writing response code")]
-    WriteResponse(#[from] WriteResponseError),
+    WriteResponse(#[from] WriteError),
+    #[error("error creating the part ID")]
+    CreatePartId(#[from] CreatePartIdError),
 }
 
 impl HandleRequestError {
@@ -43,17 +45,17 @@ impl HandleRequestError {
     /// of failure. Return `None` if not applicable.
     pub(super) fn to_response_code(&self) -> Option<TraceabilityResponse> {
         match self {
-            Self::ValueMissing => Some(TraceabilityResponse::ErrorValueMissing),
-            Self::InvalidValue(_) => Some(TraceabilityResponse::ErrorInvalidValue),
-            Self::UnknownValue(_) => Some(TraceabilityResponse::ErrorUnknownValue),
+            Self::ValueError(_) => Some(TraceabilityResponse::RequestGetValueError),
+            Self::UnknownValue(_) => Some(TraceabilityResponse::RequestUnknownValue),
             Self::WriteResponse(_) => None,
+            Self::CreatePartId(_) => todo!(),
         }
     }
 }
 
-/// Errors that can be encountered during resetting response code.
+/// Errors that can be encountered during writing to the server.
 #[derive(Debug, Error)]
-pub(super) enum WriteResponseError {
+pub(super) enum WriteError {
     #[error("error getting traceability namespace index")]
     GetNamespaceIndex(#[source] opcua::types::Error),
     #[error("write request error")]
@@ -61,3 +63,7 @@ pub(super) enum WriteResponseError {
     #[error("write operation error: {0}")]
     WriteStatus(StatusCode),
 }
+
+/// Errors that can occur during part ID creation.
+#[derive(Debug, Error)]
+pub(super) enum CreatePartIdError {}

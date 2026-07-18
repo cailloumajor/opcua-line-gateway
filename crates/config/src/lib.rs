@@ -41,6 +41,8 @@ pub struct TraceabilityConfig {
     pub request_node_id: u32,
     /// The node identifier of the response variable.
     pub response_node_id: u32,
+    /// The node identifier of the heartbeat variable.
+    pub heartbeat_node_id: u32,
 }
 
 /// The configuration for an OPC-UA server to communicate with.
