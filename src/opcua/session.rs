@@ -8,7 +8,7 @@ use thiserror::Error;
 use tokio::task::{JoinError, JoinHandle, JoinSet};
 use tokio_util::sync::CancellationToken;
 use tokio_util::task::AbortOnDropHandle;
-use tracing::{Instrument, info, info_span, instrument};
+use tracing::{Instrument, error, info, info_span, instrument};
 
 use crate::opcua::traceability::{
     TraceabilityHandler, TraceabilityInitializeError, TraceabilityInstallError,
@@ -117,8 +117,9 @@ impl OpcUaSession {
         // Stop traceability tasks.
         self.traceability_cancel.cancel();
         while let Some(result) = self.traceability_tasks.join_next().await {
-            if let Err(err) = result {
-                return Err(SessionStopError::JoinTraceabilityTask(err));
+            if let Err(e) = result {
+                let err = SessionStopError::JoinTraceabilityTask(e);
+                error!(error = %err);
             }
         }
 
