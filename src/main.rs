@@ -13,7 +13,7 @@ use tracing_subscriber::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
-use crate::opcua::{create_client, run_session_manager};
+use self::opcua::{create_client, sessions_manager};
 
 mod opcua;
 
@@ -62,7 +62,7 @@ async fn main() -> anyhow::Result<()> {
     let shutdown_token = CancellationToken::new();
     let signals_task = tokio::spawn(handle_signals(signals, shutdown_token.clone()));
 
-    run_session_manager(client.into(), config.opcua_servers, shutdown_token).await;
+    sessions_manager(client.into(), config.opcua_servers, shutdown_token).await;
 
     signals_handle.close();
 

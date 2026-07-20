@@ -39,8 +39,10 @@ pub(crate) fn create_client(config: &LineGatewayConfig) -> Result<Client, Client
         .pki_dir(&config.pki_dir)
         .certificate_path(concat!("own/", env!("CARGO_PKG_NAME"), "-cert.der"))
         .private_key_path(concat!("private/", env!("CARGO_PKG_NAME"), "-key.pem"))
-        // Retry to re-establish the session forever.
-        .session_retry_limit(-1)
+        // Disconnect on the first failed keep-alive, we handle reconnection ourselves.
+        .max_failed_keep_alive_count(1)
+        // Disable session retries, as we handle it ourselves in the sessions manager.
+        .session_retry_limit(0)
         .request_timeout(REQUEST_TIMEOUT)
         .publish_timeout(REQUEST_TIMEOUT)
         .client()

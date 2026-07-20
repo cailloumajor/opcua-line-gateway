@@ -1,78 +1,85 @@
 use std::collections::BTreeMap;
+use std::mem;
+use std::ops::DerefMut;
+use std::pin::pin;
 use std::sync::Arc;
 use std::time::Duration;
 
+use futures_util::StreamExt;
 use opcua::client::Client;
 use opcua_line_gateway_config::OpcUaServerConfig;
-use tokio::task::JoinSet;
+use parking_lot::Mutex;
 use tokio::time::{MissedTickBehavior, interval, timeout};
+use tokio_stream::wrappers::IntervalStream;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, instrument};
 
-use crate::opcua::session::OpcUaSession;
+use crate::opcua::session::{OpcUaSession, start_session};
 
-// Session spawn retry time.
-const SPAWN_RETRY_TIME: Duration = Duration::from_secs(5);
+/// The interval for sessions management ticks.
+const MANAGER_TICK_INTERVAL: Duration = Duration::from_secs(5);
 
 /// The maximum time allowed for a session to be connected.
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(2);
 
-/// Manages starting and stopping the sessions. Does these three things:
+/// OPC-UA sessions manager.
 ///
-/// 1. Start the sessions
-/// 2. Wait until shutdown
-/// 3. Stop the sessions
-#[instrument(name = "session_manager", skip_all)]
-pub(crate) async fn run_session_manager(
+/// This will run forever until provided shutdown token triggers.
+#[instrument(skip_all)]
+pub(crate) async fn sessions_manager(
     client: Arc<Client>,
     servers: BTreeMap<String, OpcUaServerConfig>,
     shutdown: CancellationToken,
 ) {
-    info!(msg = "session manager started");
+    info!(msg = "sessions manager started");
 
-    // Store sessions spawn loop tasks handles to allow joining them when stopping.
-    let mut session_spawn_handles = servers
-        .into_iter()
-        .map(|(id, config)| spawn_session(Arc::clone(&client), id, config))
-        .collect::<JoinSet<_>>();
+    let sessions: Arc<Mutex<BTreeMap<String, OpcUaSession>>> = Default::default();
 
-    shutdown.cancelled().await;
+    // Create a stream of ticks for sessions management.
+    let mut ticker = interval(MANAGER_TICK_INTERVAL);
+    ticker.set_missed_tick_behavior(MissedTickBehavior::Delay);
+    let stream = IntervalStream::new(ticker).take_until(shutdown.cancelled());
+    let mut pinned_stream = pin!(stream);
 
-    session_spawn_handles.abort_all();
-    while let Some(join_result) = session_spawn_handles.join_next().await {
-        if let Ok(session) = join_result {
-            // Ignore the result, as error logging is handled by the function `instrument` attribute.
-            let _ = session.stop().await;
+    while pinned_stream.next().await.is_some() {
+        // Drop dead sessions.
+        let mut sessions_lock = sessions.lock_arc();
+        sessions_lock.retain(|server_id, session| {
+            let finished = session.is_finished();
+            if finished {
+                info!(msg = "dropping dead session", server_id);
+            }
+            !finished
+        });
+
+        // Clone the keys to allow releasing the lock quickly.
+        let running_sessions = sessions_lock.keys().cloned().collect::<Vec<_>>();
+        drop(sessions_lock);
+
+        // Spawn sessions that are not running.
+        for (id, config) in servers
+            .iter()
+            .filter(|(id, _)| !running_sessions.contains(*id))
+        {
+            let client = Arc::clone(&client);
+            let server_id = id.clone();
+            let srv_config = config.clone();
+            let registry = Arc::clone(&sessions);
+            tokio::spawn(async move {
+                let start_future = start_session(client, server_id.clone(), srv_config, registry);
+                if timeout(CONNECT_TIMEOUT, start_future).await.is_err() {
+                    error!(error = "timeout spawning session", server_id);
+                }
+            });
         }
     }
 
-    info!(msg = "session manager terminated");
-}
-
-/// Utility function trying to spawn a session upon success.
-async fn spawn_session(
-    client: Arc<Client>,
-    server_id: String,
-    server_config: OpcUaServerConfig,
-) -> OpcUaSession {
-    let mut interval = interval(SPAWN_RETRY_TIME);
-    interval.set_missed_tick_behavior(MissedTickBehavior::Delay);
-
-    loop {
-        interval.tick().await;
-        let spawn_fut = OpcUaSession::spawn(
-            Arc::clone(&client),
-            server_id.clone(),
-            server_config.clone(),
-        );
-        match timeout(CONNECT_TIMEOUT, spawn_fut).await {
-            Ok(Ok(session)) => {
-                break session;
-            }
-            Ok(Err(_)) => {}
-            Err(_) => {
-                error!(msg = "timeout spawning session", server_id);
-            }
-        }
+    // Take the sessions registry out of the Mutex.
+    let sessions = mem::take(sessions.lock_arc().deref_mut());
+    // Stop the sessions.
+    for session in sessions.into_values() {
+        session.stop().await;
     }
+
+    info!(msg = "sessions manager terminated");
 }

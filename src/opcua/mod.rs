@@ -1,5 +1,5 @@
 pub(crate) use client::create_client;
-pub(crate) use session_manager::run_session_manager;
+pub(crate) use session_manager::sessions_manager;
 
 mod client;
 mod data_value;

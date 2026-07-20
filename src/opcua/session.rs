@@ -1,11 +1,13 @@
+use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use opcua::client::transport::TcpConnector;
 use opcua::client::{Client, Session, SessionEventLoop};
 use opcua::types::StatusCode;
 use opcua_line_gateway_config::OpcUaServerConfig;
+use parking_lot::Mutex;
 use thiserror::Error;
-use tokio::task::{JoinError, JoinHandle, JoinSet};
+use tokio::task::{JoinHandle, JoinSet};
 use tokio_util::sync::CancellationToken;
 use tokio_util::task::AbortOnDropHandle;
 use tracing::{Instrument, error, info, info_span, instrument};
@@ -13,17 +15,6 @@ use tracing::{Instrument, error, info, info_span, instrument};
 use crate::opcua::traceability::{
     TraceabilityHandler, TraceabilityInitializeError, TraceabilityInstallError,
 };
-
-/// Errors that can occur during session stopping.
-#[derive(Debug, Error)]
-pub(super) enum SessionStopError {
-    #[error("error disconnecting session")]
-    Disconnect(#[source] opcua::types::Error),
-    #[error("error joining session event loop task")]
-    JoinLoopTask(#[source] JoinError),
-    #[error("error joining traceability task")]
-    JoinTraceabilityTask(#[source] JoinError),
-}
 
 /// Errors that can occur during session creation.
 #[derive(Debug, Error)]
@@ -57,83 +48,94 @@ pub(super) struct OpcUaSession {
 }
 
 impl OpcUaSession {
-    /// Create an new [`OpcUaSession`] and spawn its runtime event loop.
-    #[instrument(name = "spawn_session", err, skip(client, server_config))]
-    pub(super) async fn spawn(
-        client: Arc<Client>,
-        server_id: String,
-        server_config: OpcUaServerConfig,
-    ) -> Result<Self, CreateSessionError> {
-        info!(msg = "creating OPC-UA session");
-
-        let (session, event_loop) = connect_to_matching_endpoint(&client, &server_config).await?;
-
-        // Start polling the event loop to bring the session alive.
-        let event_loop_handle = tokio::spawn(
-            event_loop
-                .run()
-                .instrument(info_span!(parent: None, "session_event_loop", server_id)),
-        );
-
-        // Allow the event loop handling task to be aborted if anything goes wrong before
-        // the end of this scope.
-        let loop_abort_handle = AbortOnDropHandle::new(event_loop_handle);
-
-        if !session.wait_for_connection().await {
-            return Err(CreateSessionError::SessionConnect);
-        }
-
-        let traceability_cancel = CancellationToken::new();
-        let traceability_handler = TraceabilityHandler::new(
-            server_id.clone(),
-            server_config.traceability,
-            Arc::clone(&session),
-        );
-        let traceability_tasks = traceability_handler
-            .initialize()
-            .await?
-            .install(traceability_cancel.clone())
-            .await?;
-
-        // Get back the event loop handle and disable the abort-on-drop effect.
-        let event_loop_handle = loop_abort_handle.detach();
-
-        Ok(Self {
-            server_id,
-            session,
-            event_loop_handle,
-            traceability_cancel,
-            traceability_tasks,
-        })
-    }
-
     /// Ask the session to stop and wait for the operation to complete.
     ///
     /// This function takes ownership of the [`OpcUaSession`].
-    #[instrument(err, skip_all, fields(server_id = self.server_id))]
-    pub(super) async fn stop(mut self) -> Result<(), SessionStopError> {
+    #[instrument(skip_all, fields(server_id = self.server_id))]
+    pub(super) async fn stop(mut self) {
         info!(msg = "stopping session");
 
         // Stop traceability tasks.
         self.traceability_cancel.cancel();
         while let Some(result) = self.traceability_tasks.join_next().await {
-            if let Err(e) = result {
-                let err = SessionStopError::JoinTraceabilityTask(e);
-                error!(error = %err);
+            if let Err(err) = result {
+                error!(error = "error joining traceability tasks: {}", %err);
             }
         }
 
         // Stop the session.
-        self.session
-            .disconnect()
-            .await
-            .map_err(SessionStopError::Disconnect)?;
-        self.event_loop_handle
-            .await
-            .map_err(SessionStopError::JoinLoopTask)?;
-
-        Ok(())
+        if let Err(err) = self.session.disconnect().await {
+            error!(error = "error disconnecting the session: {}", %err);
+        }
+        if let Err(err) = self.event_loop_handle.await {
+            error!(error = "error joining session event loop task: {}", %err);
+        }
     }
+
+    /// Check whether the session event loop task is finished.
+    pub(super) fn is_finished(&self) -> bool {
+        self.event_loop_handle.is_finished()
+    }
+}
+
+/// Create and start an OPC-UA session, spawning its runtime event loop.
+///
+/// Upon success, the [`OpcUaSession`] object will be stored in the provided registry.
+#[instrument(err, skip(client, server_config, registry))]
+pub(super) async fn start_session(
+    client: Arc<Client>,
+    server_id: String,
+    server_config: OpcUaServerConfig,
+    registry: Arc<Mutex<BTreeMap<String, OpcUaSession>>>,
+) -> Result<(), CreateSessionError> {
+    info!(msg = "creating OPC-UA session");
+
+    let (session, event_loop) = connect_to_matching_endpoint(&client, &server_config).await?;
+
+    // Disable session reconnection, we handle it ourselves.
+    session.disable_reconnects();
+
+    // Start polling the event loop to bring the session alive.
+    let event_loop_handle = tokio::spawn(
+        event_loop
+            .run()
+            .instrument(info_span!(parent: None, "session_event_loop", server_id)),
+    );
+
+    // Allow the event loop handling task to be aborted if anything goes wrong before
+    // the end of this scope.
+    let loop_abort_handle = AbortOnDropHandle::new(event_loop_handle);
+
+    if !session.wait_for_connection().await {
+        return Err(CreateSessionError::SessionConnect);
+    }
+
+    let traceability_cancel = CancellationToken::new();
+    let traceability_handler = TraceabilityHandler::new(
+        server_id.clone(),
+        server_config.traceability,
+        Arc::clone(&session),
+    );
+    let traceability_tasks = traceability_handler
+        .initialize()
+        .await?
+        .install(traceability_cancel.clone())
+        .await?;
+
+    // Get back the event loop handle and disable the abort-on-drop effect.
+    let event_loop_handle = loop_abort_handle.detach();
+
+    let opcua_session = OpcUaSession {
+        server_id: server_id.clone(),
+        session,
+        event_loop_handle,
+        traceability_cancel,
+        traceability_tasks,
+    };
+
+    registry.lock_arc().insert(server_id, opcua_session);
+
+    Ok(())
 }
 
 /// Replacement implementation of [`Client::connect_to_matching_endpoint()`].
