@@ -27,22 +27,47 @@ pub enum LineGatewayConfigError {
     MissingPassword(String),
 }
 
-/// Traceability related configuration for an OPC-UA server.
+/// OPC-UA line gateway configuration.
 #[derive(Clone, Deserialize, JsonSchema)]
-pub struct TraceabilityConfig {
-    /// The namespace URL used for traceability.
-    #[schemars(url)]
-    pub namespace_url: String,
-    /// The publish interval to request when subscribing to request variable.
-    #[serde(with = "jiff::fmt::serde::unsigned_duration::friendly::compact::required")]
-    #[schemars(with = "String")]
-    pub publish_interval: Duration,
-    /// The node identifier of the request variable.
-    pub request_node_id: u32,
-    /// The node identifier of the response variable.
-    pub response_node_id: u32,
-    /// The node identifier of the heartbeat variable.
-    pub heartbeat_node_id: u32,
+pub struct LineGatewayConfig {
+    /// The globally unique identifier for the application instance, as of OPC-UA.
+    pub application_uri: String,
+    /// The root directory of the OPC-UA PKI.
+    pub pki_dir: PathBuf,
+    /// Mapping of machine identifier to corresponding OPC-UA server configuration.
+    pub opcua_servers: BTreeMap<String, OpcUaServerConfig>,
+}
+
+impl LineGatewayConfig {
+    /// Create the [`LineGatewayConfig`] from the provided path to a TOML file.
+    pub fn from_toml_file<P>(path: P) -> Result<Self, LineGatewayConfigError>
+    where
+        P: AsRef<Path>,
+    {
+        let file_contents = fs::read_to_string(path).map_err(LineGatewayConfigError::ReadFile)?;
+        let config =
+            toml::from_str::<Self>(&file_contents).map_err(LineGatewayConfigError::ParseToml)?;
+
+        // Validate that we have at least one server configured.
+        if config.opcua_servers.is_empty() {
+            return Err(LineGatewayConfigError::EmptyServers);
+        }
+
+        // Validate OPC-UA username and password.
+        for (server_id, server_config) in &config.opcua_servers {
+            match (&server_config.user, &server_config.password) {
+                (None, Some(_)) => {
+                    return Err(LineGatewayConfigError::MissingUsername(server_id.clone()));
+                }
+                (Some(_), None) => {
+                    return Err(LineGatewayConfigError::MissingPassword(server_id.clone()));
+                }
+                _ => {}
+            }
+        }
+
+        Ok(config)
+    }
 }
 
 /// The configuration for an OPC-UA server to communicate with.
@@ -86,45 +111,20 @@ impl OpcUaServerConfig {
     }
 }
 
-/// OPC-UA line gateway configuration.
+/// Traceability related configuration for an OPC-UA server.
 #[derive(Clone, Deserialize, JsonSchema)]
-pub struct LineGatewayConfig {
-    /// The globally unique identifier for the application instance, as of OPC-UA.
-    pub application_uri: String,
-    /// The root directory of the OPC-UA PKI.
-    pub pki_dir: PathBuf,
-    /// Mapping of machine identifier to corresponding OPC-UA server configuration.
-    pub opcua_servers: BTreeMap<String, OpcUaServerConfig>,
-}
-
-impl LineGatewayConfig {
-    /// Create the [`LineGatewayConfig`] from the provided path to a TOML file.
-    pub fn from_toml_file<P>(path: P) -> Result<Self, LineGatewayConfigError>
-    where
-        P: AsRef<Path>,
-    {
-        let file_contents = fs::read_to_string(path).map_err(LineGatewayConfigError::ReadFile)?;
-        let config =
-            toml::from_str::<Self>(&file_contents).map_err(LineGatewayConfigError::ParseToml)?;
-
-        // Validate that we have at least one server configured.
-        if config.opcua_servers.is_empty() {
-            return Err(LineGatewayConfigError::EmptyServers);
-        }
-
-        // Validate OPC-UA username and password.
-        for (server_id, server_config) in &config.opcua_servers {
-            match (&server_config.user, &server_config.password) {
-                (None, Some(_)) => {
-                    return Err(LineGatewayConfigError::MissingUsername(server_id.clone()));
-                }
-                (Some(_), None) => {
-                    return Err(LineGatewayConfigError::MissingPassword(server_id.clone()));
-                }
-                _ => {}
-            }
-        }
-
-        Ok(config)
-    }
+pub struct TraceabilityConfig {
+    /// The namespace URL used for traceability.
+    #[schemars(url)]
+    pub namespace_url: String,
+    /// The publish interval to request when subscribing to request variable.
+    #[serde(with = "jiff::fmt::serde::unsigned_duration::friendly::compact::required")]
+    #[schemars(with = "String")]
+    pub publish_interval: Duration,
+    /// The node identifier of the request variable.
+    pub request_node_id: u32,
+    /// The node identifier of the response variable.
+    pub response_node_id: u32,
+    /// The node identifier of the heartbeat variable.
+    pub heartbeat_node_id: u32,
 }
