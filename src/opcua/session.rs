@@ -6,6 +6,7 @@ use opcua::client::{Client, Session, SessionEventLoop};
 use opcua::types::StatusCode;
 use opcua_line_gateway_config::OpcUaServerConfig;
 use parking_lot::Mutex;
+use redb::Database;
 use thiserror::Error;
 use tokio::task::{JoinHandle, JoinSet};
 use tokio_util::sync::CancellationToken;
@@ -86,6 +87,7 @@ pub(super) async fn start_session(
     client: Arc<Client>,
     server_id: String,
     server_config: OpcUaServerConfig,
+    traceability_cache_db: Arc<Database>,
     registry: Arc<Mutex<BTreeMap<String, OpcUaSession>>>,
 ) -> Result<(), CreateSessionError> {
     info!(msg = "creating OPC-UA session");
@@ -115,6 +117,7 @@ pub(super) async fn start_session(
         server_id.clone(),
         server_config.traceability,
         Arc::clone(&session),
+        Arc::clone(&traceability_cache_db),
     );
     let traceability_tasks = traceability_handler
         .initialize()

@@ -23,5 +23,6 @@ target
 # Mise local configuration
 mise.local.toml
 
-# Development configuration file
+# Development files
 /config.toml
+/dev.redb

@@ -1,12 +1,11 @@
-use opcua::types::{DataValue, StatusCode, Variant};
+use opcua::types::{DataValue, StatusCode, UAString, Variant};
+use opcua_line_gateway_config::{AsciiText, AsciiTextError};
 use thiserror::Error;
 
 /// Errors that can occur using [`TryFromDataValue`].
 #[derive(Debug, Error)]
 pub(super) enum TryFromDataValueError {
-    #[error("missing data value status code")]
-    MissingStatus,
-    #[error("data value status is not good")]
+    #[error("data value status is not good: {0}")]
     BadStatus(StatusCode),
     #[error("missing data value")]
     MissingValue,
@@ -14,31 +13,66 @@ pub(super) enum TryFromDataValueError {
     InvalidType(&'static str, String),
     #[error("string value is null")]
     NullString,
+    #[error(transparent)]
+    AsciiText(#[from] AsciiTextError),
 }
 
 /// Models the ability to convert a [`DataValue`] to useful types.
-pub(super) trait TryFromDataValue: Sized {
+pub(super) trait TryFromDataValue<'a>: Sized {
     /// Try to convert the provided [`DataValue`] to this type.
     ///
-    /// This does not try to cast the variant type to the target type.
-    fn try_from_data_value(v: DataValue) -> Result<Self, TryFromDataValueError>;
+    /// # Errors
+    ///
+    /// Returns [`TryFromDataValueError`] if the underlying `Variant` is
+    /// absent (e.g. a bad status code with no value) or does not match
+    /// the requested target type. This does not attempt any numeric or
+    /// type-level casting — the stored variant must already match `T`.
+    fn try_from_data_value(v: &'a DataValue) -> Result<Self, TryFromDataValueError>;
+}
+
+/// Validates the status and extracts the `&Variant` payload, common to
+/// every [`TryFromDataValue`] impl generated below.
+fn extract_variant(v: &DataValue) -> Result<&Variant, TryFromDataValueError> {
+    let status = v.status();
+    if !status.is_good() {
+        return Err(TryFromDataValueError::BadStatus(status));
+    }
+    let Some(variant) = &v.value else {
+        return Err(TryFromDataValueError::MissingValue);
+    };
+
+    Ok(variant)
 }
 
 /// Generate [`TryFromDataValue`] implementation for the provided type and [`Variant`] enum
 /// variant.
+///
+/// # Input formats
+///
+/// * `copy: $type, $variant` — payload is `Copy`, returned by value.
+/// * `ref: $type, $variant` — payload borrowed as `&'a $type`, no clone.
 macro_rules! impl_try_from_data_value_primitive {
-    ($type:ty, $variant:ident) => {
-        impl TryFromDataValue for $type {
-            fn try_from_data_value(v: DataValue) -> Result<Self, TryFromDataValueError> {
-                let Some(status) = v.status else {
-                    return Err(TryFromDataValueError::MissingStatus);
+    (copy: $type:ty, $variant:ident) => {
+        impl TryFromDataValue<'_> for $type {
+            fn try_from_data_value(v: &DataValue) -> Result<Self, TryFromDataValueError> {
+                let variant = extract_variant(v)?;
+
+                let Variant::$variant(val) = variant else {
+                    return Err(TryFromDataValueError::InvalidType(
+                        stringify!($variant),
+                        format!("{:?}", variant.type_id()),
+                    ));
                 };
-                if !status.is_good() {
-                    return Err(TryFromDataValueError::BadStatus(status));
-                }
-                let Some(variant) = v.value else {
-                    return Err(TryFromDataValueError::MissingValue);
-                };
+
+                Ok(*val)
+            }
+        }
+    };
+    (ref: $type:ty, $variant:ident) => {
+        impl<'a> TryFromDataValue<'a> for &'a $type {
+            fn try_from_data_value(v: &'a DataValue) -> Result<Self, TryFromDataValueError> {
+                let variant = extract_variant(v)?;
+
                 let Variant::$variant(val) = variant else {
                     return Err(TryFromDataValueError::InvalidType(
                         stringify!($variant),
@@ -52,56 +86,64 @@ macro_rules! impl_try_from_data_value_primitive {
     };
 }
 
-impl_try_from_data_value_primitive!(bool, Boolean);
-impl_try_from_data_value_primitive!(i8, SByte);
-impl_try_from_data_value_primitive!(u8, Byte);
-impl_try_from_data_value_primitive!(i16, Int16);
-impl_try_from_data_value_primitive!(u16, UInt16);
-impl_try_from_data_value_primitive!(i32, Int32);
-impl_try_from_data_value_primitive!(u32, UInt32);
-impl_try_from_data_value_primitive!(i64, Int64);
-impl_try_from_data_value_primitive!(u64, UInt64);
-impl_try_from_data_value_primitive!(f32, Float);
-impl_try_from_data_value_primitive!(f64, Double);
+impl_try_from_data_value_primitive!(copy: bool, Boolean);
+impl_try_from_data_value_primitive!(copy: i8, SByte);
+impl_try_from_data_value_primitive!(copy: u8, Byte);
+impl_try_from_data_value_primitive!(copy: i16, Int16);
+impl_try_from_data_value_primitive!(copy: u16, UInt16);
+impl_try_from_data_value_primitive!(copy: i32, Int32);
+impl_try_from_data_value_primitive!(copy: u32, UInt32);
+impl_try_from_data_value_primitive!(copy: i64, Int64);
+impl_try_from_data_value_primitive!(copy: u64, UInt64);
+impl_try_from_data_value_primitive!(copy: f32, Float);
+impl_try_from_data_value_primitive!(copy: f64, Double);
+impl_try_from_data_value_primitive!(ref: UAString, String);
 
-impl TryFromDataValue for String {
-    fn try_from_data_value(v: DataValue) -> Result<Self, TryFromDataValueError> {
-        let Some(status) = v.status else {
-            return Err(TryFromDataValueError::MissingStatus);
-        };
-        if !status.is_good() {
-            return Err(TryFromDataValueError::BadStatus(status));
-        }
-        let Some(variant) = v.value else {
-            return Err(TryFromDataValueError::MissingValue);
-        };
-        let Variant::String(ua_string) = variant else {
-            return Err(TryFromDataValueError::InvalidType(
-                "String",
-                format!("{:?}", variant.type_id()),
-            ));
-        };
-        let Some(s) = ua_string.value().to_owned() else {
-            return Err(TryFromDataValueError::NullString);
-        };
+impl<'a> TryFromDataValue<'a> for &'a str {
+    fn try_from_data_value(v: &'a DataValue) -> Result<Self, TryFromDataValueError> {
+        let s: &UAString = v.try_as()?;
 
-        Ok(s)
+        s.value()
+            .as_deref()
+            .ok_or(TryFromDataValueError::NullString)
+    }
+}
+
+impl<const LENGTH: usize> TryFromDataValue<'_> for AsciiText<LENGTH> {
+    fn try_from_data_value(v: &DataValue) -> Result<Self, TryFromDataValueError> {
+        let s: &str = v.try_as()?;
+        let ascii = s.parse()?;
+
+        Ok(ascii)
+    }
+}
+
+/// Extension trait adding ergonomic conversion methods to [`DataValue`].
+pub(super) trait DataValueExt {
+    /// Try to convert this [`DataValue`] into `T`.
+    ///
+    /// This is a thin wrapper around [`TryFromDataValue::try_from_data_value`],
+    /// provided as a method so call sites can write `dv.try_as::<&str>()`
+    /// instead of the more verbose fully-qualified syntax.
+    fn try_as<'a, T: TryFromDataValue<'a>>(&'a self) -> Result<T, TryFromDataValueError>
+    where
+        Self: 'a;
+}
+
+impl DataValueExt for DataValue {
+    fn try_as<'a, T: TryFromDataValue<'a>>(&'a self) -> Result<T, TryFromDataValueError>
+    where
+        Self: 'a,
+    {
+        T::try_from_data_value(self)
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::assert_matches;
+
     use super::*;
-
-    #[test]
-    fn missing_status() {
-        let data_value = DataValue {
-            value: Some(42u8.into()),
-            ..Default::default()
-        };
-
-        u8::try_from_data_value(data_value).expect_err("should return an error");
-    }
 
     #[test]
     fn bad_status() {
@@ -111,7 +153,12 @@ mod tests {
             ..Default::default()
         };
 
-        u8::try_from_data_value(data_value).expect_err("should return an error");
+        let result = data_value.try_as::<u8>();
+
+        assert_matches!(
+            result,
+            Err(TryFromDataValueError::BadStatus(StatusCode::BadShutdown))
+        );
     }
 
     #[test]
@@ -121,7 +168,9 @@ mod tests {
             ..Default::default()
         };
 
-        u8::try_from_data_value(data_value).expect_err("should return an error");
+        let result = data_value.try_as::<u8>();
+
+        assert_matches!(result, Err(TryFromDataValueError::MissingValue));
     }
 
     #[test]
@@ -132,18 +181,21 @@ mod tests {
             ..Default::default()
         };
 
-        u8::try_from_data_value(data_value).expect_err("should return an error");
+        let result = data_value.try_as::<u8>();
+
+        assert_matches!(result, Err(TryFromDataValueError::InvalidType("Byte", got)) if got == "Scalar(UInt16)");
     }
 
     #[test]
-    fn bool_ok() {
+    fn bool_ok_no_status() {
         let data_value = DataValue {
             value: Some(true.into()),
-            status: Some(StatusCode::GoodClamped),
             ..Default::default()
         };
 
-        assert!(bool::try_from_data_value(data_value).expect("should be successful"));
+        let got: bool = data_value.try_as().expect("should be successful");
+
+        assert!(got);
     }
 
     #[test]
@@ -154,10 +206,9 @@ mod tests {
             ..Default::default()
         };
 
-        assert_eq!(
-            i8::try_from_data_value(data_value).expect("should be successful"),
-            -42
-        );
+        let got: i8 = data_value.try_as().expect("should be successful");
+
+        assert_eq!(got, -42);
     }
 
     #[test]
@@ -168,10 +219,9 @@ mod tests {
             ..Default::default()
         };
 
-        assert_eq!(
-            u8::try_from_data_value(data_value).expect("should be successful"),
-            42
-        );
+        let got: u8 = data_value.try_as().expect("should be successful");
+
+        assert_eq!(got, 42);
     }
 
     #[test]
@@ -182,10 +232,9 @@ mod tests {
             ..Default::default()
         };
 
-        assert_eq!(
-            i16::try_from_data_value(data_value).expect("should be successful"),
-            -546
-        );
+        let got: i16 = data_value.try_as().expect("should be successful");
+
+        assert_eq!(got, -546);
     }
 
     #[test]
@@ -196,10 +245,9 @@ mod tests {
             ..Default::default()
         };
 
-        assert_eq!(
-            u16::try_from_data_value(data_value).expect("should be successful"),
-            561
-        );
+        let got: u16 = data_value.try_as().expect("should be successful");
+
+        assert_eq!(got, 561);
     }
 
     #[test]
@@ -209,10 +257,10 @@ mod tests {
             status: Some(StatusCode::GoodClamped),
             ..Default::default()
         };
-        assert_eq!(
-            i32::try_from_data_value(data_value).expect("should be successful"),
-            -71234
-        );
+
+        let got: i32 = data_value.try_as().expect("should be successful");
+
+        assert_eq!(got, -71234);
     }
 
     #[test]
@@ -222,10 +270,10 @@ mod tests {
             status: Some(StatusCode::GoodClamped),
             ..Default::default()
         };
-        assert_eq!(
-            u32::try_from_data_value(data_value).expect("should be successful"),
-            812345
-        );
+
+        let got: u32 = data_value.try_as().expect("should be successful");
+
+        assert_eq!(got, 812345);
     }
 
     #[test]
@@ -235,10 +283,10 @@ mod tests {
             status: Some(StatusCode::GoodClamped),
             ..Default::default()
         };
-        assert_eq!(
-            i64::try_from_data_value(data_value).expect("should be successful"),
-            -9812345678
-        );
+
+        let got: i64 = data_value.try_as().expect("should be successful");
+
+        assert_eq!(got, -9812345678);
     }
 
     #[test]
@@ -248,10 +296,10 @@ mod tests {
             status: Some(StatusCode::GoodClamped),
             ..Default::default()
         };
-        assert_eq!(
-            u64::try_from_data_value(data_value).expect("should be successful"),
-            9812345678
-        );
+
+        let got: u64 = data_value.try_as().expect("should be successful");
+
+        assert_eq!(got, 9812345678);
     }
 
     #[test]
@@ -261,10 +309,10 @@ mod tests {
             status: Some(StatusCode::GoodClamped),
             ..Default::default()
         };
-        assert_eq!(
-            f32::try_from_data_value(data_value).expect("should be successful"),
-            -12.375
-        );
+
+        let got: f32 = data_value.try_as().expect("should be successful");
+
+        assert_eq!(got, -12.375);
     }
 
     #[test]
@@ -274,22 +322,22 @@ mod tests {
             status: Some(StatusCode::GoodClamped),
             ..Default::default()
         };
-        assert_eq!(
-            f64::try_from_data_value(data_value).expect("should be successful"),
-            std::f64::consts::PI
-        );
+
+        let got: f64 = data_value.try_as().expect("should be successful");
+
+        assert_eq!(got, std::f64::consts::PI);
     }
 
     #[test]
-    fn string_ok() {
+    fn str_ok() {
         let data_value = DataValue {
             value: Some("hello gateway".to_string().into()),
             status: Some(StatusCode::GoodClamped),
             ..Default::default()
         };
-        assert_eq!(
-            String::try_from_data_value(data_value).expect("should be successful"),
-            "hello gateway"
-        );
+
+        let got: &str = data_value.try_as().expect("should be successful");
+
+        assert_eq!(got, "hello gateway");
     }
 }

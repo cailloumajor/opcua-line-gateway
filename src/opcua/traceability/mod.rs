@@ -2,10 +2,12 @@ use std::pin::pin;
 use std::sync::Arc;
 use std::time::Duration;
 
-use futures_util::StreamExt;
+use futures_util::{StreamExt, TryFutureExt};
+use jiff::Timestamp;
 use opcua::client::{DataChangeCallback, Session};
-use opcua::types::{DataValue, IntoVariant, NodeId, TimestampsToReturn, WriteValue};
-use opcua_line_gateway_config::TraceabilityConfig;
+use opcua::types::{DataValue, IntoVariant, NodeId, ReadValueId, TimestampsToReturn, WriteValue};
+use opcua_line_gateway_config::{AsciiText, TraceabilityConfig};
+use redb::Database;
 use tokio::sync::mpsc;
 use tokio::task::JoinSet;
 use tokio::time::{MissedTickBehavior, interval};
@@ -13,13 +15,18 @@ use tokio_stream::wrappers::{IntervalStream, UnboundedReceiverStream};
 use tokio_util::sync::CancellationToken;
 use tracing::{Instrument, info, info_span, instrument, warn};
 
-use self::errors::{CreatePartIdError, HandleRequestError, WriteError};
+use crate::opcua::data_value::DataValueExt;
+use crate::timezone::system_timezone;
+
+use self::cache::TraceabilityCache;
+use self::errors::{CreatePartIdError, HandleRequestError, ReadError, WriteError};
 pub(super) use self::errors::{TraceabilityInitializeError, TraceabilityInstallError};
-use self::protocol::{TraceabilityRequest, TraceabilityResponse};
+use self::part_id::create_part_identifier;
+use self::protocol::{RESPONSE_RESET, RESPONSE_SUCCESS, TraceabilityRequest};
 
-use super::data_value::TryFromDataValue;
-
+mod cache;
 mod errors;
+mod part_id;
 mod protocol;
 
 /// The duration between heartbeat changes.
@@ -36,11 +43,13 @@ pub(super) struct Initialized {}
 #[derive(Clone)]
 pub(super) struct TraceabilityHandler<S> {
     /// The ID of the server this handler works with.
-    pub(super) server_id: String,
+    server_id: String,
     /// The configuration for this server.
-    pub(super) config: TraceabilityConfig,
+    config: TraceabilityConfig,
     /// The OPC-UA session.
-    pub(super) session: Arc<Session>,
+    session: Arc<Session>,
+    /// The traceability cache.
+    cache: TraceabilityCache,
     /// The state of this handler.
     state: S,
 }
@@ -51,11 +60,15 @@ impl TraceabilityHandler<InitialState> {
         server_id: String,
         config: TraceabilityConfig,
         session: Arc<Session>,
+        cache_db: Arc<Database>,
     ) -> Self {
+        let cache = TraceabilityCache::new(cache_db);
+
         Self {
             server_id,
             config,
             session,
+            cache,
             state: InitialState,
         }
     }
@@ -71,6 +84,7 @@ impl TraceabilityHandler<InitialState> {
             server_id: self.server_id,
             config: self.config,
             session: self.session,
+            cache: self.cache,
             state,
         })
     }
@@ -175,6 +189,8 @@ impl TraceabilityHandler<Initialized> {
                     .take_until(heartbeat_shutdown.cancelled());
                 let mut pinned_stream = pin!(stream);
                 while let Some(value) = pinned_stream.next().await {
+                    // Ignore the result, it is handled (logging) by the instrumentation
+                    // of `write_value`.
                     let _ = cloned_self
                         .write_value(self.config.heartbeat_node_id, value)
                         .await;
@@ -199,14 +215,15 @@ impl TraceabilityHandler<Initialized> {
                     .skip(1);
                 let mut pinned_stream = pin!(stream);
                 while let Some(request_value) = pinned_stream.next().await {
-                    let result = self.handle_request(request_value).await;
-                    if let Err(Some(response)) = result.map_err(|e| e.to_response_code()) {
-                        // Ignore the result, as error logging is handled by the function
-                        // `instrument` attribute.
-                        let _ = self
-                            .write_value(self.config.response_node_id, response)
-                            .await;
-                    }
+                    let response_value = self
+                        .handle_request(request_value)
+                        .await
+                        .unwrap_or_else(|e| e.to_response_code());
+                    // Ignore the result, as error logging is handled by the function
+                    // `instrument` attribute.
+                    let _ = self
+                        .write_value(self.config.response_node_id, response_value)
+                        .await;
                 }
 
                 info!(msg = "traceability handler terminated");
@@ -217,31 +234,95 @@ impl TraceabilityHandler<Initialized> {
         Ok(tasks)
     }
 
-    /// Handle a request code from the OPC-UA server.
+    /// Handle a request code from the OPC-UA server. Upon success, return the response code
+    /// that must be written to the server.
     #[instrument(err, skip_all)]
-    async fn handle_request(&self, value: DataValue) -> Result<(), HandleRequestError> {
-        let request_code = u8::try_from_data_value(value)?;
+    async fn handle_request(&self, value: DataValue) -> Result<u8, HandleRequestError> {
+        let request_code = value.try_as().map_err(HandleRequestError::ValueError)?;
         let Some(req) = TraceabilityRequest::from_repr(request_code) else {
             return Err(HandleRequestError::UnknownValue(request_code));
         };
 
         match req {
             TraceabilityRequest::Reset => {
-                self.write_value(self.config.response_node_id, TraceabilityResponse::Reset)
-                    .await?
+                return Ok(RESPONSE_RESET);
             }
             TraceabilityRequest::CreatePartId => self.create_part_id().await?,
-            _ => todo!(),
+            TraceabilityRequest::GetPartSheets => todo!(),
+            TraceabilityRequest::SavePartSheets => todo!(),
         }
 
-        Ok(())
+        Ok(RESPONSE_SUCCESS)
     }
 
     /// Create the part ID by getting required data from the OPC-UA server and writing back the
     /// generated ID.
     #[instrument(err, skip_all)]
     async fn create_part_id(&self) -> Result<(), CreatePartIdError> {
-        todo!()
+        let config = self
+            .config
+            .part_identifier
+            .as_ref()
+            // Return an error if this instance has no part reference configuration.
+            .ok_or(CreatePartIdError::NotConfigured)?;
+
+        // Read and convert needed OPC-UA variables.
+        let values = self
+            .read_values(&[config.raw_part_ref_node_id, config.raw_batch_node_id])
+            .await
+            .map_err(CreatePartIdError::ReadVariables)?;
+        let [part_ref_value, batch_value] = values
+            .try_into()
+            .expect("read values vector should have the expected size");
+        let part_ref: &str = part_ref_value
+            .try_as()
+            .map_err(CreatePartIdError::PartRefValue)?;
+        let batch: AsciiText<2> = batch_value
+            .try_as()
+            .map_err(CreatePartIdError::BatchValue)?;
+
+        let today = Timestamp::now().to_zoned(system_timezone().clone()).date();
+
+        // Get the next serial number using a blocking task.
+        let cloned_cache = self.cache.clone();
+        let serial = tokio::task::spawn_blocking(move || cloned_cache.next_serial(today))
+            .await
+            .map_err(CreatePartIdError::NextSerialTask)?
+            .map_err(CreatePartIdError::NextSerial)?;
+
+        // Create the part identifier.
+        let part_identifier =
+            create_part_identifier(part_ref, batch, config.line_id, today, serial)
+                .map_err(CreatePartIdError::PartIdentifier)?;
+
+        self.write_value(config.part_id_node_id, part_identifier.as_str())
+            .map_err(CreatePartIdError::WritePartId)
+            .await?;
+
+        info!(msg = "created part identifier", part_identifier);
+
+        Ok(())
+    }
+
+    /// Read the values of nodes with provided identifiers.
+    #[instrument(err, skip_all)]
+    async fn read_values(&self, ids: &[u32]) -> Result<Vec<DataValue>, ReadError> {
+        let ns_index = self
+            .session
+            .get_namespace_index(&self.config.namespace_url)
+            .await
+            .map_err(ReadError::GetNamespaceIndex)?;
+        let nodes_to_read = ids
+            .iter()
+            .map(|id| {
+                let node_id = NodeId::new(ns_index, *id);
+                ReadValueId::new_value(node_id)
+            })
+            .collect::<Vec<_>>();
+        self.session
+            .read(&nodes_to_read, TimestampsToReturn::Neither, 0.0)
+            .await
+            .map_err(ReadError::ReadRequest)
     }
 
     /// Write provided value to the provided node identifier.
