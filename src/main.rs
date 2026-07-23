@@ -1,9 +1,11 @@
 use std::env;
 use std::path::PathBuf;
+use std::time::Instant;
 
 use anyhow::{Context as _, anyhow};
 use futures_util::StreamExt;
 use opcua_line_gateway_config::LineGatewayConfig;
+use redb::Database;
 use signal_hook::consts::TERM_SIGNALS;
 use signal_hook::low_level::signal_name;
 use signal_hook_tokio::Signals;
@@ -14,8 +16,10 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
 use self::opcua::{create_client, sessions_manager};
+use self::timezone::{init_system_timezone, system_timezone};
 
 mod opcua;
+mod timezone;
 
 /// Handle signals as they are caught.
 #[instrument(skip_all)]
@@ -47,12 +51,22 @@ async fn main() -> anyhow::Result<()> {
     let config = LineGatewayConfig::from_toml_file(config_path)
         .context("Failed to get configuration from file")?;
 
+    let traceability_cache_db = Database::create(&config.traceability_redb_file)
+        .context("Failed to open traceability cache database file")?;
+
+    // Initialize the cached system timezone.
+    init_system_timezone().context("Failed to get the system timezone")?;
+
     // Initialize tracing.
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
         // Configure log levels using RUST_LOG environment variable.
         .with(EnvFilter::from_default_env())
         .init();
+
+    // Ensure cached timezone.
+    let tz = system_timezone();
+    info!(msg = "got system timezone", ?tz);
 
     // Create OPC-UA client.
     let client = create_client(&config).context("Failed to create OPC-UA client")?;
@@ -62,7 +76,13 @@ async fn main() -> anyhow::Result<()> {
     let shutdown_token = CancellationToken::new();
     let signals_task = tokio::spawn(handle_signals(signals, shutdown_token.clone()));
 
-    sessions_manager(client.into(), config.opcua_servers, shutdown_token).await;
+    sessions_manager(
+        client.into(),
+        config.opcua_servers,
+        shutdown_token,
+        traceability_cache_db.into(),
+    )
+    .await;
 
     signals_handle.close();
 

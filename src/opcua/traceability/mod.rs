@@ -3,9 +3,11 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use futures_util::StreamExt;
+use jiff::Zoned;
 use opcua::client::{DataChangeCallback, Session};
-use opcua::types::{DataValue, IntoVariant, NodeId, TimestampsToReturn, WriteValue};
-use opcua_line_gateway_config::TraceabilityConfig;
+use opcua::types::{DataValue, IntoVariant, NodeId, ReadValueId, TimestampsToReturn, WriteValue};
+use opcua_line_gateway_config::{AsciiText, TraceabilityConfig};
+use redb::Database;
 use tokio::sync::mpsc;
 use tokio::task::JoinSet;
 use tokio::time::{MissedTickBehavior, interval};
@@ -13,13 +15,16 @@ use tokio_stream::wrappers::{IntervalStream, UnboundedReceiverStream};
 use tokio_util::sync::CancellationToken;
 use tracing::{Instrument, info, info_span, instrument, warn};
 
-use self::errors::{CreatePartIdError, HandleRequestError, WriteError};
+use crate::opcua::data_value::DataValueExt;
+
+use self::cache::TraceabilityCache;
+use self::errors::{CreatePartIdError, HandleRequestError, ReadError, WriteError};
 pub(super) use self::errors::{TraceabilityInitializeError, TraceabilityInstallError};
 use self::protocol::{TraceabilityRequest, TraceabilityResponse};
 
-use super::data_value::TryFromDataValue;
-
+mod cache;
 mod errors;
+mod part_id;
 mod protocol;
 
 /// The duration between heartbeat changes.
@@ -36,11 +41,13 @@ pub(super) struct Initialized {}
 #[derive(Clone)]
 pub(super) struct TraceabilityHandler<S> {
     /// The ID of the server this handler works with.
-    pub(super) server_id: String,
+    server_id: String,
     /// The configuration for this server.
-    pub(super) config: TraceabilityConfig,
+    config: TraceabilityConfig,
     /// The OPC-UA session.
-    pub(super) session: Arc<Session>,
+    session: Arc<Session>,
+    /// The traceability cache.
+    cache: TraceabilityCache,
     /// The state of this handler.
     state: S,
 }
@@ -51,11 +58,15 @@ impl TraceabilityHandler<InitialState> {
         server_id: String,
         config: TraceabilityConfig,
         session: Arc<Session>,
+        cache_db: Arc<Database>,
     ) -> Self {
+        let cache = TraceabilityCache::new(cache_db);
+
         Self {
             server_id,
             config,
             session,
+            cache,
             state: InitialState,
         }
     }
@@ -71,6 +82,7 @@ impl TraceabilityHandler<InitialState> {
             server_id: self.server_id,
             config: self.config,
             session: self.session,
+            cache: self.cache,
             state,
         })
     }
@@ -220,7 +232,7 @@ impl TraceabilityHandler<Initialized> {
     /// Handle a request code from the OPC-UA server.
     #[instrument(err, skip_all)]
     async fn handle_request(&self, value: DataValue) -> Result<(), HandleRequestError> {
-        let request_code = u8::try_from_data_value(value)?;
+        let request_code = value.try_as()?;
         let Some(req) = TraceabilityRequest::from_repr(request_code) else {
             return Err(HandleRequestError::UnknownValue(request_code));
         };
@@ -241,7 +253,51 @@ impl TraceabilityHandler<Initialized> {
     /// generated ID.
     #[instrument(err, skip_all)]
     async fn create_part_id(&self) -> Result<(), CreatePartIdError> {
+        let config = self
+            .config
+            .part_identifier
+            .as_ref()
+            // Return an error if this instance has no part reference configuration.
+            .ok_or(CreatePartIdError::NotConfigured)?;
+
+        // Read and convert needed OPC-UA variables.
+        let values = self
+            .read_values(&[config.raw_part_ref_node_id, config.raw_batch_node_id])
+            .await?;
+        let [raw_part_ref_value, raw_batch_value] = values
+            .try_into()
+            .expect("read values vector should have the expected size");
+        let raw_part_ref: &str = raw_part_ref_value
+            .try_as()
+            .map_err(CreatePartIdError::PartRefValue)?;
+        let raw_batch: AsciiText<2> = raw_batch_value
+            .try_as()
+            .map_err(CreatePartIdError::BatchValue)?;
+
+        let today = Zoned::now().date();
+
         todo!()
+    }
+
+    /// Read the values of nodes with provided identifiers.
+    #[instrument(err, skip_all)]
+    async fn read_values(&self, ids: &[u32]) -> Result<Vec<DataValue>, ReadError> {
+        let ns_index = self
+            .session
+            .get_namespace_index(&self.config.namespace_url)
+            .await
+            .map_err(ReadError::GetNamespaceIndex)?;
+        let nodes_to_read = ids
+            .iter()
+            .map(|id| {
+                let node_id = NodeId::new(ns_index, *id);
+                ReadValueId::new_value(node_id)
+            })
+            .collect::<Vec<_>>();
+        self.session
+            .read(&nodes_to_read, TimestampsToReturn::Neither, 0.0)
+            .await
+            .map_err(ReadError::ReadRequest)
     }
 
     /// Write provided value to the provided node identifier.

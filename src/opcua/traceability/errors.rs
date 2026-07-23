@@ -53,6 +53,15 @@ impl HandleRequestError {
     }
 }
 
+/// Errors that can occur during reading from the server.
+#[derive(Debug, Error)]
+pub(super) enum ReadError {
+    #[error("error getting traceability namespace index")]
+    GetNamespaceIndex(#[source] opcua::types::Error),
+    #[error("read request error")]
+    ReadRequest(#[source] opcua::types::Error),
+}
+
 /// Errors that can be encountered during writing to the server.
 #[derive(Debug, Error)]
 pub(super) enum WriteError {
@@ -66,4 +75,15 @@ pub(super) enum WriteError {
 
 /// Errors that can occur during part ID creation.
 #[derive(Debug, Error)]
-pub(super) enum CreatePartIdError {}
+pub(super) enum CreatePartIdError {
+    #[error("part ID creation is not configured for this server")]
+    NotConfigured,
+    #[error("error reading required variables")]
+    ReadVariables(#[from] ReadError),
+    #[error("invalid raw part reference value")]
+    PartRefValue(#[source] TryFromDataValueError),
+    #[error("invalid raw batch value")]
+    BatchValue(#[source] TryFromDataValueError),
+    #[error("{0}")]
+    PartRefFormat(String),
+}

@@ -10,6 +10,9 @@ use schemars::JsonSchema;
 use serde::Deserialize;
 use thiserror::Error;
 
+pub use self::ascii_text::{AsciiText, AsciiTextError};
+
+mod ascii_text;
 mod foreign;
 
 /// Represents errors that can be encountered with configuration.
@@ -30,9 +33,12 @@ pub enum LineGatewayConfigError {
 /// OPC-UA line gateway configuration.
 #[derive(Clone, Deserialize, JsonSchema)]
 pub struct LineGatewayConfig {
-    /// The globally unique identifier for the application instance, as of OPC-UA.
+    /// Path to the redb file to use for traceability cache. It will be created
+    /// if it does not exist.
+    pub traceability_redb_file: PathBuf,
+    /// Globally unique identifier for the application instance, as of OPC-UA.
     pub application_uri: String,
-    /// The root directory of the OPC-UA PKI.
+    /// Root directory of the OPC-UA PKI.
     pub pki_dir: PathBuf,
     /// Mapping of machine identifier to corresponding OPC-UA server configuration.
     pub opcua_servers: BTreeMap<String, OpcUaServerConfig>,
@@ -82,12 +88,12 @@ pub struct OpcUaServerConfig {
     /// OPC-UA security mode.
     #[serde(with = "foreign::MessageSecurityMode")]
     pub security_mode: MessageSecurityMode,
-    /// The username if authenticating to the OPC-UA server with username/password.
+    /// Username if authenticating to the OPC-UA server with username/password.
     /// If not provided, anonymous authentication will be used.
     pub user: Option<String>,
-    /// The password to use if using username/password authentication.
+    /// Password to use if using username/password authentication.
     pub password: Option<String>,
-    /// The traceability settings for this server.
+    /// Traceability settings for this server.
     pub traceability: TraceabilityConfig,
 }
 
@@ -114,17 +120,30 @@ impl OpcUaServerConfig {
 /// Traceability related configuration for an OPC-UA server.
 #[derive(Clone, Deserialize, JsonSchema)]
 pub struct TraceabilityConfig {
-    /// The namespace URL used for traceability.
+    /// Namespace URL used for traceability.
     #[schemars(url)]
     pub namespace_url: String,
-    /// The publish interval to request when subscribing to request variable.
+    /// Publish interval to request when subscribing to request variable.
     #[serde(with = "jiff::fmt::serde::unsigned_duration::friendly::compact::required")]
     #[schemars(with = "String")]
     pub publish_interval: Duration,
-    /// The node identifier of the request variable.
+    /// OPC-UA node identifier of the request variable.
     pub request_node_id: u32,
-    /// The node identifier of the response variable.
+    /// OPC-UA node identifier of the response variable.
     pub response_node_id: u32,
-    /// The node identifier of the heartbeat variable.
+    /// OPC-UA node identifier of the heartbeat variable.
     pub heartbeat_node_id: u32,
+    /// Configuration for part identifier creation, if applicable.
+    pub part_identifier: Option<CreatePartIdConfig>,
+}
+
+/// Configuration related to part ID creation for an OPC-UA server.
+#[derive(Clone, Deserialize, JsonSchema)]
+pub struct CreatePartIdConfig {
+    /// OPC-UA node identifier of the raw part reference variable.
+    pub raw_part_ref_node_id: u32,
+    /// OPC-UA node identifier of the raw material batch variable.
+    pub raw_batch_node_id: u32,
+    /// Two character production line identifier.
+    pub line_id: AsciiText<2>,
 }

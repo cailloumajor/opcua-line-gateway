@@ -7,7 +7,7 @@ publish.workspace = true
 
 [dependencies]
 async-opcua = { workspace = true, features = ["client"] }
-jiff = { version = "0.2.32", features = ["serde"] }
+jiff = { workspace = true, features = ["serde"] }
 schemars.workspace = true
 serde.workspace = true
 thiserror.workspace = true

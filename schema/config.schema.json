@@ -5,7 +5,7 @@
   "type": "object",
   "properties": {
     "application_uri": {
-      "description": "The globally unique identifier for the application instance, as of OPC-UA.",
+      "description": "Globally unique identifier for the application instance, as of OPC-UA.",
       "type": "string"
     },
     "opcua_servers": {
@@ -16,11 +16,16 @@
       }
     },
     "pki_dir": {
-      "description": "The root directory of the OPC-UA PKI.",
+      "description": "Root directory of the OPC-UA PKI.",
+      "type": "string"
+    },
+    "traceability_redb_file": {
+      "description": "Path to the redb file to use for traceability cache. It will be created\nif it does not exist.",
       "type": "string"
     }
   },
   "required": [
+    "traceability_redb_file",
     "application_uri",
     "pki_dir",
     "opcua_servers"
@@ -29,6 +34,35 @@
     "uri"
   ],
   "$defs": {
+    "CreatePartIdConfig": {
+      "description": "Configuration related to part ID creation for an OPC-UA server.",
+      "type": "object",
+      "properties": {
+        "line_id": {
+          "description": "Two character production line identifier.",
+          "type": "string",
+          "maxLength": 2,
+          "minLength": 2
+        },
+        "raw_batch_node_id": {
+          "description": "OPC-UA node identifier of the raw material batch variable.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "raw_part_ref_node_id": {
+          "description": "OPC-UA node identifier of the raw part reference variable.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "raw_part_ref_node_id",
+        "raw_batch_node_id",
+        "line_id"
+      ]
+    },
     "MessageSecurityMode": {
       "description": "A copy of [`opcua::crypto::MessageSecurityMode`] to allow using serde remote functionality.",
       "oneOf": [
@@ -47,7 +81,7 @@
       "type": "object",
       "properties": {
         "password": {
-          "description": "The password to use if using username/password authentication.",
+          "description": "Password to use if using username/password authentication.",
           "type": [
             "string",
             "null"
@@ -62,7 +96,7 @@
           "$ref": "#/$defs/SecurityPolicy"
         },
         "traceability": {
-          "description": "The traceability settings for this server.",
+          "description": "Traceability settings for this server.",
           "$ref": "#/$defs/TraceabilityConfig"
         },
         "url": {
@@ -71,7 +105,7 @@
           "format": "uri"
         },
         "user": {
-          "description": "The username if authenticating to the OPC-UA server with username/password.\nIf not provided, anonymous authentication will be used.",
+          "description": "Username if authenticating to the OPC-UA server with username/password.\nIf not provided, anonymous authentication will be used.",
           "type": [
             "string",
             "null"
@@ -106,28 +140,39 @@
       "type": "object",
       "properties": {
         "heartbeat_node_id": {
-          "description": "The node identifier of the heartbeat variable.",
+          "description": "OPC-UA node identifier of the heartbeat variable.",
           "type": "integer",
           "format": "uint32",
           "minimum": 0
         },
         "namespace_url": {
-          "description": "The namespace URL used for traceability.",
+          "description": "Namespace URL used for traceability.",
           "type": "string",
           "format": "uri"
         },
+        "part_identifier": {
+          "description": "Configuration for part identifier creation, if applicable.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CreatePartIdConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "publish_interval": {
-          "description": "The publish interval to request when subscribing to request variable.",
+          "description": "Publish interval to request when subscribing to request variable.",
           "type": "string"
         },
         "request_node_id": {
-          "description": "The node identifier of the request variable.",
+          "description": "OPC-UA node identifier of the request variable.",
           "type": "integer",
           "format": "uint32",
           "minimum": 0
         },
         "response_node_id": {
-          "description": "The node identifier of the response variable.",
+          "description": "OPC-UA node identifier of the response variable.",
           "type": "integer",
           "format": "uint32",
           "minimum": 0
