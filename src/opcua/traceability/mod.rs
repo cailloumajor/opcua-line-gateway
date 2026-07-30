@@ -5,7 +5,7 @@ use std::time::Duration;
 use futures_util::{StreamExt, TryFutureExt};
 use jiff::Timestamp;
 use opcua::client::{DataChangeCallback, Session};
-use opcua::types::{DataValue, IntoVariant, NodeId, ReadValueId, TimestampsToReturn, WriteValue};
+use opcua::types::{DataValue, NodeId, ReadValueId, TimestampsToReturn, Variant, WriteValue};
 use opcua_line_gateway_config::{AsciiText, TraceabilityConfig};
 use redb::Database;
 use tokio::sync::mpsc;
@@ -193,7 +193,7 @@ impl TraceabilityHandler<Initialized> {
                     // Ignore the result, it is handled (logging) by the instrumentation
                     // of `write_value`.
                     let _ = cloned_self
-                        .write_value(self.config.heartbeat_node_id, value)
+                        .write_values(Some((self.config.heartbeat_node_id, value.into())))
                         .await;
                 }
 
@@ -223,7 +223,7 @@ impl TraceabilityHandler<Initialized> {
                     // Ignore the result, as error logging is handled by the function
                     // `instrument` attribute.
                     let _ = self
-                        .write_value(self.config.response_node_id, response_value)
+                        .write_values(Some((self.config.response_node_id, response_value.into())))
                         .await;
                 }
 
@@ -292,15 +292,14 @@ impl TraceabilityHandler<Initialized> {
             .map_err(CreatePartIdError::NextSerial)?;
 
         // Create the part identifier.
-        let part_identifier =
-            create_part_identifier(part_ref, batch, config.line_id, today, serial)
-                .map_err(CreatePartIdError::PartIdentifier)?;
+        let part_id = create_part_identifier(part_ref, batch, config.line_id, today, serial)
+            .map_err(CreatePartIdError::PartIdentifier)?;
 
-        self.write_value(config.part_id_node_id, part_identifier.as_str())
+        self.write_values(Some((config.part_id_node_id, part_id.as_str().into())))
             .map_err(CreatePartIdError::WritePartId)
             .await?;
 
-        info!(msg = "created part identifier", part_identifier);
+        info!(msg = "created part identifier", part_id);
 
         Ok(())
     }
@@ -326,22 +325,25 @@ impl TraceabilityHandler<Initialized> {
             .map_err(ReadError::ReadRequest)
     }
 
-    /// Write provided value to the provided node identifier.
+    /// Write provided values — an iterable of tuples of node identifier ([`u32`])
+    /// and [`Variant`] — to the server.
     #[instrument(err, skip_all)]
-    async fn write_value<T>(&self, id: u32, value: T) -> Result<(), WriteError>
+    async fn write_values<I>(&self, pairs: I) -> Result<(), WriteError>
     where
-        T: IntoVariant,
+        I: IntoIterator<Item = (u32, Variant)>,
     {
         let ns_index = self
             .session
             .get_namespace_index(&self.config.namespace_url)
             .await
             .map_err(WriteError::GetNamespaceIndex)?;
-        let node_id = NodeId::new(ns_index, id);
-        let write_value = WriteValue::value_attr(node_id, value.into());
+        let nodes_to_write = pairs
+            .into_iter()
+            .map(|(id, variant)| WriteValue::value_attr(NodeId::new(ns_index, id), variant))
+            .collect::<Vec<_>>();
         let results = self
             .session
-            .write(&[write_value])
+            .write(&nodes_to_write)
             .await
             .map_err(WriteError::WriteRequest)?;
         if let Some(status) = results.into_iter().find(|s| !s.is_good()) {
