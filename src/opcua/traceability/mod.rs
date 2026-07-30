@@ -27,6 +27,7 @@ use self::protocol::{RESPONSE_RESET, RESPONSE_SUCCESS, TraceabilityRequest};
 mod cache;
 mod errors;
 mod part_id;
+mod part_sheet;
 mod protocol;
 
 /// The duration between heartbeat changes.
