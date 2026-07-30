@@ -1,11 +1,16 @@
 use std::sync::Arc;
 
 use jiff::civil::Date;
-use redb::{Database, ReadableTable, TableDefinition};
+use redb::{Database, ReadableDatabase, ReadableTable, TableDefinition};
 use tracing::instrument;
+
+use super::part_sheet::CachedPartSheet;
 
 /// Table definition for the daily serial numbers.
 const SERIAL_TABLE: TableDefinition<&str, u32> = TableDefinition::new("daily_serial");
+
+const GENERAL_PART_SHEET_TABLE: TableDefinition<&str, CachedPartSheet> =
+    TableDefinition::new("general_part_sheet");
 
 /// Cloneable wrapper around a shareable [`Database`], providing helper methods.
 #[derive(Clone)]
@@ -37,5 +42,18 @@ impl TraceabilityCache {
         write_txn.commit()?;
 
         Ok(next)
+    }
+
+    /// Get a cached general part sheet from the cache, provided the part identifier.
+    #[instrument(err, skip(self))]
+    pub(super) fn get_general_part_sheet(
+        &self,
+        part_id: &str,
+    ) -> Result<Option<CachedPartSheet>, redb::Error> {
+        let read_txn = self.0.begin_read()?;
+        let table = read_txn.open_table(GENERAL_PART_SHEET_TABLE)?;
+        let value = table.get(part_id)?;
+
+        Ok(value.map(|v| v.value()))
     }
 }
