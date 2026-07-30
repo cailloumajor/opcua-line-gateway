@@ -13,8 +13,8 @@ pub(super) enum TraceabilityRequest {
     Reset = 0,
     /// Request for creating a part ID.
     CreatePartId = 1,
-    /// Request from the machine for getting part data sheets.
-    GetPartSheets = 2,
-    /// Request from the machine for saving part data sheets.
+    /// Request from the machine to read part data sheet.
+    ReadPartSheet = 2,
+    /// Request from the machine to save part data sheets.
     SavePartSheets = 3,
 }

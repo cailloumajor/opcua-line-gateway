@@ -249,7 +249,7 @@ impl TraceabilityHandler<Initialized> {
                 return Ok(RESPONSE_RESET);
             }
             TraceabilityRequest::CreatePartId => self.create_part_id().await?,
-            TraceabilityRequest::GetPartSheets => todo!(),
+            TraceabilityRequest::ReadPartSheet => todo!(),
             TraceabilityRequest::SavePartSheets => todo!(),
         }
 
