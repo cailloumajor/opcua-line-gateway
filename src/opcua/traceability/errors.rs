@@ -89,7 +89,7 @@ pub(super) enum CreatePartIdError {
     PartRefValue(TryFromDataValueError),
     #[error("invalid raw batch value, cause: {0}")]
     BatchValue(TryFromDataValueError),
-    #[error("error joining the next_serial blocking task")]
+    #[error("error joining next_serial blocking task, cause: {0}")]
     NextSerialTask(#[source] JoinError),
     #[error("error getting next serial number from cache")]
     NextSerial(#[source] redb::Error),
