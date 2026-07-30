@@ -295,7 +295,7 @@ impl TraceabilityHandler<Initialized> {
         let part_id = create_part_identifier(part_ref, batch, config.line_id, today, serial)
             .map_err(CreatePartIdError::PartIdentifier)?;
 
-        self.write_values(Some((config.part_id_node_id, part_id.as_str().into())))
+        self.write_values(Some((self.config.part_id_node_id, part_id.as_str().into())))
             .map_err(CreatePartIdError::WritePartId)
             .await?;
 

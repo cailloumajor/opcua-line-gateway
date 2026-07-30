@@ -44,12 +44,6 @@
           "maxLength": 2,
           "minLength": 2
         },
-        "part_id_node_id": {
-          "description": "OPC-UA node identifier of the `part ID` variable",
-          "type": "integer",
-          "format": "uint32",
-          "minimum": 0
-        },
         "raw_batch_node_id": {
           "description": "OPC-UA node identifier of the raw material batch variable.",
           "type": "integer",
@@ -66,8 +60,7 @@
       "required": [
         "raw_part_ref_node_id",
         "raw_batch_node_id",
-        "line_id",
-        "part_id_node_id"
+        "line_id"
       ]
     },
     "MessageSecurityMode": {
@@ -157,6 +150,12 @@
           "type": "string",
           "format": "uri"
         },
+        "part_id_node_id": {
+          "description": "OPC-UA node identifier of the `part ID` variable.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
         "part_identifier": {
           "description": "Configuration for part identifier creation, if applicable.",
           "anyOf": [
@@ -190,7 +189,8 @@
         "publish_interval",
         "request_node_id",
         "response_node_id",
-        "heartbeat_node_id"
+        "heartbeat_node_id",
+        "part_id_node_id"
       ]
     }
   }

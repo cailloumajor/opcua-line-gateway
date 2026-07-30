@@ -133,6 +133,8 @@ pub struct TraceabilityConfig {
     pub response_node_id: u32,
     /// OPC-UA node identifier of the heartbeat variable.
     pub heartbeat_node_id: u32,
+    /// OPC-UA node identifier of the `part ID` variable.
+    pub part_id_node_id: u32,
     /// Configuration for part identifier creation, if applicable.
     pub part_identifier: Option<CreatePartIdConfig>,
 }
@@ -146,6 +148,4 @@ pub struct CreatePartIdConfig {
     pub raw_batch_node_id: u32,
     /// Two character production line identifier.
     pub line_id: AsciiText<2>,
-    /// OPC-UA node identifier of the `part ID` variable
-    pub part_id_node_id: u32,
 }
