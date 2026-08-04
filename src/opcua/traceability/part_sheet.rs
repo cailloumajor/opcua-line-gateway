@@ -1,5 +1,6 @@
 use std::io::{self, Cursor, Read};
 
+use leb128::write::unsigned_len;
 use opcua::types::{BinaryDecodable, BinaryEncodable, Context, Variant};
 use redb::{TypeName, Value};
 use tracing::instrument;
@@ -9,28 +10,32 @@ use tracing::instrument;
 pub(super) struct CachedPartSheet(Vec<u8>);
 
 impl CachedPartSheet {
-    /// Create an [`CachedPartSheet`], provided an iterator of [`Variant`].
+    /// Create an [`CachedPartSheet`], provided an iterator of node identifier and [`Variant`].
     pub(super) fn encode<'a, I>(pairs: I, ctx: &Context) -> Self
     where
-        I: IntoIterator<Item = &'a Variant>,
+        I: IntoIterator<Item = (u32, &'a Variant)>,
     {
         let pairs = pairs.into_iter().collect::<Vec<_>>();
 
-        assert!(
-            pairs.len() <= u16::MAX as usize,
-            "there should not be more than {} variants",
-            u16::MAX
-        );
-        let count = pairs.len() as u16;
+        let count: u64 = pairs
+            .len()
+            .try_into()
+            .expect("provided elements length should fit in an u64");
 
-        let exact_len: usize = pairs.iter().map(|v| v.byte_len(ctx)).sum();
+        // Compute the length in bytes of the encoded elements.
+        let exact_len: usize = pairs
+            .iter()
+            .map(|(id, v)| size_of_val(id) + v.byte_len(ctx))
+            .sum();
 
-        let mut buf = Vec::with_capacity(size_of_val(&count) + exact_len);
+        let mut buf = Vec::with_capacity(unsigned_len(count) + exact_len);
 
-        // Encode the number of elements (2 bytes little endian).
-        buf.extend_from_slice(&count.to_le_bytes());
+        // Encode the number of elements (unsigned LEB128).
+        leb128::write::unsigned(&mut buf, count).expect("writing to a Vec should not fail");
 
-        for variant in pairs {
+        for (id, variant) in pairs {
+            // Encode the node identifier (32 bits little endian).
+            buf.extend_from_slice(&id.to_le_bytes());
             // Encode the variant (OPC-UA binary encoding).
             variant
                 .encode(&mut buf, ctx)
@@ -40,23 +45,29 @@ impl CachedPartSheet {
         Self(buf)
     }
 
-    /// Consume and decode this [`CachedPartSheet`], returning a vector of [`Variant`].
+    /// Consume and decode this [`CachedPartSheet`], returning a vector of pairs of [`Variant`]
+    /// and node identifier.
     #[instrument(err, skip_all)]
-    pub(super) fn decode(&self, ctx: &Context) -> io::Result<Vec<Variant>> {
+    pub(super) fn decode(&self, ctx: &Context) -> io::Result<Vec<(u32, Variant)>> {
         let mut cursor = Cursor::new(self.0.as_slice());
 
-        // Decode the number of elements (2 bytes little endian).
-        let mut count_bytes = [0u8; 2];
-        cursor.read_exact(&mut count_bytes)?;
-        let count = u16::from_le_bytes(count_bytes);
+        // Decode the number of elements (unsigned LEB128).
+        let count = leb128::read::unsigned(&mut cursor).map_err(|e| match e {
+            leb128::read::Error::IoError(err) => err,
+            leb128::read::Error::Overflow => io::Error::other(e),
+        })?;
 
         let mut out = Vec::new();
 
         for _ in 0..count {
+            // Decode the node identifier (32 bits little endian).
+            let mut id_bytes = [0u8; 4];
+            cursor.read_exact(&mut id_bytes)?;
+            let id = u32::from_le_bytes(id_bytes);
             // Decode the variant (OPC-UA binary encoding).
             let variant = Variant::decode(&mut cursor, ctx)?;
 
-            out.push(variant);
+            out.push((id, variant));
         }
 
         Ok(out)
@@ -105,23 +116,31 @@ mod tests {
 
     #[test]
     fn encode() {
-        let variants = vec![true.into(), 42u16.into(), "blabla".into()];
+        let identifiers = [561, 98, 43];
+        let variants = &[true.into(), 42u16.into(), "blabla".into()];
+        let pairs = identifiers.into_iter().zip(variants);
         let ctx = ContextOwned::default();
 
-        let encoded = CachedPartSheet::encode(&variants, &ctx.context());
+        let encoded = CachedPartSheet::encode(pairs, &ctx.context());
 
         #[rustfmt::skip]
         let expected: &[u8] = &[
-            // Length (16-bit little endian).
-            3, 0,
+            // Length (unsigned LEB128).
+            3,
+            // First element node identifier (32-bit little endian).
+            0x31, 0x02, 0x00, 0x00,
             // First element encoding mask.
             VariantScalarTypeId::Boolean.encoding_mask(),
             // First element value (true).
             1,
+            // Second element node identifier (32-bit little endian).
+            98, 0, 0, 0,
             // Second element encoding mask.
             VariantScalarTypeId::UInt16.encoding_mask(),
             // Second element value (little endian).
             42, 0,
+            // Third element node identifier (32-bit little endian).
+            43, 0, 0, 0,
             // Third element encoding mask.
             VariantScalarTypeId::String.encoding_mask(),
             // Third element length (32-bit little endian).
@@ -137,16 +156,22 @@ mod tests {
     fn decode() {
         #[rustfmt::skip]
         let encoded: Vec<u8> = vec![
-            // Length (16-bit little endian).
-            3, 0,
+            // Length (unsigned LEB128).
+            3,
+            // First element node identifier (32-bit little endian).
+            0x31, 0x02, 0x00, 0x00,
             // First element encoding mask.
             VariantScalarTypeId::Boolean.encoding_mask(),
             // First element value (true).
             1,
+            // Second element node identifier (32-bit little endian).
+            98, 0, 0, 0,
             // Second element encoding mask.
             VariantScalarTypeId::UInt16.encoding_mask(),
             // Second element value (little endian).
             42, 0,
+            // Third element node identifier (32-bit little endian).
+            43, 0, 0, 0,
             // Third element encoding mask.
             VariantScalarTypeId::String.encoding_mask(),
             // Third element length (32-bit little endian).
@@ -160,6 +185,12 @@ mod tests {
             .decode(&ctx.context())
             .expect("decoding should not fail");
 
-        assert_eq!(decoded, &[true.into(), 42u16.into(), "blabla".into()]);
+        let expected = &[
+            (561, true.into()),
+            (98, 42u16.into()),
+            (43, "blabla".into()),
+        ];
+
+        assert_eq!(decoded, expected);
     }
 }
