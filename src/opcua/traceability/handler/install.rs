@@ -1,0 +1,178 @@
+use std::pin::pin;
+use std::time::Duration;
+
+use futures_util::StreamExt;
+use opcua::client::DataChangeCallback;
+use opcua::types::{NodeId, StatusCode, TimestampsToReturn};
+use thiserror::Error;
+use tokio::sync::mpsc;
+use tokio::task::JoinSet;
+use tokio::time::{MissedTickBehavior, interval};
+use tokio_stream::wrappers::{IntervalStream, UnboundedReceiverStream};
+use tokio_util::sync::CancellationToken;
+use tracing::{Instrument, info, info_span, instrument, warn};
+
+use super::{Initialized, TraceabilityHandler};
+
+/// The duration between heartbeat changes.
+const HEARTBEAT_INTERVAL: Duration = Duration::from_millis(500);
+
+/// Errors that can be encountered during traceability handler installation.
+#[derive(Debug, Error)]
+pub(crate) enum TraceabilityInstallError {
+    #[error("error creating subscription: {0}")]
+    CreateSubscription(#[source] opcua::types::Error),
+    #[error("server raised publishing interval (requested {0:?}, got {1:?})")]
+    PublishIntervalRaised(Duration, Duration),
+    #[error("error getting traceability namespace index")]
+    GetNamespaceIndex(#[source] opcua::types::Error),
+    #[error("error creating monitored items: {0}")]
+    CreateMonitoredItems(#[source] opcua::types::Error),
+    #[error("error on monitored item `{0}`: {1}")]
+    MonitoredItem(NodeId, StatusCode),
+}
+
+impl TraceabilityHandler<Initialized> {
+    /// Install this handler to allow it to handle requests. This mainly consists in
+    /// subscribing to the request variable.
+    ///
+    /// Returns the collection of traceability tasks.
+    #[instrument(name = "traceability_install", err, skip_all)]
+    #[must_use = "the returned handle should be used"]
+    pub(crate) async fn install(
+        self,
+        shutdown: CancellationToken,
+    ) -> Result<JoinSet<()>, TraceabilityInstallError> {
+        let publish_interval = self.config.publish_interval;
+
+        let (tx, rx) = mpsc::unbounded_channel();
+
+        let data_change_callback = DataChangeCallback::new(move |value, _monitored_item| {
+            if tx.send(value).is_err() {
+                warn!(msg = "traceability channel closed, dropping notification");
+            }
+        });
+        let subscription_id = self
+            .session
+            .create_subscription(publish_interval, 50, 10, 0, 0, true, data_change_callback)
+            .await
+            .map_err(TraceabilityInstallError::CreateSubscription)?;
+
+        // Check that the requested publishing interval has not been raised by the server.
+        let revised_publishing_interval = self
+            .session
+            .subscription_state()
+            .lock()
+            .get(subscription_id)
+            .expect("getting successfully created subscription should not fail")
+            .publishing_interval();
+
+        if revised_publishing_interval > publish_interval {
+            // Optimistic attempt to delete the subscription.
+            let _ = self.session.delete_subscription(subscription_id).await;
+            return Err(TraceabilityInstallError::PublishIntervalRaised(
+                publish_interval,
+                revised_publishing_interval,
+            ));
+        }
+
+        let ns_index = self
+            .session
+            .get_namespace_index(&self.config.namespace_url)
+            .await
+            .map_err(TraceabilityInstallError::GetNamespaceIndex)?;
+        let request_node_id = NodeId::new(ns_index, self.config.request_node_id);
+
+        // Create the monitored item. Given that we only have one item, we use sane
+        // defaults, including not attributing client ID to monitored item.
+        let created = self
+            .session
+            .create_monitored_items(
+                subscription_id,
+                TimestampsToReturn::Source,
+                vec![request_node_id.into()],
+            )
+            .await
+            .map_err(TraceabilityInstallError::CreateMonitoredItems)?;
+
+        // Check if created items are healthy.
+        if let Some(failed_item) = created
+            .into_iter()
+            .find(|item| !item.result.status_code.is_good())
+        {
+            return Err(TraceabilityInstallError::MonitoredItem(
+                failed_item.item_to_monitor.node_id,
+                failed_item.result.status_code,
+            ));
+        }
+
+        // Create a collection of tasks.
+        let mut tasks = JoinSet::new();
+
+        // Spawn heartbeat task.
+        let heartbeat_shutdown = shutdown.clone();
+        let server_id = self.server_id.clone();
+        let cloned_self = self.clone();
+        tasks.spawn(
+            async move {
+                info!(msg = "heartbeat handler started");
+
+                // Heartbeat value.
+                let mut hb_value = false;
+
+                let mut hb_interval = interval(HEARTBEAT_INTERVAL);
+                hb_interval.set_missed_tick_behavior(MissedTickBehavior::Delay);
+                let stream = IntervalStream::new(hb_interval)
+                    .map(|_| {
+                        // Revert heartbeat value and return it.
+                        hb_value ^= true;
+                        hb_value
+                    })
+                    .take_until(heartbeat_shutdown.cancelled());
+                let mut pinned_stream = pin!(stream);
+                while let Some(value) = pinned_stream.next().await {
+                    // Ignore the result, it is handled (logging) by the instrumentation
+                    // of `write_value`.
+                    let _ = cloned_self
+                        .write_values(Some((self.config.heartbeat_node_id, value.into())))
+                        .await;
+                }
+
+                info!(msg = "heartbeat handler terminated");
+            }
+            .instrument(info_span!(parent: None, "heartbeat_handler", server_id)),
+        );
+
+        // Spawn traceability request handling task.
+        let server_id = self.server_id.clone();
+        tasks.spawn(
+            async move {
+                info!(msg = "traceability handler started");
+
+                // Make a stream out of requests receiver, with graceful shutdown.
+                // The first value produced is discarded, to prevent handling
+                // a request code that would have been set before we started.
+                let stream = UnboundedReceiverStream::new(rx)
+                    .take_until(shutdown.cancelled())
+                    .skip(1);
+                let mut pinned_stream = pin!(stream);
+                while let Some(request_value) = pinned_stream.next().await {
+                    let response_value = self
+                        .handle_request(request_value)
+                        .await
+                        .unwrap_or_else(|e| e.to_response_code());
+                    // Ignore the result, as error logging is handled by the function
+                    // `instrument` attribute.
+                    let _ = self
+                        .write_values(Some((self.config.response_node_id, response_value.into())))
+                        .await;
+                }
+
+                info!(msg = "traceability handler terminated");
+            }
+            .instrument(info_span!(parent:None, "traceability_handler", server_id)),
+        );
+
+        Ok(tasks)
+    }
+}

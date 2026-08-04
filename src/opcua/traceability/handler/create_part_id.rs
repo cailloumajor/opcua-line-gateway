@@ -1,0 +1,83 @@
+use futures_util::TryFutureExt;
+use jiff::Timestamp;
+use opcua_line_gateway_config::AsciiText;
+use thiserror::Error;
+use tokio::task::JoinError;
+use tracing::{info, instrument};
+
+use crate::opcua::data_value::{DataValueExt, TryFromDataValueError};
+use crate::opcua::traceability::part_id::{PartIdentifierError, create_part_identifier};
+use crate::timezone::system_timezone;
+
+use super::{Initialized, ReadError, TraceabilityHandler, WriteError};
+
+/// Errors that can occur during part ID creation.
+#[derive(Debug, Error)]
+pub(super) enum CreatePartIdError {
+    #[error("part ID creation is not configured for this server")]
+    NotConfigured,
+    #[error("error reading required variables")]
+    ReadVariables(#[source] ReadError),
+    #[error("invalid raw part reference value, cause: {0}")]
+    PartRefValue(TryFromDataValueError),
+    #[error("invalid raw batch value, cause: {0}")]
+    BatchValue(TryFromDataValueError),
+    #[error("error joining next_serial blocking task, cause: {0}")]
+    NextSerialTask(#[source] JoinError),
+    #[error("error getting next serial number from cache")]
+    NextSerial(#[source] redb::Error),
+    #[error("error generating the part identifier")]
+    PartIdentifier(#[source] PartIdentifierError),
+    #[error("error writing the part ID")]
+    WritePartId(#[source] WriteError),
+}
+
+impl TraceabilityHandler<Initialized> {
+    /// Create the part ID by getting required data from the OPC-UA server and writing back the
+    /// generated ID.
+    #[instrument(err, skip_all)]
+    pub(super) async fn create_part_id(&self) -> Result<(), CreatePartIdError> {
+        let config = self
+            .config
+            .part_identifier
+            .as_ref()
+            // Return an error if this instance has no part reference configuration.
+            .ok_or(CreatePartIdError::NotConfigured)?;
+
+        // Read and convert needed OPC-UA variables.
+        let values = self
+            .read_values(&[config.raw_part_ref_node_id, config.raw_batch_node_id])
+            .await
+            .map_err(CreatePartIdError::ReadVariables)?;
+        let [part_ref_value, batch_value] = values
+            .try_into()
+            .expect("read values vector should have the expected size");
+        let part_ref: &str = part_ref_value
+            .try_as()
+            .map_err(CreatePartIdError::PartRefValue)?;
+        let batch: AsciiText<2> = batch_value
+            .try_as()
+            .map_err(CreatePartIdError::BatchValue)?;
+
+        let today = Timestamp::now().to_zoned(system_timezone().clone()).date();
+
+        // Get the next serial number using a blocking task.
+        let cloned_cache = self.cache.clone();
+        let serial = tokio::task::spawn_blocking(move || cloned_cache.next_serial(today))
+            .await
+            .map_err(CreatePartIdError::NextSerialTask)?
+            .map_err(CreatePartIdError::NextSerial)?;
+
+        // Create the part identifier.
+        let part_id = create_part_identifier(part_ref, batch, config.line_id, today, serial)
+            .map_err(CreatePartIdError::PartIdentifier)?;
+
+        self.write_values(Some((self.config.part_id_node_id, part_id.as_str().into())))
+            .map_err(CreatePartIdError::WritePartId)
+            .await?;
+
+        info!(msg = "created part identifier", part_id);
+
+        Ok(())
+    }
+}
