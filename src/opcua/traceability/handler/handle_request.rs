@@ -1,6 +1,6 @@
 use opcua::types::DataValue;
 use thiserror::Error;
-use tracing::instrument;
+use tracing::{info, instrument};
 
 use crate::opcua::data_value::{DataValueExt, TryFromDataValueError};
 use crate::opcua::traceability::protocol::{RESPONSE_RESET, RESPONSE_SUCCESS, TraceabilityRequest};
@@ -51,6 +51,8 @@ impl TraceabilityHandler<Initialized> {
 
         match req {
             TraceabilityRequest::Reset => {
+                info!(msg = "reset response code");
+
                 return Ok(RESPONSE_RESET);
             }
             TraceabilityRequest::CreatePartId => self.create_part_id().await?,
