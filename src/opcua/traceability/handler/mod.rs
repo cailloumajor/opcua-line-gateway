@@ -11,6 +11,7 @@ use tracing::instrument;
 
 use super::cache::TraceabilityCache;
 
+use initialize::Initialized;
 pub(crate) use initialize::TraceabilityInitializeError;
 pub(crate) use install::TraceabilityInstallError;
 
@@ -41,10 +42,6 @@ pub(super) enum WriteError {
 
 /// The initial state of the traceability handler.
 pub(crate) struct InitialState;
-
-/// The traceability handler state after initialization.
-#[derive(Clone)]
-pub(crate) struct Initialized {}
 
 /// Manages traceability for an OPC-UA session.
 #[derive(Clone)]
