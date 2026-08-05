@@ -25,6 +25,7 @@ mod create_part_id;
 mod handle_request;
 mod initialize;
 mod install;
+mod read_part_sheet;
 mod save_part_sheets;
 
 /// Errors that can occur during reading from the server.
