@@ -1,7 +1,7 @@
 use opcua::types::Variant;
 use thiserror::Error;
 use tokio::task::JoinError;
-use tracing::{info, instrument};
+use tracing::{info, instrument, warn};
 
 use crate::opcua::data_value::{DataValueExt, TryFromDataValueError};
 use crate::opcua::traceability::part_sheet::CachedPartSheet;
@@ -31,7 +31,7 @@ impl TraceabilityHandler<Initialized> {
     /// * read the part sheets from the server,
     /// * write the general part sheet to the cache,
     /// * write all the part sheets to the database.
-    #[instrument(err, skip_all)]
+    #[instrument(err, skip_all, fields(part_id))]
     pub(super) async fn save_part_sheets(&self) -> Result<(), SavePartSheetsError> {
         // Read general part sheet values form the server.
         let general_part_sheet_values = self
@@ -77,8 +77,9 @@ impl TraceabilityHandler<Initialized> {
             .map_err(SavePartSheetsError::CacheTask)??;
 
         // TODO: write part sheets to the database.
+        warn!(msg = "part sheets insertion to database is not yet implemented");
 
-        info!(msg = "part sheets saved", part_id);
+        info!(msg = "part sheets saved");
 
         Ok(())
     }
