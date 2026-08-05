@@ -44,7 +44,7 @@ impl TraceabilityCache {
         Ok(next)
     }
 
-    /// Get a cached general part sheet from the cache, provided the part identifier.
+    /// Get a general part sheet from the cache, provided the part identifier.
     #[instrument(err, skip(self))]
     pub(super) fn get_general_part_sheet(
         &self,
@@ -55,5 +55,25 @@ impl TraceabilityCache {
         let value = table.get(part_id)?;
 
         Ok(value.map(|v| v.value()))
+    }
+
+    /// Write a general part sheet in the cache, provided the part identifier and
+    /// the part sheet encoded for caching.
+    ///
+    /// This function can block upon access to wrapped database.
+    #[instrument(err, skip(self, part_sheet))]
+    pub(super) fn insert_general_part_sheet(
+        &self,
+        part_id: &str,
+        part_sheet: &CachedPartSheet,
+    ) -> Result<(), redb::Error> {
+        let write_txn = self.0.begin_write()?;
+        {
+            let mut table = write_txn.open_table(GENERAL_PART_SHEET_TABLE)?;
+            table.insert(part_id, part_sheet)?;
+        }
+        write_txn.commit()?;
+
+        Ok(())
     }
 }

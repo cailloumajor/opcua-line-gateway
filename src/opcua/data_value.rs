@@ -118,6 +118,12 @@ impl<const LENGTH: usize> TryFromDataValue<'_> for AsciiText<LENGTH> {
     }
 }
 
+impl<'a> TryFromDataValue<'a> for &'a Variant {
+    fn try_from_data_value(v: &'a DataValue) -> Result<Self, TryFromDataValueError> {
+        extract_variant(v)
+    }
+}
+
 /// Extension trait adding ergonomic conversion methods to [`DataValue`].
 pub(super) trait DataValueExt {
     /// Try to convert this [`DataValue`] into `T`.

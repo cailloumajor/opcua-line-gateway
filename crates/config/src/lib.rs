@@ -135,6 +135,8 @@ pub struct TraceabilityConfig {
     pub heartbeat_node_id: u32,
     /// OPC-UA node identifier of the `part ID` variable.
     pub part_id_node_id: u32,
+    /// OPC-UA node identifier of the general part sheet object.
+    pub general_part_sheet_node_id: u32,
     /// Configuration for part identifier creation, if applicable.
     pub part_identifier: Option<CreatePartIdConfig>,
 }

@@ -6,6 +6,7 @@ use crate::opcua::data_value::{DataValueExt, TryFromDataValueError};
 use crate::opcua::traceability::protocol::{RESPONSE_RESET, RESPONSE_SUCCESS, TraceabilityRequest};
 
 use super::create_part_id::CreatePartIdError;
+use super::save_part_sheets::SavePartSheetsError;
 use super::{Initialized, TraceabilityHandler};
 
 /// Errors that can be encountered during request handling.
@@ -17,6 +18,8 @@ pub(super) enum HandleRequestError {
     UnknownValue(u8),
     #[error("error creating the part ID")]
     CreatePartId(#[from] CreatePartIdError),
+    #[error("error saving part sheets")]
+    SavePartSheets(#[from] SavePartSheetsError),
 }
 
 impl HandleRequestError {
@@ -27,6 +30,7 @@ impl HandleRequestError {
         match self {
             Self::ValueError(_) => 91,
             Self::UnknownValue(_) => 92,
+
             Self::CreatePartId(CreatePartIdError::NotConfigured) => 11,
             Self::CreatePartId(CreatePartIdError::ReadVariables(_)) => 12,
             Self::CreatePartId(CreatePartIdError::PartRefValue(_)) => 13,
@@ -35,6 +39,13 @@ impl HandleRequestError {
             Self::CreatePartId(CreatePartIdError::NextSerial(_)) => 16,
             Self::CreatePartId(CreatePartIdError::PartIdentifier(_)) => 17,
             Self::CreatePartId(CreatePartIdError::WritePartId(_)) => 18,
+
+            Self::SavePartSheets(SavePartSheetsError::ReadGeneralPartSheet(_)) => 31,
+            Self::SavePartSheets(SavePartSheetsError::GeneralPartSheetValue(_, _)) => 32,
+            Self::SavePartSheets(SavePartSheetsError::NoPartIdNode) => 33,
+            Self::SavePartSheets(SavePartSheetsError::PartIdValue(_)) => 34,
+            Self::SavePartSheets(SavePartSheetsError::CacheInsert(_)) => 35,
+            Self::SavePartSheets(SavePartSheetsError::CacheTask(_)) => 36,
         }
     }
 }
@@ -57,7 +68,7 @@ impl TraceabilityHandler<Initialized> {
             }
             TraceabilityRequest::CreatePartId => self.create_part_id().await?,
             TraceabilityRequest::ReadPartSheet => todo!(),
-            TraceabilityRequest::SavePartSheets => todo!(),
+            TraceabilityRequest::SavePartSheets => self.save_part_sheets().await?,
         }
 
         Ok(RESPONSE_SUCCESS)
