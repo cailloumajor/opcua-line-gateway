@@ -1,6 +1,5 @@
 use opcua::types::Variant;
 use thiserror::Error;
-use tokio::task::JoinError;
 use tracing::{info, instrument, warn};
 
 use crate::opcua::data_value::{DataValueExt, TryFromDataValueError};
@@ -21,8 +20,6 @@ pub(super) enum SavePartSheetsError {
     PartIdValue(TryFromDataValueError),
     #[error("error inserting general part sheet in the cache")]
     CacheInsert(#[source] redb::Error),
-    #[error("error joining general part sheet cache insertion task, cause: {0}")]
-    CacheTask(JoinError),
 }
 
 impl TraceabilityHandler<Initialized> {
@@ -31,7 +28,7 @@ impl TraceabilityHandler<Initialized> {
     /// * read the part sheets from the server,
     /// * write the general part sheet to the cache,
     /// * write all the part sheets to the database.
-    #[instrument(err, skip_all, fields(part_id))]
+    #[instrument(err, skip_all)]
     pub(super) async fn save_part_sheets(&self) -> Result<(), SavePartSheetsError> {
         // Read general part sheet values form the server.
         let general_part_sheet_values = self
@@ -60,21 +57,19 @@ impl TraceabilityHandler<Initialized> {
             .map_err(SavePartSheetsError::PartIdValue)?;
 
         // Encode and insert the general part sheet in the cache, using a blocking task.
-        let sent_nodes = self.state.general_part_sheet_nodes.clone();
-        let sent_part_sheet = general_part_sheet.into_iter().cloned().collect::<Vec<_>>();
-        let sent_ctx = self.session.context();
-        let sent_cache = self.cache.clone();
-        let sent_part_id = part_id.to_owned();
-        let encode_and_insert_task = move || {
-            let pairs = sent_nodes.into_iter().zip(&sent_part_sheet);
-            let encoded = CachedPartSheet::encode(pairs, &sent_ctx.read_arc().context());
-            sent_cache
-                .insert_general_part_sheet(&sent_part_id, &encoded)
+        tokio::task::block_in_place(move || {
+            let pairs = self
+                .state
+                .general_part_sheet_nodes
+                .iter()
+                .copied()
+                .zip(general_part_sheet);
+            let encoded =
+                CachedPartSheet::encode(pairs, &self.session.encoding_context().read().context());
+            self.cache
+                .insert_general_part_sheet(part_id, &encoded)
                 .map_err(SavePartSheetsError::CacheInsert)
-        };
-        tokio::task::spawn_blocking(encode_and_insert_task)
-            .await
-            .map_err(SavePartSheetsError::CacheTask)??;
+        })?;
 
         // TODO: write part sheets to the database.
         warn!(msg = "part sheets insertion to database is not yet implemented");

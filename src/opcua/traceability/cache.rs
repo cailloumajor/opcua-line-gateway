@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use jiff::civil::Date;
 use redb::{Database, ReadableDatabase, ReadableTable, TableDefinition};
 use tracing::instrument;
@@ -13,12 +11,11 @@ const GENERAL_PART_SHEET_TABLE: TableDefinition<&str, CachedPartSheet> =
     TableDefinition::new("general_part_sheet");
 
 /// Cloneable wrapper around a shareable [`Database`], providing helper methods.
-#[derive(Clone)]
-pub(super) struct TraceabilityCache(Arc<Database>);
+pub(crate) struct TraceabilityCache(Database);
 
 impl TraceabilityCache {
     /// Create a new [`TraceabilityCache`], provided a shareable [`Database`].
-    pub(super) fn new(db: Arc<Database>) -> Self {
+    pub(crate) fn new(db: Database) -> Self {
         Self(db)
     }
 

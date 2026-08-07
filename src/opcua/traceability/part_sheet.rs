@@ -11,6 +11,7 @@ pub(super) struct CachedPartSheet(Vec<u8>);
 
 impl CachedPartSheet {
     /// Create an [`CachedPartSheet`], provided an iterator of node identifier and [`Variant`].
+    #[instrument(skip_all)]
     pub(super) fn encode<'a, I>(pairs: I, ctx: &Context) -> Self
     where
         I: IntoIterator<Item = (u32, &'a Variant)>,

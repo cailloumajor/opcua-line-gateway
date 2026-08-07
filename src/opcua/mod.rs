@@ -5,4 +5,4 @@ mod client;
 mod data_value;
 mod session;
 mod session_manager;
-mod traceability;
+pub(crate) mod traceability;

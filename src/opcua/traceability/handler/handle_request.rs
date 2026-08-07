@@ -38,25 +38,22 @@ impl HandleRequestError {
             Self::CreatePartId(CreatePartIdError::ReadVariables(_)) => 12,
             Self::CreatePartId(CreatePartIdError::PartRefValue(_)) => 13,
             Self::CreatePartId(CreatePartIdError::BatchValue(_)) => 14,
-            Self::CreatePartId(CreatePartIdError::NextSerialTask(_)) => 15,
-            Self::CreatePartId(CreatePartIdError::NextSerial(_)) => 16,
-            Self::CreatePartId(CreatePartIdError::PartIdentifier(_)) => 17,
-            Self::CreatePartId(CreatePartIdError::WritePartId(_)) => 18,
+            Self::CreatePartId(CreatePartIdError::NextSerial(_)) => 15,
+            Self::CreatePartId(CreatePartIdError::PartIdentifier(_)) => 16,
+            Self::CreatePartId(CreatePartIdError::WritePartId(_)) => 17,
 
             Self::ReadPartSheet(ReadPartSheetError::ReadPartId(_)) => 21,
             Self::ReadPartSheet(ReadPartSheetError::PartIdValue(_)) => 22,
             Self::ReadPartSheet(ReadPartSheetError::CacheGet(_)) => 23,
             Self::ReadPartSheet(ReadPartSheetError::CacheMissing(_)) => 24,
             Self::ReadPartSheet(ReadPartSheetError::CacheDecode(_)) => 25,
-            Self::ReadPartSheet(ReadPartSheetError::CacheTask(_)) => 26,
-            Self::ReadPartSheet(ReadPartSheetError::WritePartSheet(_)) => 27,
+            Self::ReadPartSheet(ReadPartSheetError::WritePartSheet(_)) => 26,
 
             Self::SavePartSheets(SavePartSheetsError::ReadGeneralPartSheet(_)) => 31,
             Self::SavePartSheets(SavePartSheetsError::GeneralPartSheetValue(_, _)) => 32,
             Self::SavePartSheets(SavePartSheetsError::NoPartIdNode) => 33,
             Self::SavePartSheets(SavePartSheetsError::PartIdValue(_)) => 34,
             Self::SavePartSheets(SavePartSheetsError::CacheInsert(_)) => 35,
-            Self::SavePartSheets(SavePartSheetsError::CacheTask(_)) => 36,
         }
     }
 }

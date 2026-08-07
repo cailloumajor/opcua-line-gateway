@@ -11,7 +11,6 @@ use opcua::types::{
     WriteValue,
 };
 use opcua_line_gateway_config::TraceabilityConfig;
-use redb::Database;
 use thiserror::Error;
 use tracing::instrument;
 
@@ -74,7 +73,7 @@ pub(crate) struct TraceabilityHandler<S> {
     /// The OPC-UA session.
     session: Arc<Session>,
     /// The traceability cache.
-    cache: TraceabilityCache,
+    cache: Arc<TraceabilityCache>,
     /// The state of this handler.
     state: S,
 }
@@ -85,10 +84,8 @@ impl TraceabilityHandler<InitialState> {
         server_id: String,
         config: TraceabilityConfig,
         session: Arc<Session>,
-        cache_db: Arc<Database>,
+        cache: Arc<TraceabilityCache>,
     ) -> Self {
-        let cache = TraceabilityCache::new(cache_db);
-
         Self {
             server_id,
             config,

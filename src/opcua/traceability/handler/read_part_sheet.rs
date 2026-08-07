@@ -1,7 +1,6 @@
 use std::io;
 
 use thiserror::Error;
-use tokio::task::JoinError;
 use tracing::{info, instrument};
 
 use crate::opcua::data_value::{DataValueExt, TryFromDataValueError};
@@ -22,8 +21,6 @@ pub(super) enum ReadPartSheetError {
     CacheMissing(String),
     #[error("error decoding the general part sheet")]
     CacheDecode(#[source] io::Error),
-    #[error("error joining general part sheet cache retrieval task, cause: {0}")]
-    CacheTask(#[source] JoinError),
     #[error("error writing the general part sheet to the OPC-UA server")]
     WritePartSheet(#[source] WriteError),
 }
@@ -31,7 +28,7 @@ pub(super) enum ReadPartSheetError {
 impl TraceabilityHandler<Initialized> {
     /// Run the request from the OPC-UA server to read the part sheet, i.e.
     /// read general part data from the cache and write it to the server.
-    #[instrument(err, skip_all, fields(part_id))]
+    #[instrument(err, skip_all)]
     pub(super) async fn read_part_sheet(&self) -> Result<(), ReadPartSheetError> {
         // Get the part ID from the OPC-UA server.
         let values = self
@@ -46,21 +43,16 @@ impl TraceabilityHandler<Initialized> {
             .map_err(ReadPartSheetError::PartIdValue)?;
 
         // Get and decode the general part sheet from the cache, using a blocking task.
-        let sent_cache = self.cache.clone();
-        let sent_part_id = part_id.to_owned();
-        let sent_ctx = self.session.context();
-        let get_and_decode_part_sheet = move || {
-            let encoded = sent_cache
-                .get_general_part_sheet(&sent_part_id)
+        let part_sheet = tokio::task::block_in_place(move || {
+            let encoded = self
+                .cache
+                .get_general_part_sheet(part_id)
                 .map_err(ReadPartSheetError::CacheGet)?
-                .ok_or(ReadPartSheetError::CacheMissing(sent_part_id))?;
+                .ok_or_else(|| ReadPartSheetError::CacheMissing(part_id.to_owned()))?;
             encoded
-                .decode(&sent_ctx.read().context())
+                .decode(&self.session.encoding_context().read().context())
                 .map_err(ReadPartSheetError::CacheDecode)
-        };
-        let part_sheet = tokio::task::spawn_blocking(get_and_decode_part_sheet)
-            .await
-            .map_err(ReadPartSheetError::CacheTask)??;
+        })?;
 
         // Write the general part sheet to the server.
         self.write_values(part_sheet)

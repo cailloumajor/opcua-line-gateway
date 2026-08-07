@@ -6,7 +6,6 @@ use opcua::client::{Client, Session, SessionEventLoop};
 use opcua::types::StatusCode;
 use opcua_line_gateway_config::OpcUaServerConfig;
 use parking_lot::Mutex;
-use redb::Database;
 use thiserror::Error;
 use tokio::task::{JoinHandle, JoinSet};
 use tokio_util::sync::CancellationToken;
@@ -16,6 +15,8 @@ use tracing::{Instrument, error, info, info_span, instrument};
 use crate::opcua::traceability::{
     TraceabilityHandler, TraceabilityInitializeError, TraceabilityInstallError,
 };
+
+use super::traceability::TraceabilityCache;
 
 /// Errors that can occur during session creation.
 #[derive(Debug, Error)]
@@ -82,12 +83,12 @@ impl OpcUaSession {
 /// Create and start an OPC-UA session, spawning its runtime event loop.
 ///
 /// Upon success, the [`OpcUaSession`] object will be stored in the provided registry.
-#[instrument(err, skip(client, server_config, registry))]
+#[instrument(err, skip_all, fields(server_id))]
 pub(super) async fn start_session(
     client: Arc<Client>,
     server_id: String,
     server_config: OpcUaServerConfig,
-    traceability_cache_db: Arc<Database>,
+    traceability_cache: Arc<TraceabilityCache>,
     registry: Arc<Mutex<BTreeMap<String, OpcUaSession>>>,
 ) -> Result<(), CreateSessionError> {
     info!(msg = "creating OPC-UA session");
@@ -117,7 +118,7 @@ pub(super) async fn start_session(
         server_id.clone(),
         server_config.traceability,
         Arc::clone(&session),
-        Arc::clone(&traceability_cache_db),
+        traceability_cache,
     );
     let traceability_tasks = traceability_handler
         .initialize()

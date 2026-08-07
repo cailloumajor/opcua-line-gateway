@@ -9,13 +9,14 @@ use futures_util::StreamExt;
 use opcua::client::Client;
 use opcua_line_gateway_config::OpcUaServerConfig;
 use parking_lot::Mutex;
-use redb::Database;
 use tokio::time::{MissedTickBehavior, interval, timeout};
 use tokio_stream::wrappers::IntervalStream;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, instrument};
 
 use crate::opcua::session::{OpcUaSession, start_session};
+
+use super::traceability::TraceabilityCache;
 
 /// The interval for sessions management ticks.
 const MANAGER_TICK_INTERVAL: Duration = Duration::from_secs(5);
@@ -31,7 +32,7 @@ pub(crate) async fn sessions_manager(
     client: Arc<Client>,
     servers: BTreeMap<String, OpcUaServerConfig>,
     shutdown: CancellationToken,
-    traceability_cache_db: Arc<Database>,
+    traceability_cache: Arc<TraceabilityCache>,
 ) {
     info!(msg = "sessions manager started");
 
@@ -63,14 +64,19 @@ pub(crate) async fn sessions_manager(
             .iter()
             .filter(|(id, _)| !running_sessions.contains(*id))
         {
-            let client = Arc::clone(&client);
+            let sent_client = Arc::clone(&client);
             let server_id = id.clone();
             let srv_config = config.clone();
-            let cache_db = Arc::clone(&traceability_cache_db);
+            let sent_traceability_cache = Arc::clone(&traceability_cache);
             let registry = Arc::clone(&sessions);
             tokio::spawn(async move {
-                let start_future =
-                    start_session(client, server_id.clone(), srv_config, cache_db, registry);
+                let start_future = start_session(
+                    sent_client,
+                    server_id.clone(),
+                    srv_config,
+                    sent_traceability_cache,
+                    registry,
+                );
                 if timeout(CONNECT_TIMEOUT, start_future).await.is_err() {
                     error!(error = "timeout spawning session", server_id);
                 }

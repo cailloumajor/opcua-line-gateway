@@ -1,5 +1,6 @@
 use std::env;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use anyhow::{Context as _, anyhow};
 use futures_util::StreamExt;
@@ -14,6 +15,7 @@ use tracing_subscriber::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
+use self::opcua::traceability::TraceabilityCache;
 use self::opcua::{create_client, sessions_manager};
 use self::timezone::{init_system_timezone, system_timezone};
 
@@ -53,6 +55,7 @@ async fn main() -> anyhow::Result<()> {
     // Create or open the traceability cache database (redb).
     let traceability_cache_db = Database::create(&config.traceability_redb_file)
         .context("Failed to open traceability cache database file")?;
+    let traceability_cache = Arc::new(TraceabilityCache::new(traceability_cache_db));
 
     // Initialize the cached system timezone.
     init_system_timezone().context("Failed to get the system timezone")?;
@@ -80,7 +83,7 @@ async fn main() -> anyhow::Result<()> {
         client.into(),
         config.opcua_servers,
         shutdown_token,
-        traceability_cache_db.into(),
+        traceability_cache,
     )
     .await;
 
