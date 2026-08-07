@@ -1,9 +1,8 @@
-use std::io;
-
 use thiserror::Error;
 use tracing::{info, instrument};
 
 use crate::opcua::data_value::{DataValueExt, TryFromDataValueError};
+use crate::opcua::traceability::cache::GetGeneralPartSheetError;
 
 use super::initialize::Initialized;
 use super::{ReadError, TraceabilityHandler, WriteError};
@@ -16,11 +15,9 @@ pub(super) enum ReadPartSheetError {
     #[error("invalid part ID value, cause: {0}")]
     PartIdValue(#[source] TryFromDataValueError),
     #[error("error getting general part sheet from cache")]
-    CacheGet(#[source] redb::Error),
+    CacheGet(#[source] GetGeneralPartSheetError),
     #[error("general part sheet not found for id {0}")]
     CacheMissing(String),
-    #[error("error decoding the general part sheet")]
-    CacheDecode(#[source] io::Error),
     #[error("error writing the general part sheet to the OPC-UA server")]
     WritePartSheet(#[source] WriteError),
 }
@@ -43,23 +40,20 @@ impl TraceabilityHandler<Initialized> {
             .map_err(ReadPartSheetError::PartIdValue)?;
 
         // Get and decode the general part sheet from the cache, using a blocking task.
-        let part_sheet = tokio::task::block_in_place(move || {
-            let encoded = self
-                .cache
-                .get_general_part_sheet(part_id)
-                .map_err(ReadPartSheetError::CacheGet)?
-                .ok_or_else(|| ReadPartSheetError::CacheMissing(part_id.to_owned()))?;
-            encoded
-                .decode(&self.session.encoding_context().read().context())
-                .map_err(ReadPartSheetError::CacheDecode)
+        let part_sheet_from_cache = tokio::task::block_in_place(move || {
+            self.cache
+                .get_general_part_sheet(part_id, &self.session.encoding_context().read().context())
+                .map_err(ReadPartSheetError::CacheGet)
         })?;
+        let part_sheet = part_sheet_from_cache
+            .ok_or_else(|| ReadPartSheetError::CacheMissing(part_id.to_owned()))?;
 
         // Write the general part sheet to the server.
         self.write_values(part_sheet)
             .await
             .map_err(ReadPartSheetError::WritePartSheet)?;
 
-        info!(msg = "general part sheet read");
+        info!(msg = "general part sheet read", part_id);
 
         Ok(())
     }

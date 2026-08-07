@@ -46,8 +46,7 @@ impl HandleRequestError {
             Self::ReadPartSheet(ReadPartSheetError::PartIdValue(_)) => 22,
             Self::ReadPartSheet(ReadPartSheetError::CacheGet(_)) => 23,
             Self::ReadPartSheet(ReadPartSheetError::CacheMissing(_)) => 24,
-            Self::ReadPartSheet(ReadPartSheetError::CacheDecode(_)) => 25,
-            Self::ReadPartSheet(ReadPartSheetError::WritePartSheet(_)) => 26,
+            Self::ReadPartSheet(ReadPartSheetError::WritePartSheet(_)) => 25,
 
             Self::SavePartSheets(SavePartSheetsError::ReadGeneralPartSheet(_)) => 31,
             Self::SavePartSheets(SavePartSheetsError::GeneralPartSheetValue(_, _)) => 32,
