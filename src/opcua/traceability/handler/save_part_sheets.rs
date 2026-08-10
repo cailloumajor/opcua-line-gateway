@@ -31,7 +31,7 @@ impl TraceabilityHandler<Initialized> {
     /// * write all the part sheets to the database.
     #[instrument(err, skip_all)]
     pub(super) async fn save_part_sheets(&self) -> Result<(), SavePartSheetsError> {
-        // Read general part sheet values form the server.
+        // Read general part sheet values from the server.
         let general_part_sheet_values = self
             .read_values(&self.state.general_part_sheet_nodes)
             .await
