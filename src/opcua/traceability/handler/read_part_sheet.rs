@@ -1,7 +1,7 @@
 use thiserror::Error;
 use tracing::{info, instrument};
 
-use crate::opcua::data_value::{DataValueExt, TryFromDataValueError};
+use crate::opcua::data_value::{DataValueExt, TryFromOpcUaValueError};
 use crate::opcua::traceability::cache::GetGeneralPartSheetError;
 
 use super::initialize::Initialized;
@@ -13,7 +13,7 @@ pub(super) enum ReadPartSheetError {
     #[error("error reading the part ID")]
     ReadPartId(#[source] ReadError),
     #[error("invalid part ID value, cause: {0}")]
-    PartIdValue(#[source] TryFromDataValueError),
+    PartIdValue(#[source] TryFromOpcUaValueError),
     #[error("error getting general part sheet from cache")]
     CacheGet(#[source] GetGeneralPartSheetError),
     #[error("general part sheet not found for id {0}")]
@@ -36,7 +36,7 @@ impl TraceabilityHandler<Initialized> {
             .try_into()
             .expect("read values vector should have the expected size");
         let part_id: &str = part_id_value
-            .try_as()
+            .try_ua_value_as()
             .map_err(ReadPartSheetError::PartIdValue)?;
 
         // Get and decode the general part sheet from the cache, using a blocking task.

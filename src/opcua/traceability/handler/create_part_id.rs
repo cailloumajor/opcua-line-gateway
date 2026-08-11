@@ -4,7 +4,7 @@ use opcua_line_gateway_config::AsciiText;
 use thiserror::Error;
 use tracing::{info, instrument};
 
-use crate::opcua::data_value::{DataValueExt, TryFromDataValueError};
+use crate::opcua::data_value::{DataValueExt, TryFromOpcUaValueError};
 use crate::opcua::traceability::part_id::{PartIdentifierError, create_part_identifier};
 use crate::timezone::system_timezone;
 
@@ -18,9 +18,9 @@ pub(super) enum CreatePartIdError {
     #[error("error reading required variables")]
     ReadVariables(#[source] ReadError),
     #[error("invalid raw part reference value, cause: {0}")]
-    PartRefValue(TryFromDataValueError),
+    PartRefValue(TryFromOpcUaValueError),
     #[error("invalid raw batch value, cause: {0}")]
-    BatchValue(TryFromDataValueError),
+    BatchValue(TryFromOpcUaValueError),
     #[error("error getting next serial number from cache")]
     NextSerial(#[source] redb::Error),
     #[error("error generating the part identifier")]
@@ -50,10 +50,10 @@ impl TraceabilityHandler<Initialized> {
             .try_into()
             .expect("read values vector should have the expected size");
         let part_ref: &str = part_ref_value
-            .try_as()
+            .try_ua_value_as()
             .map_err(CreatePartIdError::PartRefValue)?;
         let batch: AsciiText<2> = batch_value
-            .try_as()
+            .try_ua_value_as()
             .map_err(CreatePartIdError::BatchValue)?;
 
         let today = Timestamp::now().to_zoned(system_timezone().clone()).date();

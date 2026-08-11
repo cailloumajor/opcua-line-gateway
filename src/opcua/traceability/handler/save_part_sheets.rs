@@ -4,7 +4,7 @@ use opcua::types::Variant;
 use thiserror::Error;
 use tracing::{info, instrument, warn};
 
-use crate::opcua::data_value::{DataValueExt, TryFromDataValueError};
+use crate::opcua::data_value::{DataValueExt, TryFromOpcUaValueError};
 
 use super::{Initialized, ReadError, TraceabilityHandler};
 
@@ -14,11 +14,11 @@ pub(super) enum SavePartSheetsError {
     #[error("error reading general part sheet nodes")]
     ReadGeneralPartSheet(#[source] ReadError),
     #[error("invalid general part sheet member value (id={1}), cause: {0}")]
-    GeneralPartSheetValue(TryFromDataValueError, u32),
+    GeneralPartSheetValue(TryFromOpcUaValueError, u32),
     #[error("part identifier node not found in general part sheet")]
     NoPartIdNode,
     #[error("invalid part identifier value, cause: {0}")]
-    PartIdValue(TryFromDataValueError),
+    PartIdValue(TryFromOpcUaValueError),
     #[error("error inserting general part sheet in the cache")]
     CacheInsert(#[source] redb::Error),
 }
@@ -45,12 +45,14 @@ impl TraceabilityHandler<Initialized> {
             &general_part_sheet_values,
         ) {
             let variant: &Variant = val
-                .try_as()
+                .try_get_variant()
                 .map_err(|err| SavePartSheetsError::GeneralPartSheetValue(err, *id))?;
             general_part_sheet.push((id, variant));
 
             if maybe_part_id.is_none() && *id == self.config.part_id_node_id {
-                let part_id: &str = val.try_as().map_err(SavePartSheetsError::PartIdValue)?;
+                let part_id: &str = val
+                    .try_ua_value_as()
+                    .map_err(SavePartSheetsError::PartIdValue)?;
                 maybe_part_id = Some(part_id)
             }
         }

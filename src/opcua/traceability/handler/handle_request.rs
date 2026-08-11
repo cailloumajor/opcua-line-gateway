@@ -2,7 +2,7 @@ use opcua::types::DataValue;
 use thiserror::Error;
 use tracing::{info, instrument};
 
-use crate::opcua::data_value::{DataValueExt, TryFromDataValueError};
+use crate::opcua::data_value::{DataValueExt, TryFromOpcUaValueError};
 use crate::opcua::traceability::protocol::{RESPONSE_RESET, RESPONSE_SUCCESS, TraceabilityRequest};
 
 use super::create_part_id::CreatePartIdError;
@@ -14,7 +14,7 @@ use super::{Initialized, TraceabilityHandler};
 #[derive(Debug, Error)]
 pub(super) enum HandleRequestError {
     #[error("error getting request value, cause: {0}")]
-    ValueError(TryFromDataValueError),
+    ValueError(TryFromOpcUaValueError),
     #[error("unknown request value: {0}")]
     UnknownValue(u8),
     #[error("error creating the part ID")]
@@ -62,7 +62,9 @@ impl TraceabilityHandler<Initialized> {
     /// that must be written to the server.
     #[instrument(err, skip_all)]
     pub(super) async fn handle_request(&self, value: DataValue) -> Result<u8, HandleRequestError> {
-        let request_code = value.try_as().map_err(HandleRequestError::ValueError)?;
+        let request_code = value
+            .try_ua_value_as()
+            .map_err(HandleRequestError::ValueError)?;
         let Some(req) = TraceabilityRequest::from_repr(request_code) else {
             return Err(HandleRequestError::UnknownValue(request_code));
         };
