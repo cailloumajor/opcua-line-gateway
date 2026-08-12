@@ -79,6 +79,7 @@ async fn main() -> anyhow::Result<()> {
     let shutdown_token = CancellationToken::new();
     let signals_task = tokio::spawn(handle_signals(signals, shutdown_token.clone()));
 
+    // Start the sessions manager, acting as the main program loop.
     sessions_manager(
         client.into(),
         config.opcua_servers,
