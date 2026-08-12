@@ -19,6 +19,10 @@
       "description": "Root directory of the OPC-UA PKI.",
       "type": "string"
     },
+    "traceability_database": {
+      "description": "ClickHouse database client configuration for archiving traceability data.",
+      "$ref": "#/$defs/DatabaseClientConfig"
+    },
     "traceability_redb_file": {
       "description": "Path to the redb file to use for traceability cache. It will be created\nif it does not exist.",
       "type": "string"
@@ -28,6 +32,7 @@
     "traceability_redb_file",
     "application_uri",
     "pki_dir",
+    "traceability_database",
     "opcua_servers"
   ],
   "x-tombi-string-formats": [
@@ -61,6 +66,35 @@
         "raw_part_ref_node_id",
         "raw_batch_node_id",
         "line_id"
+      ]
+    },
+    "DatabaseClientConfig": {
+      "description": "ClickHouse database client configuration.",
+      "type": "object",
+      "properties": {
+        "default_database": {
+          "description": "Default database to use.",
+          "type": "string"
+        },
+        "password_file": {
+          "description": "Path to a file containing the ClickHouse user's password. Whitespaces around\nthe password will be removed.",
+          "type": "string"
+        },
+        "url": {
+          "description": "URL of the ClickHouse HTTP(S) endpoint.",
+          "type": "string",
+          "format": "uri"
+        },
+        "user": {
+          "description": "ClickHouse user.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "url",
+        "user",
+        "password_file",
+        "default_database"
       ]
     },
     "MessageSecurityMode": {

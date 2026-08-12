@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use std::{fs, io};
@@ -22,6 +23,10 @@ pub enum LineGatewayConfigError {
     ReadFile(#[source] io::Error),
     #[error(transparent)]
     ParseToml(toml::de::Error),
+    #[error("error getting database password file metadata")]
+    DbPassFileMeta(#[source] io::Error),
+    #[error("invalid database password file permissions (expected '0600', got '{0:04o}')")]
+    DbPassFilePermissions(u32),
     #[error("no OPC-UA server configured, running would be pointless")]
     EmptyServers,
     #[error("missing OPC-UA username for `{0}` server configuration")]
@@ -40,6 +45,8 @@ pub struct LineGatewayConfig {
     pub application_uri: String,
     /// Root directory of the OPC-UA PKI.
     pub pki_dir: PathBuf,
+    /// ClickHouse database client configuration for archiving traceability data.
+    pub traceability_database: DatabaseClientConfig,
     /// Mapping of machine identifier to corresponding OPC-UA server configuration.
     pub opcua_servers: BTreeMap<String, OpcUaServerConfig>,
 }
@@ -53,6 +60,16 @@ impl LineGatewayConfig {
         let file_contents = fs::read_to_string(path).map_err(LineGatewayConfigError::ReadFile)?;
         let config =
             toml::from_str::<Self>(&file_contents).map_err(LineGatewayConfigError::ParseToml)?;
+
+        // Validate database password file permissions.
+        let password_file_metadata = fs::metadata(&config.traceability_database.password_file)
+            .map_err(LineGatewayConfigError::DbPassFileMeta)?;
+        let password_file_mode = password_file_metadata.permissions().mode() & 0o7777;
+        if password_file_mode != 0o600 {
+            return Err(LineGatewayConfigError::DbPassFilePermissions(
+                password_file_mode,
+            ));
+        }
 
         // Validate that we have at least one server configured.
         if config.opcua_servers.is_empty() {
@@ -74,6 +91,21 @@ impl LineGatewayConfig {
 
         Ok(config)
     }
+}
+
+/// ClickHouse database client configuration.
+#[derive(Clone, Deserialize, JsonSchema)]
+pub struct DatabaseClientConfig {
+    /// URL of the ClickHouse HTTP(S) endpoint.
+    #[schemars(url)]
+    pub url: String,
+    /// ClickHouse user.
+    pub user: String,
+    /// Path to a file containing the ClickHouse user's password. Whitespaces around
+    /// the password will be removed.
+    pub password_file: PathBuf,
+    /// Default database to use.
+    pub default_database: String,
 }
 
 /// The configuration for an OPC-UA server to communicate with.

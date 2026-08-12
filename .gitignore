@@ -24,5 +24,4 @@ target
 mise.local.toml
 
 # Development files
-/config.toml
-/dev.redb
+/dev/
