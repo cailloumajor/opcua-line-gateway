@@ -49,8 +49,8 @@ impl HandleRequestError {
             Self::ReadPartSheet(ReadPartSheetError::WritePartSheet(_)) => 25,
 
             Self::SavePartSheets(SavePartSheetsError::ReadGeneralPartSheet(_)) => 31,
-            Self::SavePartSheets(SavePartSheetsError::GeneralPartSheetValue(_, _)) => 32,
-            Self::SavePartSheets(SavePartSheetsError::NoPartIdNode) => 33,
+            Self::SavePartSheets(SavePartSheetsError::GeneralPartSheetLength(_, _)) => 32,
+            Self::SavePartSheets(SavePartSheetsError::GeneralPartSheetValue(_, _)) => 33,
             Self::SavePartSheets(SavePartSheetsError::PartIdValue(_)) => 34,
             Self::SavePartSheets(SavePartSheetsError::CacheInsert(_)) => 35,
         }

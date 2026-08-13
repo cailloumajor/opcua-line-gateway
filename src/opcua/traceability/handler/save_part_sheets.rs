@@ -1,10 +1,7 @@
-use std::iter;
-
-use opcua::types::Variant;
 use thiserror::Error;
 use tracing::{info, instrument, warn};
 
-use crate::opcua::data_value::{DataValueExt, TryFromOpcUaValueError};
+use crate::opcua::data_value::{DataValueExt, TryFromOpcUaValueError, TryFromVariant};
 
 use super::{Initialized, ReadError, TraceabilityHandler};
 
@@ -13,10 +10,10 @@ use super::{Initialized, ReadError, TraceabilityHandler};
 pub(super) enum SavePartSheetsError {
     #[error("error reading general part sheet nodes")]
     ReadGeneralPartSheet(#[source] ReadError),
+    #[error("invalid number of variables in general part sheet (discovered {0}, read {1})")]
+    GeneralPartSheetLength(usize, usize),
     #[error("invalid general part sheet member value (id={1}), cause: {0}")]
     GeneralPartSheetValue(TryFromOpcUaValueError, u32),
-    #[error("part identifier node not found in general part sheet")]
-    NoPartIdNode,
     #[error("invalid part identifier value, cause: {0}")]
     PartIdValue(TryFromOpcUaValueError),
     #[error("error inserting general part sheet in the cache")]
@@ -37,27 +34,32 @@ impl TraceabilityHandler<Initialized> {
             .await
             .map_err(SavePartSheetsError::ReadGeneralPartSheet)?;
 
-        // Convert values to variants and find the part identifier.
-        let mut general_part_sheet = Vec::with_capacity(general_part_sheet_values.len());
-        let mut maybe_part_id = None;
-        for (id, val) in iter::zip(
-            &self.state.general_part_sheet_nodes,
-            &general_part_sheet_values,
-        ) {
-            let variant: &Variant = val
-                .try_get_variant()
-                .map_err(|err| SavePartSheetsError::GeneralPartSheetValue(err, *id))?;
-            general_part_sheet.push((id, variant));
-
-            if maybe_part_id.is_none() && *id == self.config.part_id_node_id {
-                let part_id: &str = val
-                    .try_ua_value_as()
-                    .map_err(SavePartSheetsError::PartIdValue)?;
-                maybe_part_id = Some(part_id)
-            }
+        let expected_len = self.state.general_part_sheet_nodes.len();
+        let got_len = general_part_sheet_values.len();
+        if got_len != expected_len {
+            return Err(SavePartSheetsError::GeneralPartSheetLength(
+                expected_len,
+                got_len,
+            ));
         }
 
-        let part_id = maybe_part_id.ok_or(SavePartSheetsError::NoPartIdNode)?;
+        // Convert values to variants.
+        let general_part_sheet = self
+            .state
+            .general_part_sheet_nodes
+            .iter()
+            .zip(&general_part_sheet_values)
+            .map(|(id, val)| {
+                val.try_get_variant()
+                    .map(|variant| (id, variant))
+                    .map_err(|err| SavePartSheetsError::GeneralPartSheetValue(err, *id))
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
+        // Get the part identifier.
+        let (_, part_id_variant) = general_part_sheet[self.state.part_id_index];
+        let part_id: &str = TryFromVariant::try_from_variant(part_id_variant)
+            .map_err(SavePartSheetsError::PartIdValue)?;
 
         // Encode and insert the general part sheet in the cache, using a blocking task.
         tokio::task::block_in_place(move || {

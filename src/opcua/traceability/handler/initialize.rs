@@ -8,12 +8,17 @@ use super::{BrowsePartSheetError, InitialState, TraceabilityHandler};
 pub(crate) enum TraceabilityInitializeError {
     #[error("error browsing the general part sheet object")]
     BrowseGeneralPartSheet(#[source] BrowsePartSheetError),
+    #[error("part identifier node not found in general part sheet")]
+    NoPartIdNode,
 }
 
 /// The traceability handler state after initialization.
 #[derive(Clone)]
 pub(crate) struct Initialized {
+    /// Numeric identifiers of the discovered general part sheet nodes.
     pub(super) general_part_sheet_nodes: Vec<u32>,
+    /// Index of the part identifier in the general part sheet nodes collection.
+    pub(super) part_id_index: usize,
 }
 
 impl TraceabilityHandler<InitialState> {
@@ -26,6 +31,10 @@ impl TraceabilityHandler<InitialState> {
             .browse_part_sheet(self.config.general_part_sheet_node_id)
             .await
             .map_err(TraceabilityInitializeError::BrowseGeneralPartSheet)?;
+        let part_id_index = general_part_sheet_nodes
+            .iter()
+            .position(|id| *id == self.config.part_id_node_id)
+            .ok_or(TraceabilityInitializeError::NoPartIdNode)?;
 
         info!(
             msg = "general part sheet nodes discovered",
@@ -34,6 +43,7 @@ impl TraceabilityHandler<InitialState> {
 
         let state = Initialized {
             general_part_sheet_nodes,
+            part_id_index,
         };
 
         Ok(TraceabilityHandler {
