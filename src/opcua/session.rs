@@ -4,7 +4,7 @@ use std::sync::Arc;
 use opcua::client::transport::TcpConnector;
 use opcua::client::{Client, Session, SessionEventLoop};
 use opcua::types::StatusCode;
-use opcua_line_gateway_config::OpcUaServerConfig;
+use opcua_line_gateway_config::{MachineConfig, OpcUaServerConfig};
 use parking_lot::Mutex;
 use thiserror::Error;
 use tokio::task::{JoinHandle, JoinSet};
@@ -87,13 +87,14 @@ impl OpcUaSession {
 pub(super) async fn start_session(
     client: Arc<Client>,
     server_id: String,
-    server_config: OpcUaServerConfig,
+    machine_config: MachineConfig,
     traceability_cache: Arc<TraceabilityCache>,
     registry: Arc<Mutex<BTreeMap<String, OpcUaSession>>>,
 ) -> Result<(), CreateSessionError> {
     info!(msg = "creating OPC-UA session");
 
-    let (session, event_loop) = connect_to_matching_endpoint(&client, &server_config).await?;
+    let (session, event_loop) =
+        connect_to_matching_endpoint(&client, &machine_config.opc_ua_server).await?;
 
     // Disable session reconnection, we handle it ourselves.
     session.disable_reconnects();
@@ -116,7 +117,7 @@ pub(super) async fn start_session(
     let traceability_cancel = CancellationToken::new();
     let traceability_handler = TraceabilityHandler::new(
         server_id.clone(),
-        server_config.traceability,
+        machine_config.traceability,
         Arc::clone(&session),
         traceability_cache,
     );

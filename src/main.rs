@@ -53,7 +53,7 @@ async fn main() -> anyhow::Result<()> {
         .context("Failed to get configuration from file")?;
 
     // Create or open the traceability cache database (redb).
-    let traceability_cache_db = Database::create(&config.traceability_redb_file)
+    let traceability_cache_db = Database::create(&config.traceability.redb_file)
         .context("Failed to open traceability cache database file")?;
     let traceability_cache = Arc::new(TraceabilityCache::new(traceability_cache_db));
 
@@ -82,7 +82,7 @@ async fn main() -> anyhow::Result<()> {
     // Start the sessions manager, acting as the main program loop.
     sessions_manager(
         client.into(),
-        config.opcua_servers,
+        config.machines,
         shutdown_token,
         traceability_cache,
     )

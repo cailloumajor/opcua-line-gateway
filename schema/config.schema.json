@@ -8,39 +8,52 @@
       "description": "Globally unique identifier for the application instance, as of OPC-UA.",
       "type": "string"
     },
-    "opcua_servers": {
-      "description": "Mapping of machine identifier to corresponding OPC-UA server configuration.",
+    "machines": {
+      "description": "Connected machines configuration, mapped by machine identifier.",
       "type": "object",
       "additionalProperties": {
-        "$ref": "#/$defs/OpcUaServerConfig"
+        "$ref": "#/$defs/MachineConfig"
       }
     },
     "pki_dir": {
       "description": "Root directory of the OPC-UA PKI.",
       "type": "string"
     },
-    "traceability_database": {
-      "description": "ClickHouse database client configuration for archiving traceability data.",
-      "$ref": "#/$defs/DatabaseClientConfig"
-    },
-    "traceability_redb_file": {
-      "description": "Path to the redb file to use for traceability cache. It will be created\nif it does not exist.",
-      "type": "string"
+    "traceability": {
+      "description": "Traceability configuration for all machines.",
+      "$ref": "#/$defs/CommonTraceabilityConfig"
     }
   },
   "required": [
-    "traceability_redb_file",
     "application_uri",
     "pki_dir",
-    "traceability_database",
-    "opcua_servers"
+    "traceability",
+    "machines"
   ],
   "x-tombi-string-formats": [
     "uri"
   ],
   "$defs": {
+    "CommonTraceabilityConfig": {
+      "description": "Traceability configuration for all machines.",
+      "type": "object",
+      "properties": {
+        "database": {
+          "description": "ClickHouse database client configuration for archiving traceability data.",
+          "$ref": "#/$defs/DatabaseClientConfig"
+        },
+        "redb_file": {
+          "description": "Path to the redb file to use for traceability cache. It will be created\nif it does not exist.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "redb_file",
+        "database"
+      ]
+    },
     "CreatePartIdConfig": {
-      "description": "Configuration related to part ID creation for an OPC-UA server.",
+      "description": "Configuration related to part ID creation for a machine.",
       "type": "object",
       "properties": {
         "line_id": {
@@ -49,13 +62,13 @@
           "maxLength": 2,
           "minLength": 2
         },
-        "raw_batch_node_id": {
+        "raw_batch_node": {
           "description": "OPC-UA node identifier of the raw material batch variable.",
           "type": "integer",
           "format": "uint32",
           "minimum": 0
         },
-        "raw_part_ref_node_id": {
+        "raw_part_ref_node": {
           "description": "OPC-UA node identifier of the raw part reference variable.",
           "type": "integer",
           "format": "uint32",
@@ -63,8 +76,8 @@
         }
       },
       "required": [
-        "raw_part_ref_node_id",
-        "raw_batch_node_id",
+        "raw_part_ref_node",
+        "raw_batch_node",
         "line_id"
       ]
     },
@@ -97,6 +110,59 @@
         "default_database"
       ]
     },
+    "MachineConfig": {
+      "description": "Connected machine configuration.",
+      "type": "object",
+      "properties": {
+        "opc_ua_server": {
+          "description": "OPC-UA server configuration for this machine.",
+          "$ref": "#/$defs/OpcUaServerConfig"
+        },
+        "traceability": {
+          "description": "Traceability settings for this machine.",
+          "$ref": "#/$defs/MachineTraceabilityConfig"
+        }
+      },
+      "required": [
+        "opc_ua_server",
+        "traceability"
+      ]
+    },
+    "MachineTraceabilityConfig": {
+      "description": "Traceability related configuration for a machine.",
+      "type": "object",
+      "properties": {
+        "namespace_url": {
+          "description": "OPC-UA namespace URL used for traceability.",
+          "type": "string",
+          "format": "uri"
+        },
+        "nodes": {
+          "description": "Traceability-related OPC-UA nodes.",
+          "$ref": "#/$defs/TraceabilityOpcUaNodesConfig"
+        },
+        "part_identifier": {
+          "description": "Configuration for part identifier creation, if applicable.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CreatePartIdConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "publish_interval": {
+          "description": "Publish interval for OPC-UA subscription to request variable.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "namespace_url",
+        "publish_interval",
+        "nodes"
+      ]
+    },
     "MessageSecurityMode": {
       "description": "A copy of [`opcua::crypto::MessageSecurityMode`] to allow using serde remote functionality.",
       "oneOf": [
@@ -111,7 +177,7 @@
       ]
     },
     "OpcUaServerConfig": {
-      "description": "The configuration for an OPC-UA server to communicate with.",
+      "description": "Connected OPC-UA server configuration.",
       "type": "object",
       "properties": {
         "password": {
@@ -129,10 +195,6 @@
           "description": "OPC_UA security policy.",
           "$ref": "#/$defs/SecurityPolicy"
         },
-        "traceability": {
-          "description": "Traceability settings for this server.",
-          "$ref": "#/$defs/TraceabilityConfig"
-        },
         "url": {
           "description": "OPC-UA server URL.",
           "type": "string",
@@ -149,8 +211,7 @@
       "required": [
         "url",
         "security_policy",
-        "security_mode",
-        "traceability"
+        "security_mode"
       ]
     },
     "SecurityPolicy": {
@@ -169,55 +230,35 @@
         }
       ]
     },
-    "TraceabilityConfig": {
-      "description": "Traceability related configuration for an OPC-UA server.",
+    "TraceabilityOpcUaNodesConfig": {
+      "description": "OPC-UA nodes used for traceability.",
       "type": "object",
       "properties": {
-        "general_part_sheet_node_id": {
+        "general_part_sheet": {
           "description": "OPC-UA node identifier of the general part sheet object.",
           "type": "integer",
           "format": "uint32",
           "minimum": 0
         },
-        "heartbeat_node_id": {
+        "heartbeat": {
           "description": "OPC-UA node identifier of the heartbeat variable.",
           "type": "integer",
           "format": "uint32",
           "minimum": 0
         },
-        "namespace_url": {
-          "description": "Namespace URL used for traceability.",
-          "type": "string",
-          "format": "uri"
-        },
-        "part_id_node_id": {
+        "part_id": {
           "description": "OPC-UA node identifier of the `part ID` variable.",
           "type": "integer",
           "format": "uint32",
           "minimum": 0
         },
-        "part_identifier": {
-          "description": "Configuration for part identifier creation, if applicable.",
-          "anyOf": [
-            {
-              "$ref": "#/$defs/CreatePartIdConfig"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "publish_interval": {
-          "description": "Publish interval to request when subscribing to request variable.",
-          "type": "string"
-        },
-        "request_node_id": {
+        "request": {
           "description": "OPC-UA node identifier of the request variable.",
           "type": "integer",
           "format": "uint32",
           "minimum": 0
         },
-        "response_node_id": {
+        "response": {
           "description": "OPC-UA node identifier of the response variable.",
           "type": "integer",
           "format": "uint32",
@@ -225,13 +266,11 @@
         }
       },
       "required": [
-        "namespace_url",
-        "publish_interval",
-        "request_node_id",
-        "response_node_id",
-        "heartbeat_node_id",
-        "part_id_node_id",
-        "general_part_sheet_node_id"
+        "request",
+        "response",
+        "heartbeat",
+        "general_part_sheet",
+        "part_id"
       ]
     }
   }

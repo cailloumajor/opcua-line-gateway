@@ -7,7 +7,7 @@ use std::time::Duration;
 
 use futures_util::StreamExt;
 use opcua::client::Client;
-use opcua_line_gateway_config::OpcUaServerConfig;
+use opcua_line_gateway_config::MachineConfig;
 use parking_lot::Mutex;
 use tokio::time::{MissedTickBehavior, interval, timeout};
 use tokio_stream::wrappers::IntervalStream;
@@ -30,7 +30,7 @@ const CONNECT_TIMEOUT: Duration = Duration::from_secs(2);
 #[instrument(skip_all)]
 pub(crate) async fn sessions_manager(
     client: Arc<Client>,
-    servers: BTreeMap<String, OpcUaServerConfig>,
+    servers: BTreeMap<String, MachineConfig>,
     shutdown: CancellationToken,
     traceability_cache: Arc<TraceabilityCache>,
 ) {

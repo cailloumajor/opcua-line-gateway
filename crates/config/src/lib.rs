@@ -38,17 +38,14 @@ pub enum LineGatewayConfigError {
 /// OPC-UA line gateway configuration.
 #[derive(Clone, Deserialize, JsonSchema)]
 pub struct LineGatewayConfig {
-    /// Path to the redb file to use for traceability cache. It will be created
-    /// if it does not exist.
-    pub traceability_redb_file: PathBuf,
     /// Globally unique identifier for the application instance, as of OPC-UA.
     pub application_uri: String,
     /// Root directory of the OPC-UA PKI.
     pub pki_dir: PathBuf,
-    /// ClickHouse database client configuration for archiving traceability data.
-    pub traceability_database: DatabaseClientConfig,
-    /// Mapping of machine identifier to corresponding OPC-UA server configuration.
-    pub opcua_servers: BTreeMap<String, OpcUaServerConfig>,
+    /// Traceability configuration for all machines.
+    pub traceability: CommonTraceabilityConfig,
+    /// Connected machines configuration, mapped by machine identifier.
+    pub machines: BTreeMap<String, MachineConfig>,
 }
 
 impl LineGatewayConfig {
@@ -62,7 +59,7 @@ impl LineGatewayConfig {
             toml::from_str::<Self>(&file_contents).map_err(LineGatewayConfigError::ParseToml)?;
 
         // Validate database password file permissions.
-        let password_file_metadata = fs::metadata(&config.traceability_database.password_file)
+        let password_file_metadata = fs::metadata(&config.traceability.database.password_file)
             .map_err(LineGatewayConfigError::DbPassFileMeta)?;
         let password_file_mode = password_file_metadata.permissions().mode() & 0o7777;
         if password_file_mode != 0o600 {
@@ -72,18 +69,21 @@ impl LineGatewayConfig {
         }
 
         // Validate that we have at least one server configured.
-        if config.opcua_servers.is_empty() {
+        if config.machines.is_empty() {
             return Err(LineGatewayConfigError::EmptyServers);
         }
 
         // Validate OPC-UA username and password.
-        for (server_id, server_config) in &config.opcua_servers {
-            match (&server_config.user, &server_config.password) {
+        for (machine_id, machine_config) in &config.machines {
+            match (
+                &machine_config.opc_ua_server.user,
+                &machine_config.opc_ua_server.password,
+            ) {
                 (None, Some(_)) => {
-                    return Err(LineGatewayConfigError::MissingUsername(server_id.clone()));
+                    return Err(LineGatewayConfigError::MissingUsername(machine_id.clone()));
                 }
                 (Some(_), None) => {
-                    return Err(LineGatewayConfigError::MissingPassword(server_id.clone()));
+                    return Err(LineGatewayConfigError::MissingPassword(machine_id.clone()));
                 }
                 _ => {}
             }
@@ -91,6 +91,16 @@ impl LineGatewayConfig {
 
         Ok(config)
     }
+}
+
+/// Traceability configuration for all machines.
+#[derive(Clone, Deserialize, JsonSchema)]
+pub struct CommonTraceabilityConfig {
+    /// Path to the redb file to use for traceability cache. It will be created
+    /// if it does not exist.
+    pub redb_file: PathBuf,
+    /// ClickHouse database client configuration for archiving traceability data.
+    pub database: DatabaseClientConfig,
 }
 
 /// ClickHouse database client configuration.
@@ -108,7 +118,16 @@ pub struct DatabaseClientConfig {
     pub default_database: String,
 }
 
-/// The configuration for an OPC-UA server to communicate with.
+/// Connected machine configuration.
+#[derive(Clone, Deserialize, JsonSchema)]
+pub struct MachineConfig {
+    /// OPC-UA server configuration for this machine.
+    pub opc_ua_server: OpcUaServerConfig,
+    /// Traceability settings for this machine.
+    pub traceability: MachineTraceabilityConfig,
+}
+
+/// Connected OPC-UA server configuration.
 #[derive(Clone, Deserialize, JsonSchema)]
 pub struct OpcUaServerConfig {
     /// OPC-UA server URL.
@@ -125,8 +144,6 @@ pub struct OpcUaServerConfig {
     pub user: Option<String>,
     /// Password to use if using username/password authentication.
     pub password: Option<String>,
-    /// Traceability settings for this server.
-    pub traceability: TraceabilityConfig,
 }
 
 impl OpcUaServerConfig {
@@ -149,37 +166,44 @@ impl OpcUaServerConfig {
     }
 }
 
-/// Traceability related configuration for an OPC-UA server.
+/// Traceability related configuration for a machine.
 #[derive(Clone, Deserialize, JsonSchema)]
-pub struct TraceabilityConfig {
-    /// Namespace URL used for traceability.
+pub struct MachineTraceabilityConfig {
+    /// OPC-UA namespace URL used for traceability.
     #[schemars(url)]
     pub namespace_url: String,
-    /// Publish interval to request when subscribing to request variable.
+    /// Publish interval for OPC-UA subscription to request variable.
     #[serde(with = "jiff::fmt::serde::unsigned_duration::friendly::compact::required")]
     #[schemars(with = "String")]
     pub publish_interval: Duration,
-    /// OPC-UA node identifier of the request variable.
-    pub request_node_id: u32,
-    /// OPC-UA node identifier of the response variable.
-    pub response_node_id: u32,
-    /// OPC-UA node identifier of the heartbeat variable.
-    pub heartbeat_node_id: u32,
-    /// OPC-UA node identifier of the `part ID` variable.
-    pub part_id_node_id: u32,
-    /// OPC-UA node identifier of the general part sheet object.
-    pub general_part_sheet_node_id: u32,
+    /// Traceability-related OPC-UA nodes.
+    pub nodes: TraceabilityOpcUaNodesConfig,
     /// Configuration for part identifier creation, if applicable.
     pub part_identifier: Option<CreatePartIdConfig>,
 }
 
-/// Configuration related to part ID creation for an OPC-UA server.
+/// OPC-UA nodes used for traceability.
+#[derive(Clone, Deserialize, JsonSchema)]
+pub struct TraceabilityOpcUaNodesConfig {
+    /// OPC-UA node identifier of the request variable.
+    pub request: u32,
+    /// OPC-UA node identifier of the response variable.
+    pub response: u32,
+    /// OPC-UA node identifier of the heartbeat variable.
+    pub heartbeat: u32,
+    /// OPC-UA node identifier of the general part sheet object.
+    pub general_part_sheet: u32,
+    /// OPC-UA node identifier of the `part ID` variable.
+    pub part_id: u32,
+}
+
+/// Configuration related to part ID creation for a machine.
 #[derive(Clone, Deserialize, JsonSchema)]
 pub struct CreatePartIdConfig {
     /// OPC-UA node identifier of the raw part reference variable.
-    pub raw_part_ref_node_id: u32,
+    pub raw_part_ref_node: u32,
     /// OPC-UA node identifier of the raw material batch variable.
-    pub raw_batch_node_id: u32,
+    pub raw_batch_node: u32,
     /// Two character production line identifier.
     pub line_id: AsciiText<2>,
 }

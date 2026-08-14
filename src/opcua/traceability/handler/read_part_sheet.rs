@@ -29,7 +29,7 @@ impl TraceabilityHandler<Initialized> {
     pub(super) async fn read_part_sheet(&self) -> Result<(), ReadPartSheetError> {
         // Get the part ID from the OPC-UA server.
         let values = self
-            .read_values(&[self.config.part_id_node_id])
+            .read_values(&[self.config.nodes.part_id])
             .await
             .map_err(ReadPartSheetError::ReadPartId)?;
         let [part_id_value] = values

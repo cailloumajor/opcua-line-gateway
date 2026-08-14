@@ -10,7 +10,7 @@ use opcua::types::{
     NodeClassMask, NodeId, ReadValueId, ReferenceTypeId, StatusCode, TimestampsToReturn, Variant,
     WriteValue,
 };
-use opcua_line_gateway_config::TraceabilityConfig;
+use opcua_line_gateway_config::MachineTraceabilityConfig;
 use thiserror::Error;
 use tracing::instrument;
 
@@ -69,7 +69,7 @@ pub(crate) struct TraceabilityHandler<S> {
     /// The ID of the server this handler works with.
     server_id: String,
     /// The configuration for this server.
-    config: TraceabilityConfig,
+    config: MachineTraceabilityConfig,
     /// The OPC-UA session.
     session: Arc<Session>,
     /// The traceability cache.
@@ -82,7 +82,7 @@ impl TraceabilityHandler<InitialState> {
     /// Create a new [`TraceabilityHandler`].
     pub(crate) fn new(
         server_id: String,
-        config: TraceabilityConfig,
+        config: MachineTraceabilityConfig,
         session: Arc<Session>,
         cache: Arc<TraceabilityCache>,
     ) -> Self {

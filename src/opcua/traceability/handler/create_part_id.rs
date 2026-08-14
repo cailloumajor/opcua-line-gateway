@@ -43,7 +43,7 @@ impl TraceabilityHandler<Initialized> {
 
         // Read and convert needed OPC-UA variables.
         let values = self
-            .read_values(&[config.raw_part_ref_node_id, config.raw_batch_node_id])
+            .read_values(&[config.raw_part_ref_node, config.raw_batch_node])
             .await
             .map_err(CreatePartIdError::ReadVariables)?;
         let [part_ref_value, batch_value] = values
@@ -69,7 +69,7 @@ impl TraceabilityHandler<Initialized> {
         let part_id = create_part_identifier(part_ref, batch, config.line_id, today, serial)
             .map_err(CreatePartIdError::PartIdentifier)?;
 
-        self.write_values(Some((self.config.part_id_node_id, part_id.as_str().into())))
+        self.write_values(Some((self.config.nodes.part_id, part_id.as_str().into())))
             .map_err(CreatePartIdError::WritePartId)
             .await?;
 
