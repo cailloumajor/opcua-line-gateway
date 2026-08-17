@@ -3,7 +3,6 @@ use std::io::{self, Cursor, Read};
 use jiff::civil::Date;
 use leb128::write::unsigned_len;
 use opcua::types::{BinaryDecodable, BinaryEncodable, Context, Variant};
-use parking_lot::Mutex;
 use redb::{Database, ReadableDatabase, ReadableTable, TableDefinition};
 use thiserror::Error;
 use tracing::instrument;
@@ -26,16 +25,12 @@ pub(super) enum GetGeneralPartSheetError {
 /// Cloneable wrapper around a shareable [`Database`], providing helper methods.
 pub(crate) struct TraceabilityCache {
     db: Database,
-    general_part_sheet_buf: Mutex<Vec<u8>>,
 }
 
 impl TraceabilityCache {
     /// Create a new [`TraceabilityCache`], provided a shareable [`Database`].
     pub(crate) fn new(db: Database) -> Self {
-        Self {
-            db,
-            general_part_sheet_buf: Default::default(),
-        }
+        Self { db }
     }
 
     /// Get the next serial number for the provided date.
@@ -91,12 +86,12 @@ impl TraceabilityCache {
         part_sheet: &[(&u32, &Variant)],
         ctx: &Context,
     ) -> Result<(), redb::Error> {
-        encode_part_sheet(part_sheet, ctx);
+        let encoded = encode_part_sheet(part_sheet, ctx);
 
         let write_txn = self.db.begin_write()?;
         write_txn
             .open_table(GENERAL_PART_SHEET_TABLE)?
-            .insert(part_id, self.general_part_sheet_buf.lock().as_slice())?;
+            .insert(part_id, encoded.as_slice())?;
         write_txn.commit()?;
 
         Ok(())
