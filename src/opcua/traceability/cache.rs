@@ -1,4 +1,4 @@
-use std::io::{self, Cursor, Read};
+use std::io::{self, Read};
 
 use jiff::civil::Date;
 use leb128::write::unsigned_len;
@@ -132,11 +132,9 @@ fn encode_part_sheet(part_sheet: &[(&u32, &Variant)], ctx: &Context) -> Vec<u8> 
 /// Consume and decode this [`CachedPartSheet`], returning a vector of pairs of [`Variant`]
 /// and node identifier.
 #[instrument(err, skip_all)]
-fn decode_part_sheet(encoded: &[u8], ctx: &Context) -> io::Result<Vec<(u32, Variant)>> {
-    let mut cursor = Cursor::new(encoded);
-
+fn decode_part_sheet(mut buf: &[u8], ctx: &Context) -> io::Result<Vec<(u32, Variant)>> {
     // Decode the number of elements (unsigned LEB128).
-    let count = leb128::read::unsigned(&mut cursor).map_err(|e| match e {
+    let count = leb128::read::unsigned(&mut buf).map_err(|e| match e {
         leb128::read::Error::IoError(err) => err,
         leb128::read::Error::Overflow => io::Error::other(e),
     })?;
@@ -148,10 +146,10 @@ fn decode_part_sheet(encoded: &[u8], ctx: &Context) -> io::Result<Vec<(u32, Vari
     for _ in 0..count {
         // Decode the node identifier (32 bits little endian).
         let mut id_bytes = [0u8; 4];
-        cursor.read_exact(&mut id_bytes)?;
+        buf.read_exact(&mut id_bytes)?;
         let id = u32::from_le_bytes(id_bytes);
         // Decode the variant (OPC-UA binary encoding).
-        let variant = Variant::decode(&mut cursor, ctx)?;
+        let variant = Variant::decode(&mut buf, ctx)?;
 
         out.push((id, variant));
     }
