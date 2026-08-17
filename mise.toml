@@ -17,6 +17,12 @@ rust = { version = "1.97.1", components = "rust-analyzer", profile = "default" }
 cargo-binstall = "latest"
 "cargo:clickhousectl" = "latest"
 
+[tools."cargo:https://github.com/ClickHouse/clickhouse-analyzer"]
+version = "latest"
+crate = "clickhouse-analyzer"
+bin = "clickhouse-lsp"
+features = "lsp"
+
 [settings]
 minimum_release_age = "7d"
 

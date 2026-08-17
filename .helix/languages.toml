@@ -1,6 +1,6 @@
 [[language]]
-name = "json"
-language-servers = ["biome"]
+name = "sql"
+language-servers = ["clickhouse-lsp"]
 
 [[language]]
 name = "markdown"
@@ -12,9 +12,8 @@ formatter = { command = "rumdl", args = ["check", "--fix", "--stdin"] }
 name = "pkl"
 auto-format = true
 
-[language-server.biome]
-command = "biome"
-args = ["lsp-proxy"]
+[language-server.clickhouse-lsp]
+command = "clickhouse-lsp"
 
 [language-server.mpls]
 command = "mpls"
