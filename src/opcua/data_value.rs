@@ -106,12 +106,6 @@ impl<const LENGTH: usize> TryFromVariant<'_> for AsciiText<LENGTH> {
     }
 }
 
-// impl<'a> TryFromVariant<'a> for &'a Variant {
-//     fn try_from_variant(v: &'a Variant) -> Result<Self, TryFromOpcUaValueError> {
-//         extract_variant(v)
-//     }
-// }
-
 /// Extension trait adding ergonomic conversion methods to [`DataValue`].
 pub(super) trait DataValueExt {
     /// Validates the status and extracts the `&Variant` payload, common to
