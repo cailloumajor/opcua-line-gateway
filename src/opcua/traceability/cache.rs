@@ -1,7 +1,7 @@
 use std::io::{self, Read};
+use std::num::TryFromIntError;
 
 use jiff::civil::Date;
-use leb128::write::unsigned_len;
 use opcua::types::{BinaryDecodable, BinaryEncodable, Context, Variant};
 use redb::{Database, ReadableDatabase, ReadableTable, TableDefinition};
 use thiserror::Error;
@@ -20,6 +20,15 @@ pub(super) enum GetGeneralPartSheetError {
     Redb(#[from] redb::Error),
     #[error("error decoding general part sheet")]
     Decoding(#[source] io::Error),
+}
+
+/// Errors that can occur during insertion of general part sheet in the cache.
+#[derive(Debug, Error)]
+pub(super) enum InsertGeneralPartSheetError {
+    #[error("number of elements does not fit in an u16: {0}")]
+    ElementsCount(TryFromIntError),
+    #[error(transparent)]
+    Redb(#[from] redb::Error),
 }
 
 /// Cloneable wrapper around a shareable [`Database`], providing helper methods.
@@ -83,39 +92,42 @@ impl TraceabilityCache {
     pub(super) fn insert_general_part_sheet(
         &self,
         part_id: &str,
-        part_sheet: &[(&u32, &Variant)],
+        part_sheet: Vec<(u32, Variant)>,
         ctx: &Context,
-    ) -> Result<(), redb::Error> {
-        let encoded = encode_part_sheet(part_sheet, ctx);
+    ) -> Result<(), InsertGeneralPartSheetError> {
+        let encoded = encode_part_sheet(part_sheet, ctx)
+            .map_err(InsertGeneralPartSheetError::ElementsCount)?;
 
-        let write_txn = self.db.begin_write()?;
+        let write_txn = self.db.begin_write().map_err(redb::Error::from)?;
         write_txn
-            .open_table(GENERAL_PART_SHEET_TABLE)?
-            .insert(part_id, encoded.as_slice())?;
-        write_txn.commit()?;
+            .open_table(GENERAL_PART_SHEET_TABLE)
+            .map_err(redb::Error::from)?
+            .insert(part_id, encoded.as_slice())
+            .map_err(redb::Error::from)?;
+        write_txn.commit().map_err(redb::Error::from)?;
 
         Ok(())
     }
 }
 
 /// Encode a part sheet, provided as an iterator of node identifier and [`Variant`],
-/// in the provided reusable buffer, using provided OPC-UA encoding context.
+/// using provided OPC-UA encoding context.
 #[instrument(skip_all)]
-fn encode_part_sheet(part_sheet: &[(&u32, &Variant)], ctx: &Context) -> Vec<u8> {
-    let count: u64 = part_sheet
-        .len()
-        .try_into()
-        .expect("provided elements length should fit in an u64");
+fn encode_part_sheet(
+    part_sheet: Vec<(u32, Variant)>,
+    ctx: &Context,
+) -> Result<Vec<u8>, TryFromIntError> {
+    let count: u16 = part_sheet.len().try_into()?;
 
     let encoded_elements_size = part_sheet
         .iter()
-        .map(|(id, variant)| size_of_val(*id) + variant.byte_len(ctx))
+        .map(|(id, variant)| size_of_val(id) + variant.byte_len(ctx))
         .sum::<usize>();
 
-    let mut buf: Vec<u8> = Vec::with_capacity(unsigned_len(count) + encoded_elements_size);
+    let mut buf: Vec<u8> = Vec::with_capacity(size_of_val(&count) + encoded_elements_size);
 
-    // Encode the number of elements (unsigned LEB128).
-    leb128::write::unsigned(&mut buf, count).expect("writing to a Vec should not fail");
+    // Encode the number of elements.
+    buf.extend_from_slice(&count.to_le_bytes());
 
     for (id, variant) in part_sheet {
         // Encode the node identifier (32 bits little endian).
@@ -126,26 +138,23 @@ fn encode_part_sheet(part_sheet: &[(&u32, &Variant)], ctx: &Context) -> Vec<u8> 
             .expect("writing to a Vec should not fail");
     }
 
-    buf
+    Ok(buf)
 }
 
 /// Consume and decode this [`CachedPartSheet`], returning a vector of pairs of [`Variant`]
 /// and node identifier.
 #[instrument(err, skip_all)]
 fn decode_part_sheet(mut buf: &[u8], ctx: &Context) -> io::Result<Vec<(u32, Variant)>> {
-    // Decode the number of elements (unsigned LEB128).
-    let count = leb128::read::unsigned(&mut buf).map_err(|e| match e {
-        leb128::read::Error::IoError(err) => err,
-        leb128::read::Error::Overflow => io::Error::other(e),
-    })?;
+    // Decode the number of elements.
+    let mut count_bytes = [0u8; _];
+    buf.read_exact(&mut count_bytes)?;
+    let count = u16::from_le_bytes(count_bytes);
 
-    let cap = usize::try_from(count).expect("number of elements should fit in an usize");
-
-    let mut out = Vec::with_capacity(cap);
+    let mut out = Vec::with_capacity(count.into());
 
     for _ in 0..count {
         // Decode the node identifier (32 bits little endian).
-        let mut id_bytes = [0u8; 4];
+        let mut id_bytes = [0u8; _];
         buf.read_exact(&mut id_bytes)?;
         let id = u32::from_le_bytes(id_bytes);
         // Decode the variant (OPC-UA binary encoding).
@@ -165,14 +174,15 @@ mod tests {
 
     #[test]
     fn part_sheet_encode_decode() {
-        let part_sheet = &[
-            (&561, &true.into()),
-            (&98, &42u16.into()),
-            (&43, &"blabla".into()),
+        let part_sheet = vec![
+            (561, true.into()),
+            (98, 42u16.into()),
+            (43, "blabla".into()),
         ];
         let ctx = ContextOwned::default();
 
-        let encoded = encode_part_sheet(part_sheet, &ctx.context());
+        let encoded =
+            encode_part_sheet(part_sheet, &ctx.context()).expect("encoding should not fail");
         let decoded =
             decode_part_sheet(&encoded, &ctx.context()).expect("decoding should not fail");
 

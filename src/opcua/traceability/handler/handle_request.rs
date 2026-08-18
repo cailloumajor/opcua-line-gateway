@@ -45,14 +45,16 @@ impl HandleRequestError {
             Self::ReadPartSheet(ReadPartSheetError::ReadPartId(_)) => 21,
             Self::ReadPartSheet(ReadPartSheetError::PartIdValue(_)) => 22,
             Self::ReadPartSheet(ReadPartSheetError::CacheGet(_)) => 23,
-            Self::ReadPartSheet(ReadPartSheetError::CacheMissing(_)) => 24,
-            Self::ReadPartSheet(ReadPartSheetError::WritePartSheet(_)) => 25,
+            Self::ReadPartSheet(ReadPartSheetError::CacheGetTask(_)) => 24,
+            Self::ReadPartSheet(ReadPartSheetError::CacheMissing(_)) => 25,
+            Self::ReadPartSheet(ReadPartSheetError::WritePartSheet(_)) => 26,
 
             Self::SavePartSheets(SavePartSheetsError::ReadGeneralPartSheet(_)) => 31,
             Self::SavePartSheets(SavePartSheetsError::GeneralPartSheetLength(_, _)) => 32,
             Self::SavePartSheets(SavePartSheetsError::GeneralPartSheetValue(_, _)) => 33,
             Self::SavePartSheets(SavePartSheetsError::PartIdValue(_)) => 34,
             Self::SavePartSheets(SavePartSheetsError::CacheInsert(_)) => 35,
+            Self::SavePartSheets(SavePartSheetsError::CacheInsertTask(_)) => 36,
         }
     }
 }

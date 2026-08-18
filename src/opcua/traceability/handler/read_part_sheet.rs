@@ -1,4 +1,8 @@
+use std::sync::Arc;
+
+use opcua::types::Variant;
 use thiserror::Error;
+use tokio::task::JoinError;
 use tracing::{info, instrument};
 
 use crate::opcua::data_value::{DataValueExt, TryFromOpcUaValueError};
@@ -16,6 +20,8 @@ pub(super) enum ReadPartSheetError {
     PartIdValue(#[source] TryFromOpcUaValueError),
     #[error("error getting general part sheet from cache")]
     CacheGet(#[source] GetGeneralPartSheetError),
+    #[error("blocking task to retrieve general part sheet failed: {0}")]
+    CacheGetTask(JoinError),
     #[error("general part sheet not found for id {0}")]
     CacheMissing(String),
     #[error("error writing the general part sheet to the OPC-UA server")]
@@ -39,12 +45,7 @@ impl TraceabilityHandler<Initialized> {
             .try_ua_value_as()
             .map_err(ReadPartSheetError::PartIdValue)?;
 
-        // Get and decode the general part sheet from the cache, using a blocking task.
-        let part_sheet_from_cache = tokio::task::block_in_place(move || {
-            self.cache
-                .get_general_part_sheet(part_id, &self.session.encoding_context().read().context())
-                .map_err(ReadPartSheetError::CacheGet)
-        })?;
+        let part_sheet_from_cache = self.get_cached_general_part_sheet(part_id).await?;
         let part_sheet = part_sheet_from_cache
             .ok_or_else(|| ReadPartSheetError::CacheMissing(part_id.to_owned()))?;
 
@@ -56,5 +57,22 @@ impl TraceabilityHandler<Initialized> {
         info!(msg = "general part sheet read", part_id);
 
         Ok(())
+    }
+
+    /// Get and decode the general part sheet from the cache, using a blocking task.
+    async fn get_cached_general_part_sheet(
+        &self,
+        part_id: &str,
+    ) -> Result<Option<Vec<(u32, Variant)>>, ReadPartSheetError> {
+        let sent_cache = Arc::clone(&self.cache);
+        let sent_part_id = part_id.to_owned();
+        let sent_context = self.session.context();
+        tokio::task::spawn_blocking(move || {
+            sent_cache
+                .get_general_part_sheet(&sent_part_id, &sent_context.read_arc().context())
+                .map_err(ReadPartSheetError::CacheGet)
+        })
+        .await
+        .map_err(ReadPartSheetError::CacheGetTask)?
     }
 }

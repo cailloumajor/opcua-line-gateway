@@ -1,7 +1,12 @@
+use std::sync::Arc;
+
+use opcua::types::Variant;
 use thiserror::Error;
+use tokio::task::{JoinError, JoinHandle};
 use tracing::{info, instrument, warn};
 
 use crate::opcua::data_value::{DataValueExt, TryFromOpcUaValueError, TryFromVariant};
+use crate::opcua::traceability::cache::InsertGeneralPartSheetError;
 
 use super::{Initialized, ReadError, TraceabilityHandler};
 
@@ -17,7 +22,9 @@ pub(super) enum SavePartSheetsError {
     #[error("invalid part identifier value, cause: {0}")]
     PartIdValue(TryFromOpcUaValueError),
     #[error("error inserting general part sheet in the cache")]
-    CacheInsert(#[source] redb::Error),
+    CacheInsert(#[source] InsertGeneralPartSheetError),
+    #[error("blocking task to cache general part sheet failed: {0}")]
+    CacheInsertTask(JoinError),
 }
 
 impl TraceabilityHandler<Initialized> {
@@ -48,29 +55,23 @@ impl TraceabilityHandler<Initialized> {
             .state
             .general_part_sheet_nodes
             .iter()
-            .zip(&general_part_sheet_values)
+            .zip(general_part_sheet_values)
             .map(|(id, val)| {
                 val.try_get_variant()
-                    .map(|variant| (id, variant))
+                    .map(|variant| (*id, variant.clone()))
                     .map_err(|err| SavePartSheetsError::GeneralPartSheetValue(err, *id))
             })
             .collect::<Result<Vec<_>, _>>()?;
 
         // Get the part identifier.
-        let (_, part_id_variant) = general_part_sheet[self.state.part_id_index];
+        let (_, part_id_variant) = &general_part_sheet[self.state.part_id_index];
         let part_id: &str = TryFromVariant::try_from_variant(part_id_variant)
             .map_err(SavePartSheetsError::PartIdValue)?;
+        let part_id = part_id.to_owned();
 
-        // Encode and insert the general part sheet in the cache, using a blocking task.
-        tokio::task::block_in_place(move || {
-            self.cache
-                .insert_general_part_sheet(
-                    part_id,
-                    &general_part_sheet,
-                    &self.session.encoding_context().read().context(),
-                )
-                .map_err(SavePartSheetsError::CacheInsert)
-        })?;
+        self.cache_general_part_sheet(&part_id, general_part_sheet)
+            .await
+            .map_err(SavePartSheetsError::CacheInsertTask)??;
 
         // TODO: write part sheets to the database.
         warn!(msg = "part sheets insertion to database is not yet implemented");
@@ -78,5 +79,26 @@ impl TraceabilityHandler<Initialized> {
         info!(msg = "part sheets saved", part_id);
 
         Ok(())
+    }
+
+    /// Encode and insert the general part sheet in the cache, using a blocking task.
+    fn cache_general_part_sheet(
+        &self,
+        part_id: &str,
+        part_sheet: Vec<(u32, Variant)>,
+    ) -> JoinHandle<Result<(), SavePartSheetsError>> {
+        let sent_cache = Arc::clone(&self.cache);
+        let sent_part_id = part_id.to_owned();
+        let sent_context = self.session.context();
+
+        tokio::task::spawn_blocking(move || {
+            sent_cache
+                .insert_general_part_sheet(
+                    &sent_part_id,
+                    part_sheet,
+                    &sent_context.read_arc().context(),
+                )
+                .map_err(SavePartSheetsError::CacheInsert)
+        })
     }
 }
