@@ -5,8 +5,8 @@ use thiserror::Error;
 use tokio::task::{JoinError, JoinHandle};
 use tracing::{info, instrument, warn};
 
-use crate::opcua::data_value::{DataValueExt, TryFromOpcUaValueError, TryFromVariant};
-use crate::opcua::traceability::cache::InsertGeneralPartSheetError;
+use crate::opcua::{DataValueExt, TryFromOpcUaValueError, TryFromVariant};
+use crate::traceability::cache::InsertGeneralPartSheetError;
 
 use super::{Initialized, ReadError, TraceabilityHandler};
 

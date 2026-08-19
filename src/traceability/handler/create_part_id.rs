@@ -4,9 +4,9 @@ use opcua_line_gateway_config::AsciiText;
 use thiserror::Error;
 use tracing::{info, instrument};
 
-use crate::opcua::data_value::{DataValueExt, TryFromOpcUaValueError};
-use crate::opcua::traceability::part_id::{PartIdentifierError, create_part_identifier};
+use crate::opcua::{DataValueExt, TryFromOpcUaValueError};
 use crate::timezone::system_timezone;
+use crate::traceability::part_id::{PartIdentifierError, create_part_identifier};
 
 use super::{Initialized, ReadError, TraceabilityHandler, WriteError};
 

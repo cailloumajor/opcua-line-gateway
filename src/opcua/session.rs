@@ -12,11 +12,9 @@ use tokio_util::sync::CancellationToken;
 use tokio_util::task::AbortOnDropHandle;
 use tracing::{Instrument, error, info, info_span, instrument};
 
-use crate::opcua::traceability::{
-    TraceabilityHandler, TraceabilityInitializeError, TraceabilityInstallError,
+use crate::traceability::{
+    TraceabilityCache, TraceabilityHandler, TraceabilityInitializeError, TraceabilityInstallError,
 };
-
-use super::traceability::TraceabilityCache;
 
 /// Errors that can occur during session creation.
 #[derive(Debug, Error)]

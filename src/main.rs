@@ -15,12 +15,13 @@ use tracing_subscriber::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
-use self::opcua::traceability::TraceabilityCache;
 use self::opcua::{create_client, sessions_manager};
 use self::timezone::{init_system_timezone, system_timezone};
+use self::traceability::TraceabilityCache;
 
 mod opcua;
 mod timezone;
+mod traceability;
 
 /// Handle signals as they are caught.
 #[instrument(skip_all)]

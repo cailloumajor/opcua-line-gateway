@@ -2,8 +2,8 @@ use opcua::types::DataValue;
 use thiserror::Error;
 use tracing::{info, instrument};
 
-use crate::opcua::data_value::{DataValueExt, TryFromOpcUaValueError};
-use crate::opcua::traceability::protocol::{RESPONSE_RESET, RESPONSE_SUCCESS, TraceabilityRequest};
+use crate::opcua::{DataValueExt, TryFromOpcUaValueError};
+use crate::traceability::protocol::{RESPONSE_RESET, RESPONSE_SUCCESS, TraceabilityRequest};
 
 use super::create_part_id::CreatePartIdError;
 use super::read_part_sheet::ReadPartSheetError;

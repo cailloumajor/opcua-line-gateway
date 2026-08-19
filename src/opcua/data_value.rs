@@ -4,7 +4,7 @@ use thiserror::Error;
 
 /// Errors that can occur during conversion of OPC-UA value.
 #[derive(Debug, Error)]
-pub(super) enum TryFromOpcUaValueError {
+pub(crate) enum TryFromOpcUaValueError {
     #[error("data value status is not good: {0}")]
     BadStatus(StatusCode),
     #[error("missing data value")]
@@ -24,7 +24,7 @@ impl TryFromOpcUaValueError {
 }
 
 /// Fallible conversion of [`Variant`] to useful types.
-pub(super) trait TryFromVariant<'a>: Sized {
+pub(crate) trait TryFromVariant<'a>: Sized {
     /// Try to convert the provided [`Variant`] reference to this type.
     ///
     /// # Errors
@@ -107,7 +107,7 @@ impl<const LENGTH: usize> TryFromVariant<'_> for AsciiText<LENGTH> {
 }
 
 /// Extension trait adding ergonomic conversion methods to [`DataValue`].
-pub(super) trait DataValueExt {
+pub(crate) trait DataValueExt {
     /// Validates the status and extracts the `&Variant` payload, common to
     /// every [`TryFromDataValue`] impl generated below.
     fn try_get_variant(&self) -> Result<&Variant, TryFromOpcUaValueError>;

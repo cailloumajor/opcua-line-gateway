@@ -15,8 +15,7 @@ use tokio_util::sync::CancellationToken;
 use tracing::{error, info, instrument};
 
 use crate::opcua::session::{OpcUaSession, start_session};
-
-use super::traceability::TraceabilityCache;
+use crate::traceability::TraceabilityCache;
 
 /// The interval for sessions management ticks.
 const MANAGER_TICK_INTERVAL: Duration = Duration::from_secs(5);
