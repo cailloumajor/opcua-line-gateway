@@ -8,8 +8,7 @@ CREATE TABLE IF NOT EXISTS traceability.general_part_sheet
     saved_at   DateTime64(3, 'UTC') CODEC(DoubleDelta, ZSTD(1)),
     machine_id LowCardinality(String),
 
-    -- Part identifier: a protocol variable, located by `part_id_node_id` in the
-    -- gateway configuration and excluded from `data` to avoid duplication.
+    -- Part identifier: a protocol variable, excluded from `data` to avoid duplication.
     part_id String,
 
     -- General part sheet contract. Path names are OPC-UA BrowseNames.
