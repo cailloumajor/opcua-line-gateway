@@ -37,11 +37,11 @@ impl TraceabilityHandler<TraceabilityContext> {
     pub(super) async fn save_part_sheets(&self) -> Result<(), SavePartSheetsError> {
         // Read general part sheet values from the server.
         let general_part_sheet_values = self
-            .read_values(self.state.general_part_sheet_nodes.iter().copied())
+            .read_values(self.state.general_part_sheet.nodes.iter().copied())
             .await
             .map_err(SavePartSheetsError::ReadGeneralPartSheet)?;
 
-        let expected_len = self.state.general_part_sheet_nodes.len();
+        let expected_len = self.state.general_part_sheet.nodes.len();
         let got_len = general_part_sheet_values.len();
         if got_len != expected_len {
             return Err(SavePartSheetsError::GeneralPartSheetLength(
@@ -53,7 +53,8 @@ impl TraceabilityHandler<TraceabilityContext> {
         // Convert values to variants.
         let general_part_sheet = self
             .state
-            .general_part_sheet_nodes
+            .general_part_sheet
+            .nodes
             .iter()
             .zip(general_part_sheet_values)
             .map(|(id, val)| {
@@ -64,7 +65,7 @@ impl TraceabilityHandler<TraceabilityContext> {
             .collect::<Result<Vec<_>, _>>()?;
 
         // Get the part identifier.
-        let (_, part_id_variant) = &general_part_sheet[self.state.part_id_index];
+        let (_, part_id_variant) = &general_part_sheet[self.state.general_part_sheet.part_id_index];
         let part_id: &str = TryFromVariant::try_from_variant(part_id_variant)
             .map_err(SavePartSheetsError::PartIdValue)?;
         let part_id = part_id.to_owned();

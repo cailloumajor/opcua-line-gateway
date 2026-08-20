@@ -15,9 +15,16 @@ pub(crate) enum TraceabilityInitializeError {
 /// The traceability handler state after initialization.
 #[derive(Clone)]
 pub(crate) struct TraceabilityContext {
-    /// Numeric identifiers of the discovered general part sheet nodes.
-    pub(super) general_part_sheet_nodes: Vec<u32>,
-    /// Index of the part identifier in the general part sheet nodes collection.
+    /// General part sheet context.
+    pub(super) general_part_sheet: GeneralPartSheetContext,
+}
+
+/// Traceability context related to general part sheet.
+#[derive(Clone)]
+pub(super) struct GeneralPartSheetContext {
+    /// Numeric identifiers of the discovered nodes.
+    pub(super) nodes: Vec<u32>,
+    /// Index of the part identifier in the nodes collection.
     pub(super) part_id_index: usize,
 }
 
@@ -42,8 +49,10 @@ impl TraceabilityHandler<InitialState> {
         );
 
         let state = TraceabilityContext {
-            general_part_sheet_nodes,
-            part_id_index,
+            general_part_sheet: GeneralPartSheetContext {
+                nodes: general_part_sheet_nodes,
+                part_id_index,
+            },
         };
 
         Ok(TraceabilityHandler {
