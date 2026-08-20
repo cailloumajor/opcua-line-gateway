@@ -58,6 +58,8 @@ pub(crate) enum BrowsePartSheetError {
     BrowseResultStatus(StatusCode),
     #[error("invalid node identifier, expected numeric, got {0}")]
     NonNumericId(Identifier),
+    #[error("browse name for node identifier {0} is null")]
+    NullBrowseName(u32),
 }
 
 /// The initial state of the traceability handler.
@@ -98,10 +100,15 @@ impl TraceabilityHandler<InitialState> {
 
 impl TraceabilityHandler<InitialState> {
     /// Browse a part sheet (i.e. an OPC-UA object), provided its node identifier.
-    /// Return a collection of node identifiers, which are those of the object's
-    /// properties of variable type.
+    /// Return a collection of numeric node identifiers and browse names couples,
+    /// which are those of the object's properties of variable type.
+    ///
+    /// The returned collection is sorted by numeric identifiers.
     #[instrument(err, skip(self))]
-    async fn browse_part_sheet(&self, root_node_id: u32) -> Result<Vec<u32>, BrowsePartSheetError> {
+    async fn browse_part_sheet(
+        &self,
+        root_node_id: u32,
+    ) -> Result<Vec<(u32, String)>, BrowsePartSheetError> {
         // Get the traceability namespace index.
         let ns_index = self
             .session
@@ -128,12 +135,11 @@ impl TraceabilityHandler<InitialState> {
             include_subtypes: false,
             // Return only nodes of `Variable` class.
             node_class_mask: NodeClassMask::VARIABLE.bits(),
-            // Disable all fields in the returned `ReferenceDescription`.
-            // Browse configuration above is restrictive enough to not have the need for them.
-            result_mask: BrowseResultMaskFlags::empty().bits(),
+            // Enable `BrowseName` field in the returned `ReferenceDescription`.
+            result_mask: BrowseResultMaskFlags::BrowseName.bits(),
         };
 
-        let mut part_sheet_nodes = Vec::new();
+        let mut nodes = Vec::new();
 
         // Browse the part sheet object to build the node identifiers list.
         let mut pinned_stream = pin!(browser.run(vec![initial]));
@@ -151,11 +157,21 @@ impl TraceabilityHandler<InitialState> {
                 let Identifier::Numeric(numeric_id) = identifier else {
                     return Err(BrowsePartSheetError::NonNumericId(identifier.clone()));
                 };
-                part_sheet_nodes.push(*numeric_id);
+                let browse_name = ref_description
+                    .browse_name
+                    .name
+                    .value()
+                    .clone()
+                    .ok_or(BrowsePartSheetError::NullBrowseName(*numeric_id))?;
+
+                nodes.push((*numeric_id, browse_name));
             }
         }
 
-        Ok(part_sheet_nodes)
+        // Sort the nodes collection by identifiers.
+        nodes.sort_unstable_by_key(|(id, _)| *id);
+
+        Ok(nodes)
     }
 }
 

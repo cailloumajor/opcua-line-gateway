@@ -36,8 +36,14 @@ impl TraceabilityHandler<TraceabilityContext> {
     #[instrument(err, skip_all)]
     pub(super) async fn save_part_sheets(&self) -> Result<(), SavePartSheetsError> {
         // Read general part sheet values from the server.
+        let general_part_sheet_ids = self
+            .state
+            .general_part_sheet
+            .nodes
+            .iter()
+            .map(|(id, _)| *id);
         let general_part_sheet_values = self
-            .read_values(self.state.general_part_sheet.nodes.iter().copied())
+            .read_values(general_part_sheet_ids)
             .await
             .map_err(SavePartSheetsError::ReadGeneralPartSheet)?;
 
@@ -57,7 +63,7 @@ impl TraceabilityHandler<TraceabilityContext> {
             .nodes
             .iter()
             .zip(general_part_sheet_values)
-            .map(|(id, val)| {
+            .map(|((id, _), val)| {
                 val.try_into_variant()
                     .map(|variant| (*id, variant.clone()))
                     .map_err(|err| SavePartSheetsError::GeneralPartSheetValue(err, *id))

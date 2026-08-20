@@ -22,8 +22,8 @@ pub(crate) struct TraceabilityContext {
 /// Traceability context related to general part sheet.
 #[derive(Clone)]
 pub(super) struct GeneralPartSheetContext {
-    /// Numeric identifiers of the discovered nodes.
-    pub(super) nodes: Vec<u32>,
+    /// Discovered nodes, couples of numeric identifier and browse name.
+    pub(super) nodes: Vec<(u32, String)>,
     /// Index of the part identifier in the nodes collection.
     pub(super) part_id_index: usize,
 }
@@ -40,7 +40,7 @@ impl TraceabilityHandler<InitialState> {
             .map_err(TraceabilityInitializeError::BrowseGeneralPartSheet)?;
         let part_id_index = general_part_sheet_nodes
             .iter()
-            .position(|id| *id == self.config.nodes.part_id)
+            .position(|(id, _)| *id == self.config.nodes.part_id)
             .ok_or(TraceabilityInitializeError::NoPartIdNode)?;
 
         info!(
