@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
-use opcua::types::Variant;
 use thiserror::Error;
 use tokio::task::{JoinError, JoinHandle};
 use tracing::{info, instrument, warn};
 
 use crate::opcua::{DataValueExt, TryFromOpcUaValueError, TryFromVariant};
 use crate::traceability::cache::InsertGeneralPartSheetError;
+use crate::traceability::part_sheet::CachedPartSheet;
 
 use super::{ReadError, TraceabilityContext, TraceabilityHandler};
 
@@ -56,7 +56,7 @@ impl TraceabilityHandler<TraceabilityContext> {
             ));
         }
 
-        // Convert values to variants.
+        // Build the part sheet.
         let general_part_sheet = self
             .state
             .general_part_sheet
@@ -65,13 +65,15 @@ impl TraceabilityHandler<TraceabilityContext> {
             .zip(general_part_sheet_values)
             .map(|((id, _), val)| {
                 val.try_into_variant()
-                    .map(|variant| (*id, variant.clone()))
+                    .map(|variant| (*id, variant))
                     .map_err(|err| SavePartSheetsError::GeneralPartSheetValue(err, *id))
             })
-            .collect::<Result<Vec<_>, _>>()?;
+            .collect::<Result<CachedPartSheet, _>>()?;
 
         // Get the part identifier.
-        let (_, part_id_variant) = &general_part_sheet[self.state.general_part_sheet.part_id_index];
+        let part_id_variant = general_part_sheet
+            .get_variant(self.state.general_part_sheet.part_id_index)
+            .expect("an element should exist at the part identifier index position");
         let part_id = String::try_from_variant(part_id_variant.clone())
             .map_err(SavePartSheetsError::PartIdValue)?;
 
@@ -91,7 +93,7 @@ impl TraceabilityHandler<TraceabilityContext> {
     fn cache_general_part_sheet(
         &self,
         part_id: &str,
-        part_sheet: Vec<(u32, Variant)>,
+        part_sheet: CachedPartSheet,
     ) -> JoinHandle<Result<(), SavePartSheetsError>> {
         let sent_cache = Arc::clone(&self.cache);
         let sent_part_id = part_id.to_owned();

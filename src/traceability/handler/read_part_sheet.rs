@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
-use opcua::types::Variant;
 use thiserror::Error;
 use tokio::task::JoinError;
 use tracing::{info, instrument};
 
 use crate::opcua::{DataValueExt, TryFromOpcUaValueError};
 use crate::traceability::cache::GetGeneralPartSheetError;
+use crate::traceability::part_sheet::CachedPartSheet;
 
 use super::{ReadError, TraceabilityContext, TraceabilityHandler, WriteError};
 
@@ -62,7 +62,7 @@ impl TraceabilityHandler<TraceabilityContext> {
     async fn get_cached_general_part_sheet(
         &self,
         part_id: &str,
-    ) -> Result<Option<Vec<(u32, Variant)>>, ReadPartSheetError> {
+    ) -> Result<Option<CachedPartSheet>, ReadPartSheetError> {
         let sent_cache = Arc::clone(&self.cache);
         let sent_part_id = part_id.to_owned();
         let sent_context = self.session.context();
