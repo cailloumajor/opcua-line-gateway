@@ -12,7 +12,7 @@ use tokio_stream::wrappers::{IntervalStream, UnboundedReceiverStream};
 use tokio_util::sync::CancellationToken;
 use tracing::{Instrument, info, info_span, instrument, warn};
 
-use super::{Initialized, TraceabilityHandler};
+use super::{TraceabilityContext, TraceabilityHandler};
 
 /// The duration between heartbeat changes.
 const HEARTBEAT_INTERVAL: Duration = Duration::from_millis(500);
@@ -32,7 +32,7 @@ pub(crate) enum TraceabilityInstallError {
     MonitoredItem(NodeId, StatusCode),
 }
 
-impl TraceabilityHandler<Initialized> {
+impl TraceabilityHandler<TraceabilityContext> {
     /// Install this handler to allow it to handle requests. This mainly consists in
     /// subscribing to the request variable.
     ///

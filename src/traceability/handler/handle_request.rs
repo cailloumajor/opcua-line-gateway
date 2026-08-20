@@ -8,7 +8,7 @@ use crate::traceability::protocol::{RESPONSE_RESET, RESPONSE_SUCCESS, Traceabili
 use super::create_part_id::CreatePartIdError;
 use super::read_part_sheet::ReadPartSheetError;
 use super::save_part_sheets::SavePartSheetsError;
-use super::{Initialized, TraceabilityHandler};
+use super::{TraceabilityContext, TraceabilityHandler};
 
 /// Errors that can be encountered during request handling.
 #[derive(Debug, Error)]
@@ -59,7 +59,7 @@ impl HandleRequestError {
     }
 }
 
-impl TraceabilityHandler<Initialized> {
+impl TraceabilityHandler<TraceabilityContext> {
     /// Handle a request code from the OPC-UA server. Upon success, return the response code
     /// that must be written to the server.
     #[instrument(err, skip_all)]

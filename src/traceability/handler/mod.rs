@@ -16,7 +16,7 @@ use tracing::instrument;
 
 use super::cache::TraceabilityCache;
 
-use initialize::Initialized;
+use initialize::TraceabilityContext;
 pub(crate) use initialize::TraceabilityInitializeError;
 pub(crate) use install::TraceabilityInstallError;
 
@@ -159,7 +159,7 @@ impl TraceabilityHandler<InitialState> {
     }
 }
 
-impl TraceabilityHandler<Initialized> {
+impl TraceabilityHandler<TraceabilityContext> {
     /// Read the values of nodes with provided identifiers.
     #[instrument(err, skip_all)]
     async fn read_values<I>(&self, ids: I) -> Result<Vec<DataValue>, ReadError>

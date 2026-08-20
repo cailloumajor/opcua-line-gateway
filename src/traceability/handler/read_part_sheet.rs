@@ -8,8 +8,7 @@ use tracing::{info, instrument};
 use crate::opcua::{DataValueExt, TryFromOpcUaValueError};
 use crate::traceability::cache::GetGeneralPartSheetError;
 
-use super::initialize::Initialized;
-use super::{ReadError, TraceabilityHandler, WriteError};
+use super::{ReadError, TraceabilityContext, TraceabilityHandler, WriteError};
 
 /// Errors that can occur during handling the request to read the general part sheet.
 #[derive(Debug, Error)]
@@ -28,7 +27,7 @@ pub(super) enum ReadPartSheetError {
     WritePartSheet(#[source] WriteError),
 }
 
-impl TraceabilityHandler<Initialized> {
+impl TraceabilityHandler<TraceabilityContext> {
     /// Run the request from the OPC-UA server to read the part sheet, i.e.
     /// read general part data from the cache and write it to the server.
     #[instrument(err, skip_all)]

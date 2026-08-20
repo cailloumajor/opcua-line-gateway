@@ -8,7 +8,7 @@ use crate::opcua::{DataValueExt, TryFromOpcUaValueError};
 use crate::timezone::system_timezone;
 use crate::traceability::part_id::{PartIdentifierError, create_part_identifier};
 
-use super::{Initialized, ReadError, TraceabilityHandler, WriteError};
+use super::{ReadError, TraceabilityContext, TraceabilityHandler, WriteError};
 
 /// Errors that can occur during part ID creation.
 #[derive(Debug, Error)]
@@ -29,7 +29,7 @@ pub(super) enum CreatePartIdError {
     WritePartId(#[source] WriteError),
 }
 
-impl TraceabilityHandler<Initialized> {
+impl TraceabilityHandler<TraceabilityContext> {
     /// Create the part ID by getting required data from the OPC-UA server and writing back the
     /// generated ID.
     #[instrument(err, skip_all)]

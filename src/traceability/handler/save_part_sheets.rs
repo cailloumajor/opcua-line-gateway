@@ -8,7 +8,7 @@ use tracing::{info, instrument, warn};
 use crate::opcua::{DataValueExt, TryFromOpcUaValueError, TryFromVariant};
 use crate::traceability::cache::InsertGeneralPartSheetError;
 
-use super::{Initialized, ReadError, TraceabilityHandler};
+use super::{ReadError, TraceabilityContext, TraceabilityHandler};
 
 /// Errors that can occur during handling the request for saving part sheets.
 #[derive(Debug, Error)]
@@ -27,7 +27,7 @@ pub(super) enum SavePartSheetsError {
     CacheInsertTask(JoinError),
 }
 
-impl TraceabilityHandler<Initialized> {
+impl TraceabilityHandler<TraceabilityContext> {
     /// Run the request from the OPC-UA server to save the part sheets, i.e.:
     ///
     /// * read the part sheets from the server,
