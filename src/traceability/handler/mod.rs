@@ -162,16 +162,19 @@ impl TraceabilityHandler<InitialState> {
 impl TraceabilityHandler<Initialized> {
     /// Read the values of nodes with provided identifiers.
     #[instrument(err, skip_all)]
-    async fn read_values(&self, ids: &[u32]) -> Result<Vec<DataValue>, ReadError> {
+    async fn read_values<I>(&self, ids: I) -> Result<Vec<DataValue>, ReadError>
+    where
+        I: IntoIterator<Item = u32>,
+    {
         let ns_index = self
             .session
             .get_namespace_index(&self.config.namespace_url)
             .await
             .map_err(ReadError::GetNamespaceIndex)?;
         let nodes_to_read = ids
-            .iter()
+            .into_iter()
             .map(|id| {
-                let node_id = NodeId::new(ns_index, *id);
+                let node_id = NodeId::new(ns_index, id);
                 ReadValueId::new_value(node_id)
             })
             .collect::<Vec<_>>();

@@ -134,7 +134,7 @@ impl TraceabilityHandler<Initialized> {
                     // Ignore the result, it is handled (logging) by the instrumentation
                     // of `write_value`.
                     let _ = cloned_self
-                        .write_values(Some((self.config.nodes.heartbeat, value.into())))
+                        .write_values([(self.config.nodes.heartbeat, value.into())])
                         .await;
                 }
 
@@ -164,7 +164,7 @@ impl TraceabilityHandler<Initialized> {
                     // Ignore the result, as error logging is handled by the function
                     // `instrument` attribute.
                     let _ = self
-                        .write_values(Some((self.config.nodes.response, response_value.into())))
+                        .write_values([(self.config.nodes.response, response_value.into())])
                         .await;
                 }
 

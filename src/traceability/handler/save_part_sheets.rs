@@ -37,7 +37,7 @@ impl TraceabilityHandler<Initialized> {
     pub(super) async fn save_part_sheets(&self) -> Result<(), SavePartSheetsError> {
         // Read general part sheet values from the server.
         let general_part_sheet_values = self
-            .read_values(&self.state.general_part_sheet_nodes)
+            .read_values(self.state.general_part_sheet_nodes.iter().copied())
             .await
             .map_err(SavePartSheetsError::ReadGeneralPartSheet)?;
 
