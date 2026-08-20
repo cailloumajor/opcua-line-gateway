@@ -49,7 +49,7 @@ impl TraceabilityHandler<TraceabilityContext> {
         let [part_ref_value, batch_value] = values
             .try_into()
             .expect("read values vector should have the expected size");
-        let part_ref: &str = part_ref_value
+        let part_ref: String = part_ref_value
             .try_ua_value_as()
             .map_err(CreatePartIdError::PartRefValue)?;
         let batch: AsciiText<2> = batch_value
@@ -66,7 +66,7 @@ impl TraceabilityHandler<TraceabilityContext> {
         })?;
 
         // Create the part identifier.
-        let part_id = create_part_identifier(part_ref, batch, config.line_id, today, serial)
+        let part_id = create_part_identifier(&part_ref, batch, config.line_id, today, serial)
             .map_err(CreatePartIdError::PartIdentifier)?;
 
         self.write_values([(self.config.nodes.part_id, part_id.clone().into())])

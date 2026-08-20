@@ -40,11 +40,11 @@ impl TraceabilityHandler<TraceabilityContext> {
         let [part_id_value] = values
             .try_into()
             .expect("read values vector should have the expected size");
-        let part_id: &str = part_id_value
+        let part_id: String = part_id_value
             .try_ua_value_as()
             .map_err(ReadPartSheetError::PartIdValue)?;
 
-        let part_sheet_from_cache = self.get_cached_general_part_sheet(part_id).await?;
+        let part_sheet_from_cache = self.get_cached_general_part_sheet(&part_id).await?;
         let part_sheet = part_sheet_from_cache
             .ok_or_else(|| ReadPartSheetError::CacheMissing(part_id.to_owned()))?;
 

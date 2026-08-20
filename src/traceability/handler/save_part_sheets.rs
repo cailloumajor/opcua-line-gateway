@@ -58,7 +58,7 @@ impl TraceabilityHandler<TraceabilityContext> {
             .iter()
             .zip(general_part_sheet_values)
             .map(|(id, val)| {
-                val.try_get_variant()
+                val.try_into_variant()
                     .map(|variant| (*id, variant.clone()))
                     .map_err(|err| SavePartSheetsError::GeneralPartSheetValue(err, *id))
             })
@@ -66,9 +66,8 @@ impl TraceabilityHandler<TraceabilityContext> {
 
         // Get the part identifier.
         let (_, part_id_variant) = &general_part_sheet[self.state.general_part_sheet.part_id_index];
-        let part_id: &str = TryFromVariant::try_from_variant(part_id_variant)
+        let part_id = String::try_from_variant(part_id_variant.clone())
             .map_err(SavePartSheetsError::PartIdValue)?;
-        let part_id = part_id.to_owned();
 
         self.cache_general_part_sheet(&part_id, general_part_sheet)
             .await
