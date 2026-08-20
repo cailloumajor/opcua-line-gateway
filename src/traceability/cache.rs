@@ -33,15 +33,13 @@ pub(super) enum InsertGeneralPartSheetError {
     Redb(#[from] redb::Error),
 }
 
-/// Cloneable wrapper around a shareable [`Database`], providing helper methods.
-pub(crate) struct TraceabilityCache {
-    db: Database,
-}
+/// Wrapper around a redb [`Database`], providing helper methods.
+pub(crate) struct TraceabilityCache(Database);
 
 impl TraceabilityCache {
     /// Create a new [`TraceabilityCache`], provided a shareable [`Database`].
     pub(crate) fn new(db: Database) -> Self {
-        Self { db }
+        Self(db)
     }
 
     /// Get the next serial number for the provided date.
@@ -51,7 +49,7 @@ impl TraceabilityCache {
     pub(super) fn next_serial(&self, today: Date) -> Result<u32, redb::Error> {
         let date_str = today.strftime("%Y%m%d").to_string();
 
-        let write_txn = self.db.begin_write()?;
+        let write_txn = self.0.begin_write()?;
         let next = {
             let mut table = write_txn.open_table(SERIAL_TABLE)?;
             let next = table
@@ -74,7 +72,7 @@ impl TraceabilityCache {
         part_id: &str,
         ctx: &Context,
     ) -> Result<Option<CachedPartSheet>, GetGeneralPartSheetError> {
-        let read_txn = self.db.begin_read().map_err(redb::Error::from)?;
+        let read_txn = self.0.begin_read().map_err(redb::Error::from)?;
         let table = read_txn
             .open_table(GENERAL_PART_SHEET_TABLE)
             .map_err(redb::Error::from)?;
@@ -104,7 +102,7 @@ impl TraceabilityCache {
             .encode_for_cache(ctx)
             .map_err(InsertGeneralPartSheetError::ElementsCount)?;
 
-        let write_txn = self.db.begin_write().map_err(redb::Error::from)?;
+        let write_txn = self.0.begin_write().map_err(redb::Error::from)?;
         write_txn
             .open_table(GENERAL_PART_SHEET_TABLE)
             .map_err(redb::Error::from)?
