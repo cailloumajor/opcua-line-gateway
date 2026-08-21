@@ -11,7 +11,7 @@ use schemars::JsonSchema;
 use serde::Deserialize;
 use thiserror::Error;
 
-pub use self::ascii_text::{AsciiText, AsciiTextError};
+pub use self::ascii_text::{AsciiDigitsOrUpper, AsciiTextError};
 
 mod ascii_text;
 mod foreign;
@@ -207,5 +207,5 @@ pub struct CreatePartIdConfig {
     /// OPC-UA node identifier of the raw material batch variable.
     pub raw_batch_node: u32,
     /// Two character production line identifier.
-    pub line_id: AsciiText<2>,
+    pub line_id: AsciiDigitsOrUpper<2>,
 }

@@ -1,7 +1,7 @@
 use std::fmt;
 
 use jiff::civil::Date;
-use opcua_line_gateway_config::AsciiText;
+use opcua_line_gateway_config::AsciiDigitsOrUpper;
 use regex::regex;
 use thiserror::Error;
 use tracing::instrument;
@@ -68,8 +68,8 @@ impl fmt::Display for PartReference<'_> {
 #[instrument(err)]
 pub(super) fn create_part_identifier(
     part_ref: &str,
-    batch: AsciiText<2>,
-    line_id: AsciiText<2>,
+    batch: AsciiDigitsOrUpper<2>,
+    line_id: AsciiDigitsOrUpper<2>,
     today: Date,
     serial: u32,
 ) -> Result<String, PartIdentifierError> {

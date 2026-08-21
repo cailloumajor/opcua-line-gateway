@@ -1,6 +1,6 @@
 use futures_util::TryFutureExt;
 use jiff::Timestamp;
-use opcua_line_gateway_config::AsciiText;
+use opcua_line_gateway_config::AsciiDigitsOrUpper;
 use thiserror::Error;
 use tracing::{info, instrument};
 
@@ -52,7 +52,7 @@ impl TraceabilityHandler<TraceabilityContext> {
         let part_ref: String = part_ref_value
             .try_ua_value_as()
             .map_err(CreatePartIdError::PartRefValue)?;
-        let batch: AsciiText<2> = batch_value
+        let batch: AsciiDigitsOrUpper<2> = batch_value
             .try_ua_value_as()
             .map_err(CreatePartIdError::BatchValue)?;
 

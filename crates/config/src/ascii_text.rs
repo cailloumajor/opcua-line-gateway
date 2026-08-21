@@ -14,13 +14,15 @@ pub enum AsciiTextError {
     BadLength(usize, usize),
     #[error("non-printable ASCII byte 0x{0:02X} at position {1}")]
     NonPrintable(u8, usize),
+    #[error("non digit or uppercase ASCII character `{0}` at position {1}")]
+    NonDigitOrUppercase(char, usize),
 }
 
 /// A fixed-size, immutable ASCII string.
 #[derive(Clone, Copy, Debug)]
-pub struct AsciiText<const LENGTH: usize>([u8; LENGTH]);
+pub struct AsciiDigitsOrUpper<const LENGTH: usize>([u8; LENGTH]);
 
-impl<const LENGTH: usize> TryFrom<&[u8]> for AsciiText<LENGTH> {
+impl<const LENGTH: usize> TryFrom<&[u8]> for AsciiDigitsOrUpper<LENGTH> {
     type Error = AsciiTextError;
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
@@ -28,12 +30,13 @@ impl<const LENGTH: usize> TryFrom<&[u8]> for AsciiText<LENGTH> {
             return Err(AsciiTextError::BadLength(value.len(), LENGTH));
         }
 
-        if let Some((pos, byte)) = value
-            .iter()
-            .enumerate()
-            .find(|(_, b)| !b.is_ascii_graphic())
-        {
-            return Err(AsciiTextError::NonPrintable(*byte, pos));
+        for (pos, byte) in value.iter().enumerate() {
+            if !byte.is_ascii_graphic() {
+                return Err(AsciiTextError::NonPrintable(*byte, pos + 1));
+            }
+            if !byte.is_ascii_digit() && !byte.is_ascii_uppercase() {
+                return Err(AsciiTextError::NonDigitOrUppercase((*byte).into(), pos + 1));
+            }
         }
 
         let inner = value
@@ -44,7 +47,7 @@ impl<const LENGTH: usize> TryFrom<&[u8]> for AsciiText<LENGTH> {
     }
 }
 
-impl<const LENGTH: usize> FromStr for AsciiText<LENGTH> {
+impl<const LENGTH: usize> FromStr for AsciiDigitsOrUpper<LENGTH> {
     type Err = AsciiTextError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -52,14 +55,14 @@ impl<const LENGTH: usize> FromStr for AsciiText<LENGTH> {
     }
 }
 
-impl<const LENGTH: usize> fmt::Display for AsciiText<LENGTH> {
+impl<const LENGTH: usize> fmt::Display for AsciiDigitsOrUpper<LENGTH> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = str::from_utf8(&self.0).expect("converting ASCII to UTF-8 should not fail");
         f.write_str(s)
     }
 }
 
-impl<'de, const LENGTH: usize> Deserialize<'de> for AsciiText<LENGTH> {
+impl<'de, const LENGTH: usize> Deserialize<'de> for AsciiDigitsOrUpper<LENGTH> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -67,7 +70,7 @@ impl<'de, const LENGTH: usize> Deserialize<'de> for AsciiText<LENGTH> {
         struct AsciiTextVisitor<const LENGTH: usize>;
 
         impl<const LENGTH: usize> Visitor<'_> for AsciiTextVisitor<LENGTH> {
-            type Value = AsciiText<LENGTH>;
+            type Value = AsciiDigitsOrUpper<LENGTH>;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 write!(
@@ -97,7 +100,7 @@ impl<'de, const LENGTH: usize> Deserialize<'de> for AsciiText<LENGTH> {
     }
 }
 
-impl<const LENGTH: usize> JsonSchema for AsciiText<LENGTH> {
+impl<const LENGTH: usize> JsonSchema for AsciiDigitsOrUpper<LENGTH> {
     fn inline_schema() -> bool {
         true
     }
@@ -123,29 +126,36 @@ mod tests {
 
     #[test]
     fn too_short() {
-        let result = "ABC".parse::<AsciiText<4>>();
+        let result = "ABC".parse::<AsciiDigitsOrUpper<4>>();
 
         assert_matches!(result, Err(AsciiTextError::BadLength(3, 4)));
     }
 
     #[test]
     fn too_long() {
-        let result = "ABCDE".parse::<AsciiText<4>>();
+        let result = "ABCDE".parse::<AsciiDigitsOrUpper<4>>();
 
         assert_matches!(result, Err(AsciiTextError::BadLength(5, 4)));
     }
 
     #[test]
     fn non_ascii() {
-        let result = "AB\tD".parse::<AsciiText<4>>();
+        let result = "AB\tD".parse::<AsciiDigitsOrUpper<4>>();
 
-        assert_matches!(result, Err(AsciiTextError::NonPrintable(0x09, 2)));
+        assert_matches!(result, Err(AsciiTextError::NonPrintable(0x09, 3)));
+    }
+
+    #[test]
+    fn non_digit_or_uppercase() {
+        let result = "ABCd".parse::<AsciiDigitsOrUpper<4>>();
+
+        assert_matches!(result, Err(AsciiTextError::NonDigitOrUppercase('d', 4)));
     }
 
     #[test]
     fn okay() {
         let ascii_text = "R2D2"
-            .parse::<AsciiText<4>>()
+            .parse::<AsciiDigitsOrUpper<4>>()
             .expect("parsing should not fail");
 
         assert_eq!(ascii_text.to_string(), "R2D2");

@@ -1,5 +1,5 @@
 use opcua::types::{DataValue, StatusCode, UAString, Variant};
-use opcua_line_gateway_config::{AsciiText, AsciiTextError};
+use opcua_line_gateway_config::{AsciiDigitsOrUpper, AsciiTextError};
 use thiserror::Error;
 
 /// Errors that can occur during conversion of OPC-UA value.
@@ -75,7 +75,7 @@ impl TryFromVariant for String {
     }
 }
 
-impl<const LENGTH: usize> TryFromVariant for AsciiText<LENGTH> {
+impl<const LENGTH: usize> TryFromVariant for AsciiDigitsOrUpper<LENGTH> {
     fn try_from_variant(v: Variant) -> Result<Self, TryFromOpcUaValueError> {
         let s: String = TryFromVariant::try_from_variant(v)?;
         let ascii = s.parse()?;
