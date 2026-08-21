@@ -6,8 +6,8 @@ use crate::opcua::{DataValueExt, TryFromOpcUaValueError};
 use crate::traceability::protocol::{RESPONSE_RESET, RESPONSE_SUCCESS, TraceabilityRequest};
 
 use super::create_part_id::CreatePartIdError;
-use super::read_part_sheet::ReadPartSheetError;
-use super::save_part_sheets::SavePartSheetsError;
+use super::read_part_sheet::HandleReadError;
+use super::save_part_sheets::HandleSaveError;
 use super::{TraceabilityContext, TraceabilityHandler};
 
 /// Errors that can be encountered during request handling.
@@ -19,10 +19,10 @@ pub(super) enum HandleRequestError {
     UnknownValue(u8),
     #[error("error creating the part ID")]
     CreatePartId(#[from] CreatePartIdError),
-    #[error("error reading the general part sheet")]
-    ReadPartSheet(#[from] ReadPartSheetError),
-    #[error("error saving part sheets")]
-    SavePartSheets(#[from] SavePartSheetsError),
+    #[error("error handling read request")]
+    HandleRead(#[from] HandleReadError),
+    #[error("error handling save request")]
+    HandleSave(#[from] HandleSaveError),
 }
 
 impl HandleRequestError {
@@ -42,19 +42,19 @@ impl HandleRequestError {
             Self::CreatePartId(CreatePartIdError::PartIdentifier(_)) => 16,
             Self::CreatePartId(CreatePartIdError::WritePartId(_)) => 17,
 
-            Self::ReadPartSheet(ReadPartSheetError::ReadPartId(_)) => 21,
-            Self::ReadPartSheet(ReadPartSheetError::PartIdValue(_)) => 22,
-            Self::ReadPartSheet(ReadPartSheetError::CacheGet(_)) => 23,
-            Self::ReadPartSheet(ReadPartSheetError::CacheGetTask(_)) => 24,
-            Self::ReadPartSheet(ReadPartSheetError::CacheMissing(_)) => 25,
-            Self::ReadPartSheet(ReadPartSheetError::WritePartSheet(_)) => 26,
+            Self::HandleRead(HandleReadError::ReadPartId(_)) => 21,
+            Self::HandleRead(HandleReadError::PartIdValue(_)) => 22,
+            Self::HandleRead(HandleReadError::CacheGet(_)) => 23,
+            Self::HandleRead(HandleReadError::CacheGetTask(_)) => 24,
+            Self::HandleRead(HandleReadError::CacheMissing(_)) => 25,
+            Self::HandleRead(HandleReadError::WritePartSheet(_)) => 26,
 
-            Self::SavePartSheets(SavePartSheetsError::ReadGeneralPartSheet(_)) => 31,
-            Self::SavePartSheets(SavePartSheetsError::GeneralPartSheetLength(_, _)) => 32,
-            Self::SavePartSheets(SavePartSheetsError::GeneralPartSheetValue(_, _)) => 33,
-            Self::SavePartSheets(SavePartSheetsError::PartIdValue(_)) => 34,
-            Self::SavePartSheets(SavePartSheetsError::CacheInsert(_)) => 35,
-            Self::SavePartSheets(SavePartSheetsError::CacheInsertTask(_)) => 36,
+            Self::HandleSave(HandleSaveError::ReadGeneralPartSheet(_)) => 31,
+            Self::HandleSave(HandleSaveError::GeneralPartSheetLength(_, _)) => 32,
+            Self::HandleSave(HandleSaveError::GeneralPartSheetValue(_, _)) => 33,
+            Self::HandleSave(HandleSaveError::PartIdValue(_)) => 34,
+            Self::HandleSave(HandleSaveError::CacheSave(_)) => 35,
+            Self::HandleSave(HandleSaveError::CacheSaveTask(_)) => 36,
         }
     }
 }
@@ -78,8 +78,8 @@ impl TraceabilityHandler<TraceabilityContext> {
                 return Ok(RESPONSE_RESET);
             }
             TraceabilityRequest::CreatePartId => self.create_part_id().await?,
-            TraceabilityRequest::ReadPartSheet => self.read_part_sheet().await?,
-            TraceabilityRequest::SavePartSheets => self.save_part_sheets().await?,
+            TraceabilityRequest::ReadPartSheet => self.handle_read().await?,
+            TraceabilityRequest::SavePartSheets => self.handle_save().await?,
         }
 
         Ok(RESPONSE_SUCCESS)

@@ -26,7 +26,7 @@ pub(super) enum GetGeneralPartSheetError {
 
 /// Errors that can occur during insertion of general part sheet in the cache.
 #[derive(Debug, Error)]
-pub(super) enum InsertGeneralPartSheetError {
+pub(super) enum SavePartSheetsError {
     #[error("number of elements does not fit in an u16: {0}")]
     ElementsCount(TryFromIntError),
     #[error(transparent)]
@@ -95,12 +95,12 @@ impl TraceabilityCache {
         part_id: &str,
         general_part_sheet: &[(u32, String, Variant)],
         ctx: &Context,
-    ) -> Result<(), InsertGeneralPartSheetError> {
+    ) -> Result<(), SavePartSheetsError> {
         let cache_encoding_iter = general_part_sheet
             .iter()
             .map(|(id, _, variant)| (*id, variant));
         let encoded = encode_cached_part_sheet(cache_encoding_iter, ctx)
-            .map_err(InsertGeneralPartSheetError::ElementsCount)?;
+            .map_err(SavePartSheetsError::ElementsCount)?;
 
         // TODO: encode the two part sheets (adding required parameters to this function)
         //       to JSON and enqueue them in to-be-created tables.

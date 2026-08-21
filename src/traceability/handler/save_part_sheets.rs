@@ -5,13 +5,13 @@ use tokio::task::JoinError;
 use tracing::{info, instrument, warn};
 
 use crate::opcua::{DataValueExt, TryFromOpcUaValueError, TryFromVariant};
-use crate::traceability::cache::InsertGeneralPartSheetError;
+use crate::traceability::cache::SavePartSheetsError;
 
 use super::{ReadError, TraceabilityContext, TraceabilityHandler};
 
 /// Errors that can occur during handling the request for saving part sheets.
 #[derive(Debug, Error)]
-pub(super) enum SavePartSheetsError {
+pub(super) enum HandleSaveError {
     #[error("error reading general part sheet nodes")]
     ReadGeneralPartSheet(#[source] ReadError),
     #[error("invalid number of variables in general part sheet (discovered {0}, read {1})")]
@@ -21,9 +21,9 @@ pub(super) enum SavePartSheetsError {
     #[error("invalid part identifier value, cause: {0}")]
     PartIdValue(TryFromOpcUaValueError),
     #[error("error inserting general part sheet in the cache")]
-    CacheInsert(#[source] InsertGeneralPartSheetError),
+    CacheSave(#[source] SavePartSheetsError),
     #[error("blocking task to cache general part sheet failed: {0}")]
-    CacheInsertTask(JoinError),
+    CacheSaveTask(JoinError),
 }
 
 impl TraceabilityHandler<TraceabilityContext> {
@@ -33,7 +33,7 @@ impl TraceabilityHandler<TraceabilityContext> {
     /// * write the general part sheet to the cache,
     /// * write all the part sheets to the database.
     #[instrument(err, skip_all)]
-    pub(super) async fn save_part_sheets(&self) -> Result<(), SavePartSheetsError> {
+    pub(super) async fn handle_save(&self) -> Result<(), HandleSaveError> {
         // Read general part sheet values from the server.
         let general_part_sheet_ids = self
             .state
@@ -44,12 +44,12 @@ impl TraceabilityHandler<TraceabilityContext> {
         let general_part_sheet_values = self
             .read_values(general_part_sheet_ids)
             .await
-            .map_err(SavePartSheetsError::ReadGeneralPartSheet)?;
+            .map_err(HandleSaveError::ReadGeneralPartSheet)?;
 
         let expected_len = self.state.general_part_sheet.nodes.len();
         let got_len = general_part_sheet_values.len();
         if got_len != expected_len {
-            return Err(SavePartSheetsError::GeneralPartSheetLength(
+            return Err(HandleSaveError::GeneralPartSheetLength(
                 expected_len,
                 got_len,
             ));
@@ -65,7 +65,7 @@ impl TraceabilityHandler<TraceabilityContext> {
             .map(|((id, name), val)| {
                 val.try_into_variant()
                     .map(|variant| (*id, name.clone(), variant))
-                    .map_err(|err| SavePartSheetsError::GeneralPartSheetValue(err, *id))
+                    .map_err(|err| HandleSaveError::GeneralPartSheetValue(err, *id))
             })
             .collect::<Result<Vec<_>, _>>()?;
 
@@ -75,7 +75,7 @@ impl TraceabilityHandler<TraceabilityContext> {
             .map(|(_, _, v)| v)
             .expect("an element should exist at the part identifier index position");
         let part_id = String::try_from_variant(part_id_variant.clone())
-            .map_err(SavePartSheetsError::PartIdValue)?;
+            .map_err(HandleSaveError::PartIdValue)?;
 
         // Insert the general part sheet in the cache, using a blocking task.
         let sent_cache = Arc::clone(&self.cache);
@@ -90,8 +90,8 @@ impl TraceabilityHandler<TraceabilityContext> {
         });
 
         task.await
-            .map_err(SavePartSheetsError::CacheInsertTask)?
-            .map_err(SavePartSheetsError::CacheInsert)?;
+            .map_err(HandleSaveError::CacheSaveTask)?
+            .map_err(HandleSaveError::CacheSave)?;
 
         // TODO: write part sheets to the database.
         warn!(msg = "part sheets insertion to database is not yet implemented");
