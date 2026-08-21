@@ -81,7 +81,7 @@ impl OpcUaSession {
 /// Create and start an OPC-UA session, spawning its runtime event loop.
 ///
 /// Upon success, the [`OpcUaSession`] object will be stored in the provided registry.
-#[instrument(err, skip_all, fields(server_id))]
+#[instrument(err, skip_all, fields(server_id = server_id))]
 pub(super) async fn start_session(
     client: Arc<Client>,
     server_id: String,

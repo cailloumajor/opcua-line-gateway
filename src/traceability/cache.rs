@@ -2,12 +2,12 @@ use std::io;
 use std::num::TryFromIntError;
 
 use jiff::civil::Date;
-use opcua::types::Context;
+use opcua::types::{Context, Variant};
 use redb::{Database, ReadableDatabase, ReadableTable, TableDefinition};
 use thiserror::Error;
 use tracing::instrument;
 
-use super::part_sheet::CachedPartSheet;
+use super::part_sheet::{decode_cached_part_sheet, encode_cached_part_sheet};
 
 /// Table definition for the daily serial numbers.
 const SERIAL_TABLE: TableDefinition<&str, u32> = TableDefinition::new("daily_serial");
@@ -66,12 +66,12 @@ impl TraceabilityCache {
 
     /// Get a general part sheet from the cache, provided the part identifier and
     /// an OPC-UA encoding context.
-    #[instrument(err, skip_all, fields(part_id))]
+    #[instrument(err, skip_all, fields(part_id = part_id))]
     pub(super) fn get_general_part_sheet(
         &self,
         part_id: &str,
         ctx: &Context,
-    ) -> Result<Option<CachedPartSheet>, GetGeneralPartSheetError> {
+    ) -> Result<Option<Vec<(u32, Variant)>>, GetGeneralPartSheetError> {
         let read_txn = self.0.begin_read().map_err(redb::Error::from)?;
         let table = read_txn
             .open_table(GENERAL_PART_SHEET_TABLE)
@@ -80,27 +80,30 @@ impl TraceabilityCache {
 
         value_guard
             .map(|g| {
-                CachedPartSheet::from_cache_encoding(g.value(), ctx)
-                    .map_err(GetGeneralPartSheetError::Decoding)
+                decode_cached_part_sheet(g.value(), ctx).map_err(GetGeneralPartSheetError::Decoding)
             })
             .transpose()
     }
 
-    /// Write a general part sheet in the cache, provided the part identifier,
-    /// the part sheet as a slice of node identifier and variant, and an OPC-UA
-    /// encoding context.
+    /// Provided general and operation part_sheets, save the general one to the cache
+    /// and enqueue both for database insertion.
     ///
     /// This function can block upon access to wrapped database.
-    #[instrument(err, skip_all, fields(part_id))]
-    pub(super) fn insert_general_part_sheet(
+    #[instrument(err, skip_all, fields(part_id = part_id))]
+    pub(super) fn save_part_sheets(
         &self,
         part_id: &str,
-        part_sheet: CachedPartSheet,
+        general_part_sheet: &[(u32, String, Variant)],
         ctx: &Context,
     ) -> Result<(), InsertGeneralPartSheetError> {
-        let encoded = part_sheet
-            .encode_for_cache(ctx)
+        let cache_encoding_iter = general_part_sheet
+            .iter()
+            .map(|(id, _, variant)| (*id, variant));
+        let encoded = encode_cached_part_sheet(cache_encoding_iter, ctx)
             .map_err(InsertGeneralPartSheetError::ElementsCount)?;
+
+        // TODO: encode the two part sheets (adding required parameters to this function)
+        //       to JSON and enqueue them in to-be-created tables.
 
         let write_txn = self.0.begin_write().map_err(redb::Error::from)?;
         write_txn

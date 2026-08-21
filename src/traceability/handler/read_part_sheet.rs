@@ -6,7 +6,6 @@ use tracing::{info, instrument};
 
 use crate::opcua::{DataValueExt, TryFromOpcUaValueError};
 use crate::traceability::cache::GetGeneralPartSheetError;
-use crate::traceability::part_sheet::CachedPartSheet;
 
 use super::{ReadError, TraceabilityContext, TraceabilityHandler, WriteError};
 
@@ -44,7 +43,17 @@ impl TraceabilityHandler<TraceabilityContext> {
             .try_ua_value_as()
             .map_err(ReadPartSheetError::PartIdValue)?;
 
-        let part_sheet_from_cache = self.get_cached_general_part_sheet(&part_id).await?;
+        // Get the general part sheet from the cache, using a blocking task.
+        let sent_cache = Arc::clone(&self.cache);
+        let sent_part_id = part_id.to_owned();
+        let sent_context = self.session.context();
+        let task = tokio::task::spawn_blocking(move || {
+            sent_cache.get_general_part_sheet(&sent_part_id, &sent_context.read_arc().context())
+        });
+        let part_sheet_from_cache = task
+            .await
+            .map_err(ReadPartSheetError::CacheGetTask)?
+            .map_err(ReadPartSheetError::CacheGet)?;
         let part_sheet = part_sheet_from_cache
             .ok_or_else(|| ReadPartSheetError::CacheMissing(part_id.to_owned()))?;
 
@@ -56,22 +65,5 @@ impl TraceabilityHandler<TraceabilityContext> {
         info!(msg = "general part sheet read", part_id);
 
         Ok(())
-    }
-
-    /// Get and decode the general part sheet from the cache, using a blocking task.
-    async fn get_cached_general_part_sheet(
-        &self,
-        part_id: &str,
-    ) -> Result<Option<CachedPartSheet>, ReadPartSheetError> {
-        let sent_cache = Arc::clone(&self.cache);
-        let sent_part_id = part_id.to_owned();
-        let sent_context = self.session.context();
-        tokio::task::spawn_blocking(move || {
-            sent_cache
-                .get_general_part_sheet(&sent_part_id, &sent_context.read_arc().context())
-                .map_err(ReadPartSheetError::CacheGet)
-        })
-        .await
-        .map_err(ReadPartSheetError::CacheGetTask)?
     }
 }
