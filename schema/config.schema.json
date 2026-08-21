@@ -40,7 +40,7 @@
       "properties": {
         "database": {
           "description": "ClickHouse database client configuration for archiving traceability data.",
-          "$ref": "#/$defs/DatabaseClientConfig"
+          "$ref": "#/$defs/TraceabilityDatabaseConfig"
         },
         "redb_file": {
           "description": "Path to the redb file to use for traceability cache. It will be created\nif it does not exist.",
@@ -79,35 +79,6 @@
         "raw_part_ref_node",
         "raw_batch_node",
         "line_id"
-      ]
-    },
-    "DatabaseClientConfig": {
-      "description": "ClickHouse database client configuration.",
-      "type": "object",
-      "properties": {
-        "default_database": {
-          "description": "Default database to use.",
-          "type": "string"
-        },
-        "password_file": {
-          "description": "Path to a file containing the ClickHouse user's password. Whitespaces around\nthe password will be removed.",
-          "type": "string"
-        },
-        "url": {
-          "description": "URL of the ClickHouse HTTP(S) endpoint.",
-          "type": "string",
-          "format": "uri"
-        },
-        "user": {
-          "description": "ClickHouse user.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "url",
-        "user",
-        "password_file",
-        "default_database"
       ]
     },
     "MachineConfig": {
@@ -228,6 +199,40 @@
             "Basic256"
           ]
         }
+      ]
+    },
+    "TraceabilityDatabaseConfig": {
+      "description": "ClickHouse database configuration for traceability.",
+      "type": "object",
+      "properties": {
+        "default_database": {
+          "description": "Default database to use.",
+          "type": "string"
+        },
+        "general_part_sheet_table": {
+          "description": "Table to use for general part sheet.",
+          "type": "string"
+        },
+        "password_file": {
+          "description": "Path to a file containing the ClickHouse user's password. Whitespaces around\nthe password will be removed.",
+          "type": "string"
+        },
+        "url": {
+          "description": "URL of the ClickHouse HTTP(S) endpoint.",
+          "type": "string",
+          "format": "uri"
+        },
+        "user": {
+          "description": "ClickHouse user.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "url",
+        "user",
+        "password_file",
+        "default_database",
+        "general_part_sheet_table"
       ]
     },
     "TraceabilityOpcUaNodesConfig": {

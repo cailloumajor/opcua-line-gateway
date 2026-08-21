@@ -100,12 +100,12 @@ pub struct CommonTraceabilityConfig {
     /// if it does not exist.
     pub redb_file: PathBuf,
     /// ClickHouse database client configuration for archiving traceability data.
-    pub database: DatabaseClientConfig,
+    pub database: TraceabilityDatabaseConfig,
 }
 
-/// ClickHouse database client configuration.
+/// ClickHouse database configuration for traceability.
 #[derive(Clone, Deserialize, JsonSchema)]
-pub struct DatabaseClientConfig {
+pub struct TraceabilityDatabaseConfig {
     /// URL of the ClickHouse HTTP(S) endpoint.
     #[schemars(url)]
     pub url: String,
@@ -116,6 +116,8 @@ pub struct DatabaseClientConfig {
     pub password_file: PathBuf,
     /// Default database to use.
     pub default_database: String,
+    /// Table to use for general part sheet.
+    pub general_part_sheet_table: String,
 }
 
 /// Connected machine configuration.
