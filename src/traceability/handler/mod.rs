@@ -14,6 +14,8 @@ use opcua_line_gateway_config::MachineTraceabilityConfig;
 use thiserror::Error;
 use tracing::instrument;
 
+use crate::opcua::{DataValueExt, SerializeVariant, TryFromOpcUaValueError};
+
 use super::cache::TraceabilityCache;
 
 use initialize::TraceabilityContext;
@@ -29,7 +31,7 @@ mod save_part_sheets;
 
 /// Errors that can occur during reading from the server.
 #[derive(Debug, Error)]
-enum ReadError {
+pub(crate) enum ReadError {
     #[error("error getting traceability namespace index")]
     GetNamespaceIndex(#[source] opcua::types::Error),
     #[error("read request error")]
@@ -60,6 +62,14 @@ pub(crate) enum BrowsePartSheetError {
     NonNumericId(Identifier),
     #[error("browse name for node identifier {0} is null")]
     NullBrowseName(u32),
+    #[error("error reading browsed values")]
+    ReadValues(#[source] ReadError),
+    #[error("invalid number of read variables (discovered {0}, read {1})")]
+    ValuesCount(usize, usize),
+    #[error("invalid discovered data value for node {1}, cause: {0}")]
+    InvalidDataValue(TryFromOpcUaValueError, String),
+    #[error("unsupported Variant for serialization for node {1}, cause: {0}")]
+    NotSerializable(serde_json::Error, String),
 }
 
 /// The initial state of the traceability handler.
@@ -166,11 +176,29 @@ impl TraceabilityHandler<InitialState> {
             }
         }
 
+        // Read the nodes values and ensure we can serialize them.
+        let values = self
+            .read_values(nodes.iter().map(|(id, _)| *id))
+            .await
+            .map_err(BrowsePartSheetError::ReadValues)?;
+        let expected_len = nodes.len();
+        let got_len = values.len();
+        if got_len != expected_len {
+            return Err(BrowsePartSheetError::ValuesCount(expected_len, got_len));
+        }
+        for (value, (_, name)) in values.into_iter().zip(&nodes) {
+            let variant = value
+                .try_into_variant()
+                .map_err(|err| BrowsePartSheetError::InvalidDataValue(err, name.to_owned()))?;
+            serde_json::to_value(SerializeVariant(&variant))
+                .map_err(|err| BrowsePartSheetError::NotSerializable(err, name.to_owned()))?;
+        }
+
         Ok(nodes)
     }
 }
 
-impl TraceabilityHandler<TraceabilityContext> {
+impl<T> TraceabilityHandler<T> {
     /// Read the values of nodes with provided identifiers.
     #[instrument(err, skip_all)]
     async fn read_values<I>(&self, ids: I) -> Result<Vec<DataValue>, ReadError>
