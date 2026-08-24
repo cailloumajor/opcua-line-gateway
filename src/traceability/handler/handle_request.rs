@@ -53,8 +53,9 @@ impl HandleRequestError {
             Self::HandleSave(HandleSaveError::GeneralPartSheetLength(_, _)) => 32,
             Self::HandleSave(HandleSaveError::GeneralPartSheetValue(_, _)) => 33,
             Self::HandleSave(HandleSaveError::PartIdValue(_)) => 34,
-            Self::HandleSave(HandleSaveError::CacheSave(_)) => 35,
-            Self::HandleSave(HandleSaveError::CacheSaveTask(_)) => 36,
+            Self::HandleSave(HandleSaveError::InvalidPartId(_)) => 35,
+            Self::HandleSave(HandleSaveError::CacheSave(_)) => 36,
+            Self::HandleSave(HandleSaveError::CacheSaveTask(_)) => 37,
         }
     }
 }

@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use opcua_line_gateway_config::AsciiDigitsOrUpper;
 use thiserror::Error;
 use tokio::task::JoinError;
 use tracing::{info, instrument};
@@ -39,30 +40,29 @@ impl TraceabilityHandler<TraceabilityContext> {
         let [part_id_value] = values
             .try_into()
             .expect("read values vector should have the expected size");
-        let part_id: String = part_id_value
+        let part_id: AsciiDigitsOrUpper<23> = part_id_value
             .try_ua_value_as()
             .map_err(HandleReadError::PartIdValue)?;
 
         // Get the general part sheet from the cache, using a blocking task.
         let sent_cache = Arc::clone(&self.cache);
-        let sent_part_id = part_id.to_owned();
         let sent_context = self.session.context();
         let task = tokio::task::spawn_blocking(move || {
-            sent_cache.get_general_part_sheet(&sent_part_id, &sent_context.read_arc().context())
+            sent_cache.get_general_part_sheet(part_id.as_str(), &sent_context.read_arc().context())
         });
         let part_sheet_from_cache = task
             .await
             .map_err(HandleReadError::CacheGetTask)?
             .map_err(HandleReadError::CacheGet)?;
         let part_sheet = part_sheet_from_cache
-            .ok_or_else(|| HandleReadError::CacheMissing(part_id.to_owned()))?;
+            .ok_or_else(|| HandleReadError::CacheMissing(part_id.to_string()))?;
 
         // Write the general part sheet to the server.
         self.write_values(part_sheet)
             .await
             .map_err(HandleReadError::WritePartSheet)?;
 
-        info!(msg = "general part sheet read", part_id);
+        info!(msg = "general part sheet read", %part_id);
 
         Ok(())
     }

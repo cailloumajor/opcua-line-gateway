@@ -1,11 +1,13 @@
 use std::sync::Arc;
 
+use opcua_line_gateway_config::AsciiDigitsOrUpper;
 use thiserror::Error;
 use tokio::task::JoinError;
 use tracing::{info, instrument, warn};
 
 use crate::opcua::{DataValueExt, TryFromOpcUaValueError, TryFromVariant};
 use crate::traceability::cache::SavePartSheetsError;
+use crate::traceability::part_id::{PartIdentifierError, validate_part_identifier};
 
 use super::{ReadError, TraceabilityContext, TraceabilityHandler};
 
@@ -20,6 +22,8 @@ pub(super) enum HandleSaveError {
     GeneralPartSheetValue(TryFromOpcUaValueError, u32),
     #[error("invalid part identifier value, cause: {0}")]
     PartIdValue(TryFromOpcUaValueError),
+    #[error("invalid part identifier")]
+    InvalidPartId(#[source] PartIdentifierError),
     #[error("error inserting general part sheet in the cache")]
     CacheSave(#[source] SavePartSheetsError),
     #[error("blocking task to cache general part sheet failed: {0}")]
@@ -74,16 +78,16 @@ impl TraceabilityHandler<TraceabilityContext> {
             .get(self.state.general_part_sheet.part_id_index)
             .map(|(_, _, v)| v)
             .expect("an element should exist at the part identifier index position");
-        let part_id = String::try_from_variant(part_id_variant.clone())
+        let part_id = AsciiDigitsOrUpper::<23>::try_from_variant(part_id_variant.clone())
             .map_err(HandleSaveError::PartIdValue)?;
+        validate_part_identifier(part_id).map_err(HandleSaveError::InvalidPartId)?;
 
         // Insert the general part sheet in the cache, using a blocking task.
         let sent_cache = Arc::clone(&self.cache);
-        let sent_part_id = part_id.to_owned();
         let sent_context = self.session.context();
         let task = tokio::task::spawn_blocking(move || {
             sent_cache.save_part_sheets(
-                &sent_part_id,
+                part_id.as_str(),
                 &general_part_sheet,
                 &sent_context.read_arc().context(),
             )
@@ -96,7 +100,7 @@ impl TraceabilityHandler<TraceabilityContext> {
         // TODO: write part sheets to the database.
         warn!(msg = "part sheets insertion to database is not yet implemented");
 
-        info!(msg = "part sheets saved", part_id);
+        info!(msg = "part sheets saved", %part_id);
 
         Ok(())
     }

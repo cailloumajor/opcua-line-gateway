@@ -13,6 +13,10 @@ pub(super) enum PartIdentifierError {
     PartReference(String),
     #[error("invalid serial number (should fit in 5 digits, got {0})")]
     SerialTooBig(u32),
+    #[error("invalid year and/or day: {0}")]
+    InvalidYearAndDay(jiff::Error),
+    #[error("invalid serial number (expected 5 digits, got {0})")]
+    InvalidSerial(String),
 }
 
 /// Represents the part reference portion in the part identifier.
@@ -86,8 +90,34 @@ pub(super) fn create_part_identifier(
     Ok(s)
 }
 
+/// Validate the provided part identifier, mainly to prevent errors when inserting
+/// in the database.
+#[instrument(err)]
+pub(super) fn validate_part_identifier(
+    s: AsciiDigitsOrUpper<23>,
+) -> Result<(), PartIdentifierError> {
+    let part_ref = &s.as_array()[..9];
+    if !part_ref.iter().all(|b| b.is_ascii_digit()) {
+        let inner = String::from_utf8_lossy(part_ref).into_owned();
+        return Err(PartIdentifierError::PartReference(inner));
+    }
+
+    let year_and_day = &s.as_str()[13..18];
+    Date::strptime("%y%j", year_and_day).map_err(PartIdentifierError::InvalidYearAndDay)?;
+
+    let serial = &s.as_array()[18..];
+    if !serial.iter().all(|b| b.is_ascii_digit()) {
+        let inner = String::from_utf8_lossy(serial).into_owned();
+        return Err(PartIdentifierError::InvalidSerial(inner));
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
+    use std::assert_matches;
+
     use super::*;
 
     mod part_reference {
@@ -145,8 +175,6 @@ mod tests {
     }
 
     mod create_part_identifier {
-        use std::assert_matches;
-
         use super::*;
 
         #[test]
@@ -182,6 +210,55 @@ mod tests {
                 .expect("creating part identifier should not fail");
 
             assert_eq!(part_id, "123498713XX422634312345");
+        }
+    }
+
+    mod validate_part_identifier {
+        use super::*;
+
+        #[test]
+        fn invalid_part_reference() {
+            let part_id = "1234A6789XX422634300001"
+                .parse()
+                .expect("parsing part identifier should not fail");
+
+            let result = validate_part_identifier(part_id);
+
+            assert_matches!(result, Err(PartIdentifierError::PartReference(err)) if err == "1234A6789");
+        }
+
+        #[test]
+        fn invalid_day() {
+            let part_id = "123456789XX422650000001"
+                .parse()
+                .expect("parsing part identifier should not fail");
+
+            let result = validate_part_identifier(part_id);
+
+            assert_matches!(
+                result,
+                Err(PartIdentifierError::InvalidYearAndDay(err)) if err.is_range()
+            );
+        }
+
+        #[test]
+        fn invalid_serial() {
+            let part_id = "123456789XX422634300A01"
+                .parse()
+                .expect("parsing part identifier should not fail");
+
+            let result = validate_part_identifier(part_id);
+
+            assert_matches!(result, Err(PartIdentifierError::InvalidSerial(err)) if err == "00A01");
+        }
+
+        #[test]
+        fn ok() {
+            let part_id = "123456789XX422634300001"
+                .parse()
+                .expect("parsing part identifier should not fail");
+
+            validate_part_identifier(part_id).expect("part identifier should be valid");
         }
     }
 }

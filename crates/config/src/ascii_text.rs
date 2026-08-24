@@ -22,6 +22,18 @@ pub enum AsciiTextError {
 #[derive(Clone, Copy, Debug)]
 pub struct AsciiDigitsOrUpper<const LENGTH: usize>([u8; LENGTH]);
 
+impl<const LENGTH: usize> AsciiDigitsOrUpper<LENGTH> {
+    /// Gets a reference to the underlying array.
+    pub const fn as_array(&self) -> &[u8; LENGTH] {
+        &self.0
+    }
+
+    /// Return the string as a string slice.
+    pub fn as_str(&self) -> &str {
+        str::from_utf8(&self.0).expect("converting ASCII to UTF-8 should not fail")
+    }
+}
+
 impl<const LENGTH: usize> TryFrom<&[u8]> for AsciiDigitsOrUpper<LENGTH> {
     type Error = AsciiTextError;
 
@@ -57,8 +69,7 @@ impl<const LENGTH: usize> FromStr for AsciiDigitsOrUpper<LENGTH> {
 
 impl<const LENGTH: usize> fmt::Display for AsciiDigitsOrUpper<LENGTH> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let s = str::from_utf8(&self.0).expect("converting ASCII to UTF-8 should not fail");
-        f.write_str(s)
+        f.write_str(self.as_str())
     }
 }
 
