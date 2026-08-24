@@ -79,10 +79,9 @@ pub(super) fn create_part_identifier(
 
     let part_ref: PartReference = part_ref.try_into()?;
 
-    let year = today.year() % 100;
-    let day = today.day_of_year();
+    let year_and_day = today.strftime("%y%j");
 
-    let s = format!("{part_ref}{batch}{line_id}{year:02}{day:03}{serial:05}");
+    let s = format!("{part_ref}{batch}{line_id}{year_and_day}{serial:05}");
 
     Ok(s)
 }
@@ -143,5 +142,46 @@ mod tests {
         failure_test!(joint_size_too_short, "P89-4865ABCD9A-X846");
         failure_test!(joint_size_too_long_with_postfix, "P89-4865ABCD8513A-X846");
         failure_test!(joint_size_too_long_without_postfix, "P89-4865ABCD8513");
+    }
+
+    mod create_part_identifier {
+        use std::assert_matches;
+
+        use super::*;
+
+        #[test]
+        fn serial_too_long() {
+            let batch = "XX".parse().expect("parsing the batch should not fail");
+            let line_id = "42".parse().expect("parsing the batch should not fail");
+            let today = Date::constant(2026, 12, 9);
+
+            let result = create_part_identifier("12-3498GR713", batch, line_id, today, 100000);
+
+            assert_matches!(result, Err(PartIdentifierError::SerialTooBig(100000)));
+        }
+
+        #[test]
+        fn ok_with_padding() {
+            let batch = "XX".parse().expect("parsing the batch should not fail");
+            let line_id = "42".parse().expect("parsing the batch should not fail");
+            let today = Date::constant(2005, 1, 9);
+
+            let part_id = create_part_identifier("12-3498GR713", batch, line_id, today, 3)
+                .expect("creating part identifier should not fail");
+
+            assert_eq!(part_id, "123498713XX420500900003");
+        }
+
+        #[test]
+        fn ok_no_padding() {
+            let batch = "XX".parse().expect("parsing the batch should not fail");
+            let line_id = "42".parse().expect("parsing the batch should not fail");
+            let today = Date::constant(2026, 12, 9);
+
+            let part_id = create_part_identifier("12-3498GR713", batch, line_id, today, 12345)
+                .expect("creating part identifier should not fail");
+
+            assert_eq!(part_id, "123498713XX422634312345");
+        }
     }
 }
