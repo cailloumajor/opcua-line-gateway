@@ -102,8 +102,6 @@ impl TraceabilityHandler<InitialState> {
     /// Browse a part sheet (i.e. an OPC-UA object), provided its node identifier.
     /// Return a collection of numeric node identifiers and browse names couples,
     /// which are those of the object's properties of variable type.
-    ///
-    /// The returned collection is sorted by numeric identifiers.
     #[instrument(err, skip(self))]
     async fn browse_part_sheet(
         &self,
@@ -167,9 +165,6 @@ impl TraceabilityHandler<InitialState> {
                 nodes.push((*numeric_id, browse_name));
             }
         }
-
-        // Sort the nodes collection by identifiers.
-        nodes.sort_unstable_by_key(|(id, _)| *id);
 
         Ok(nodes)
     }
