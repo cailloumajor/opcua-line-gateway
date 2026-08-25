@@ -22,8 +22,8 @@ pub(super) enum HandleSaveError {
     GeneralPartSheetValue(TryFromOpcUaValueError, String),
     #[error("invalid part identifier value, cause: {0}")]
     PartIdValue(TryFromOpcUaValueError),
-    #[error("invalid part identifier")]
-    InvalidPartId(#[source] PartIdentifierError),
+    #[error("invalid part identifier: {1}")]
+    InvalidPartId(#[source] PartIdentifierError, String),
     #[error("error inserting general part sheet in the cache")]
     CacheSave(#[source] SavePartSheetsError),
     #[error("blocking task to cache general part sheet failed: {0}")]
@@ -80,7 +80,8 @@ impl TraceabilityHandler<TraceabilityContext> {
             .expect("an element should exist at the part identifier index position");
         let part_id = AsciiDigitsOrUpper::<23>::try_from_variant(part_id_variant.clone())
             .map_err(HandleSaveError::PartIdValue)?;
-        validate_part_identifier(part_id).map_err(HandleSaveError::InvalidPartId)?;
+        validate_part_identifier(part_id)
+            .map_err(|err| HandleSaveError::InvalidPartId(err, part_id.to_string()))?;
 
         // Insert the general part sheet in the cache, using a blocking task.
         let sent_cache = Arc::clone(&self.cache);

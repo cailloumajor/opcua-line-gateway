@@ -69,7 +69,7 @@ impl fmt::Display for PartReference<'_> {
 /// * Current year (2 digits);
 /// * Day of year (3 digits);
 /// * Per-day incremental serial number (5 digits);
-#[instrument(err)]
+#[instrument(err, fields(batch = %batch, line_id = %line_id))]
 pub(super) fn create_part_identifier(
     part_ref: &str,
     batch: AsciiDigitsOrUpper<2>,
@@ -92,20 +92,20 @@ pub(super) fn create_part_identifier(
 
 /// Validate the provided part identifier, mainly to prevent errors when inserting
 /// in the database.
-#[instrument(err)]
+#[instrument(err, skip_all)]
 pub(super) fn validate_part_identifier(
-    s: AsciiDigitsOrUpper<23>,
+    part_id: AsciiDigitsOrUpper<23>,
 ) -> Result<(), PartIdentifierError> {
-    let part_ref = &s.as_array()[..9];
+    let part_ref = &part_id.as_array()[..9];
     if !part_ref.iter().all(|b| b.is_ascii_digit()) {
         let inner = String::from_utf8_lossy(part_ref).into_owned();
         return Err(PartIdentifierError::PartReference(inner));
     }
 
-    let year_and_day = &s.as_str()[13..18];
+    let year_and_day = &part_id.as_str()[13..18];
     Date::strptime("%y%j", year_and_day).map_err(PartIdentifierError::InvalidYearAndDay)?;
 
-    let serial = &s.as_array()[18..];
+    let serial = &part_id.as_array()[18..];
     if !serial.iter().all(|b| b.is_ascii_digit()) {
         let inner = String::from_utf8_lossy(serial).into_owned();
         return Err(PartIdentifierError::InvalidSerial(inner));

@@ -1,4 +1,5 @@
 use opcua::types::Variant;
+use serde::ser::SerializeSeq;
 use serde::{Serialize, Serializer, ser};
 
 /// Wrapper around a [`Variant`] reference, allowing serialization.
@@ -23,6 +24,18 @@ impl Serialize for SerializeVariant<'_> {
             Variant::Float(v) => serializer.serialize_f32(*v),
             Variant::Double(v) => serializer.serialize_f64(*v),
             Variant::String(v) => v.value().serialize(serializer),
+            Variant::Array(v) => {
+                if v.dimensions.is_some() {
+                    return Err(ser::Error::custom(
+                        "multidimensional arrays are not supported",
+                    ));
+                }
+                let mut seq = serializer.serialize_seq(Some(v.values.len()))?;
+                for variant in &v.values {
+                    seq.serialize_element(&Self(variant))?;
+                }
+                seq.end()
+            }
             _ => Err(ser::Error::custom(format!(
                 "unsupported serialization for Variant type {:?}",
                 self.0.type_id()
@@ -42,19 +55,20 @@ mod tests {
     fn serialize_supported() {
         let variants: [Variant; _] = [
             Variant::Empty,
-            true.into(),             // Boolean
-            (-126i8).into(),         // SByte
-            42u8.into(),             // Byte
-            (-32321i16).into(),      // Int16
-            4521u16.into(),          // UInt16
-            (-123456789i32).into(),  // Int32
-            123456789u32.into(),     // UInt32
-            (-9876543210i64).into(), // Int64
-            9876543210u64.into(),    // UInt64
-            3.15f32.into(),          // Float
-            2.418281828f64.into(),   // Double
-            UAString::null().into(), // Null string
-            "hello opcua".into(),    // String
+            true.into(),              // Boolean
+            (-126i8).into(),          // SByte
+            42u8.into(),              // Byte
+            (-32321i16).into(),       // Int16
+            4521u16.into(),           // UInt16
+            (-123456789i32).into(),   // Int32
+            123456789u32.into(),      // UInt32
+            (-9876543210i64).into(),  // Int64
+            9876543210u64.into(),     // UInt64
+            3.15f32.into(),           // Float
+            2.418281828f64.into(),    // Double
+            UAString::null().into(),  // Null string
+            "hello opcua".into(),     // String
+            vec![true, false].into(), // Array
         ];
         let serializable = variants.iter().map(SerializeVariant).collect::<Vec<_>>();
 
@@ -79,6 +93,10 @@ mod tests {
                 Token::None,
                 Token::Some,
                 Token::Str("hello opcua"),
+                Token::Seq { len: Some(2) },
+                Token::Bool(true),
+                Token::Bool(false),
+                Token::SeqEnd,
                 Token::SeqEnd,
             ],
         );
