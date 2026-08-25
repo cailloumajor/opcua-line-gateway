@@ -4,7 +4,7 @@ use std::str::FromStr;
 
 use schemars::{JsonSchema, Schema, SchemaGenerator, json_schema};
 use serde::de::Visitor;
-use serde::{Deserialize, Deserializer, de};
+use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
 use thiserror::Error;
 
 /// Errors that can occur with [`AsciiText`].
@@ -70,6 +70,15 @@ impl<const LENGTH: usize> FromStr for AsciiDigitsOrUpper<LENGTH> {
 impl<const LENGTH: usize> fmt::Display for AsciiDigitsOrUpper<LENGTH> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.as_str())
+    }
+}
+
+impl<const LENGTH: usize> Serialize for AsciiDigitsOrUpper<LENGTH> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(self.as_str())
     }
 }
 

@@ -114,7 +114,7 @@ pub(super) async fn start_session(
 
     let traceability_cancel = CancellationToken::new();
     let traceability_handler = TraceabilityHandler::new(
-        server_id.clone(),
+        server_id.clone().into(),
         machine_config.traceability,
         Arc::clone(&session),
         traceability_cache,

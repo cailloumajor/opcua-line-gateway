@@ -78,8 +78,8 @@ pub(crate) struct InitialState;
 /// Manages traceability for an OPC-UA session.
 #[derive(Clone)]
 pub(crate) struct TraceabilityHandler<S> {
-    /// The ID of the server this handler works with.
-    server_id: String,
+    /// The ID of the machine this handler works with.
+    server_id: Arc<str>,
     /// The configuration for this server.
     config: MachineTraceabilityConfig,
     /// The OPC-UA session.
@@ -93,7 +93,7 @@ pub(crate) struct TraceabilityHandler<S> {
 impl TraceabilityHandler<InitialState> {
     /// Create a new [`TraceabilityHandler`].
     pub(crate) fn new(
-        server_id: String,
+        server_id: Arc<str>,
         config: MachineTraceabilityConfig,
         session: Arc<Session>,
         cache: Arc<TraceabilityCache>,
@@ -116,7 +116,7 @@ impl TraceabilityHandler<InitialState> {
     async fn browse_part_sheet(
         &self,
         root_node_id: u32,
-    ) -> Result<Vec<(u32, String)>, BrowsePartSheetError> {
+    ) -> Result<Vec<(u32, Arc<str>)>, BrowsePartSheetError> {
         // Get the traceability namespace index.
         let ns_index = self
             .session
@@ -165,11 +165,12 @@ impl TraceabilityHandler<InitialState> {
                 let Identifier::Numeric(numeric_id) = identifier else {
                     return Err(BrowsePartSheetError::NonNumericId(identifier.clone()));
                 };
-                let browse_name = ref_description
+                let browse_name: Arc<str> = ref_description
                     .browse_name
                     .name
                     .value()
                     .clone()
+                    .map(From::from)
                     .ok_or(BrowsePartSheetError::NullBrowseName(*numeric_id))?;
 
                 nodes.push((*numeric_id, browse_name));
@@ -189,9 +190,9 @@ impl TraceabilityHandler<InitialState> {
         for (value, (_, name)) in values.into_iter().zip(&nodes) {
             let variant = value
                 .try_into_variant()
-                .map_err(|err| BrowsePartSheetError::InvalidDataValue(err, name.to_owned()))?;
+                .map_err(|err| BrowsePartSheetError::InvalidDataValue(err, name.to_string()))?;
             serde_json::to_value(SerializeVariant(&variant))
-                .map_err(|err| BrowsePartSheetError::NotSerializable(err, name.to_owned()))?;
+                .map_err(|err| BrowsePartSheetError::NotSerializable(err, name.to_string()))?;
         }
 
         Ok(nodes)

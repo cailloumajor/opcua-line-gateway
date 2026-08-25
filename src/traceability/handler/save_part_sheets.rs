@@ -3,7 +3,7 @@ use std::sync::Arc;
 use opcua_line_gateway_config::AsciiDigitsOrUpper;
 use thiserror::Error;
 use tokio::task::JoinError;
-use tracing::{info, instrument, warn};
+use tracing::{info, instrument};
 
 use crate::opcua::{DataValueExt, TryFromOpcUaValueError, TryFromVariant};
 use crate::traceability::cache::SavePartSheetsError;
@@ -18,8 +18,8 @@ pub(super) enum HandleSaveError {
     ReadGeneralPartSheet(#[source] ReadError),
     #[error("invalid number of variables in general part sheet (discovered {0}, read {1})")]
     GeneralPartSheetLength(usize, usize),
-    #[error("invalid general part sheet member value (id={1}), cause: {0}")]
-    GeneralPartSheetValue(TryFromOpcUaValueError, u32),
+    #[error("invalid general part sheet value for node {1}, cause: {0}")]
+    GeneralPartSheetValue(TryFromOpcUaValueError, String),
     #[error("invalid part identifier value, cause: {0}")]
     PartIdValue(TryFromOpcUaValueError),
     #[error("invalid part identifier")]
@@ -69,7 +69,7 @@ impl TraceabilityHandler<TraceabilityContext> {
             .map(|((id, name), val)| {
                 val.try_into_variant()
                     .map(|variant| (*id, name.clone(), variant))
-                    .map_err(|err| HandleSaveError::GeneralPartSheetValue(err, *id))
+                    .map_err(|err| HandleSaveError::GeneralPartSheetValue(err, name.to_string()))
             })
             .collect::<Result<Vec<_>, _>>()?;
 
@@ -84,10 +84,12 @@ impl TraceabilityHandler<TraceabilityContext> {
 
         // Insert the general part sheet in the cache, using a blocking task.
         let sent_cache = Arc::clone(&self.cache);
+        let sent_server_id = Arc::clone(&self.server_id);
         let sent_context = self.session.context();
         let task = tokio::task::spawn_blocking(move || {
             sent_cache.save_part_sheets(
-                part_id.as_str(),
+                sent_server_id,
+                part_id,
                 &general_part_sheet,
                 &sent_context.read_arc().context(),
             )
@@ -96,9 +98,6 @@ impl TraceabilityHandler<TraceabilityContext> {
         task.await
             .map_err(HandleSaveError::CacheSaveTask)?
             .map_err(HandleSaveError::CacheSave)?;
-
-        // TODO: write part sheets to the database.
-        warn!(msg = "part sheets insertion to database is not yet implemented");
 
         info!(msg = "part sheets saved", %part_id);
 

@@ -1,7 +1,17 @@
 use std::num::TryFromIntError;
+use std::sync::Arc;
 
+use jiff::Timestamp;
 use opcua::types::{BinaryDecodable, BinaryEncodable, Context, Variant};
+use opcua_line_gateway_config::AsciiDigitsOrUpper;
+use serde::ser::SerializeMap;
+use serde::{Serialize, Serializer};
 use tracing::instrument;
+
+use crate::opcua::SerializeVariant;
+
+/// Type of an item in a part sheet to be cached and/or archived.
+pub(super) type SavedPartSheetItem = (u32, Arc<str>, Variant);
 
 /// Encode a part sheet, provided as an iterator of element, to the format used
 /// for caching, returning the encoded bytes.
@@ -15,21 +25,15 @@ use tracing::instrument;
 ///
 /// Return an error if the number of elements is too big (must fit in an [`u16`]).
 #[instrument(skip_all)]
-pub(super) fn encode_cached_part_sheet<'a, I>(
-    part_sheet: I,
+pub(super) fn encode_part_sheet_for_cache(
+    part_sheet: &[SavedPartSheetItem],
     ctx: &Context,
-) -> Result<Vec<u8>, TryFromIntError>
-where
-    I: IntoIterator<Item = (u32, &'a Variant)>,
-    <I as IntoIterator>::IntoIter: Clone + ExactSizeIterator,
-{
-    let iterator = part_sheet.into_iter();
+) -> Result<Vec<u8>, TryFromIntError> {
+    let count: u16 = part_sheet.len().try_into()?;
 
-    let count: u16 = iterator.len().try_into()?;
-
-    let encoded_elements_size = iterator
-        .clone()
-        .map(|(id, variant)| id.byte_len(ctx) + variant.byte_len(ctx))
+    let encoded_elements_size = part_sheet
+        .iter()
+        .map(|(id, _, variant)| id.byte_len(ctx) + variant.byte_len(ctx))
         .sum::<usize>();
 
     let mut buf: Vec<u8> = Vec::with_capacity(count.byte_len(ctx) + encoded_elements_size);
@@ -39,7 +43,7 @@ where
         .encode(&mut buf, ctx)
         .expect("writing to a Vec should not fail");
 
-    for (id, variant) in iterator {
+    for (id, _, variant) in part_sheet {
         // Encode the node identifier.
         id.encode(&mut buf, ctx)
             .expect("writing to a Vec should not fail");
@@ -79,28 +83,140 @@ pub(super) fn decode_cached_part_sheet(
     Ok(out)
 }
 
+/// Encode a part sheet, provided as an iterator of element, to the format used
+/// for database insertion (`JSONEachRow`), returning the encoded bytes.
+///
+/// # Errors
+///
+/// Return an error if something goes wrong with serialization.
+#[instrument(err, skip_all)]
+pub(super) fn encode_part_sheet_for_db(
+    saved_at: Timestamp,
+    machine_id: &str,
+    part_id: AsciiDigitsOrUpper<23>,
+    part_sheet: &[SavedPartSheetItem],
+) -> serde_json::Result<String> {
+    let row = PartSheetRow {
+        saved_at,
+        machine_id,
+        part_id,
+        data: part_sheet,
+    };
+
+    serde_json::to_string(&row)
+}
+
+/// Utility struct to allow serializing a part sheet database row.
+#[derive(Serialize)]
+struct PartSheetRow<'a> {
+    #[serde(serialize_with = "serialize_timestamp")]
+    saved_at: Timestamp,
+    machine_id: &'a str,
+    part_id: AsciiDigitsOrUpper<23>,
+    #[serde(serialize_with = "serialize_part_sheet")]
+    data: &'a [SavedPartSheetItem],
+}
+
+/// Serialize a timestamp in a ClickHouse idiomatic format to use with DateTime64 column.
+fn serialize_timestamp<S>(ts: &Timestamp, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    serializer.collect_str(&ts.strftime("%F %T%3.f"))
+}
+
+fn serialize_part_sheet<S>(
+    part_sheet: &[SavedPartSheetItem],
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let mut map = serializer.serialize_map(Some(part_sheet.len()))?;
+    for (_, name, value) in part_sheet {
+        map.serialize_entry(name.as_ref(), &SerializeVariant(value))?;
+    }
+    map.end()
+}
+
 #[cfg(test)]
 mod tests {
     use opcua::types::ContextOwned;
+    use serde_test::{Token, assert_ser_tokens};
 
     use super::*;
 
     #[test]
     fn cache_encoding_roudtrip() {
-        let fixture: [(u32, Variant); 3] = [
+        let part_sheet: &[SavedPartSheetItem] = &[
+            (561, "".into(), true.into()),
+            (98, "".into(), 42u16.into()),
+            (43, "".into(), "blabla".into()),
+        ];
+
+        let ctx = ContextOwned::default();
+
+        let encoded = encode_part_sheet_for_cache(part_sheet, &ctx.context())
+            .expect("encoding should not fail");
+        let decoded =
+            decode_cached_part_sheet(&encoded, &ctx.context()).expect("decoding should not fail");
+
+        let expected: &[(u32, Variant)] = &[
             (561, true.into()),
             (98, 42u16.into()),
             (43, "blabla".into()),
         ];
 
-        let ctx = ContextOwned::default();
+        assert_eq!(decoded, expected);
+    }
 
-        let part_sheet_iter = fixture.iter().map(|(id, v)| (*id, v));
-        let encoded = encode_cached_part_sheet(part_sheet_iter, &ctx.context())
-            .expect("encoding should not fail");
-        let decoded =
-            decode_cached_part_sheet(&encoded, &ctx.context()).expect("decoding should not fail");
+    #[test]
+    fn part_sheet_row_serialization() {
+        let saved_at = "1984-12-09T04:30:54.123Z"
+            .parse()
+            .expect("parsing timestamp should not fail");
+        let part_id = "123456789XX422611100001"
+            .parse()
+            .expect("parsing part identifier should not fail");
+        let part_sheet: &[SavedPartSheetItem] = &[
+            (0, "first".into(), true.into()),
+            (0, "second".into(), 42u16.into()),
+            (0, "third".into(), "blabla".into()),
+        ];
+        let row = PartSheetRow {
+            saved_at,
+            machine_id: "MAC1",
+            part_id,
+            data: part_sheet,
+        };
 
-        assert_eq!(decoded, fixture);
+        assert_ser_tokens(
+            &row,
+            &[
+                Token::Struct {
+                    name: "PartSheetRow",
+                    len: 4,
+                },
+                Token::Str("saved_at"),
+                Token::Str("1984-12-09 04:30:54.123"),
+                Token::Str("machine_id"),
+                Token::Str("MAC1"),
+                Token::Str("part_id"),
+                Token::Str("123456789XX422611100001"),
+                Token::Str("data"),
+                Token::Map {
+                    len: Some(part_sheet.len()),
+                },
+                Token::Str("first"),
+                Token::Bool(true),
+                Token::Str("second"),
+                Token::U16(42),
+                Token::Str("third"),
+                Token::Some,
+                Token::Str("blabla"),
+                Token::MapEnd,
+                Token::StructEnd,
+            ],
+        );
     }
 }

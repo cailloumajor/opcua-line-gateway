@@ -140,7 +140,7 @@ impl TraceabilityHandler<TraceabilityContext> {
 
                 info!(msg = "heartbeat handler terminated");
             }
-            .instrument(info_span!(parent: None, "heartbeat_handler", server_id)),
+            .instrument(info_span!(parent: None, "heartbeat_handler", %server_id)),
         );
 
         // Spawn traceability request handling task.
@@ -170,7 +170,7 @@ impl TraceabilityHandler<TraceabilityContext> {
 
                 info!(msg = "traceability handler terminated");
             }
-            .instrument(info_span!(parent:None, "traceability_handler", server_id)),
+            .instrument(info_span!(parent:None, "traceability_handler", %server_id)),
         );
 
         Ok(tasks)

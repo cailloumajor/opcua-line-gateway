@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use thiserror::Error;
 use tracing::{info, instrument};
 
@@ -23,7 +25,7 @@ pub(crate) struct TraceabilityContext {
 #[derive(Clone)]
 pub(super) struct GeneralPartSheetContext {
     /// Discovered nodes, couples of numeric identifier and browse name.
-    pub(super) nodes: Vec<(u32, String)>,
+    pub(super) nodes: Vec<(u32, Arc<str>)>,
     /// Index of the part identifier in the nodes collection.
     pub(super) part_id_index: usize,
 }

@@ -1,25 +1,43 @@
 use std::io;
 use std::num::TryFromIntError;
+use std::sync::Arc;
 
+use jiff::Timestamp;
 use jiff::civil::Date;
 use opcua::types::{Context, Variant};
+use opcua_line_gateway_config::AsciiDigitsOrUpper;
 use redb::{Database, ReadableDatabase, ReadableTable, TableDefinition};
 use thiserror::Error;
-use tracing::instrument;
+use tracing::{instrument, warn};
 
-use super::part_sheet::{decode_cached_part_sheet, encode_cached_part_sheet};
+use crate::traceability::part_sheet::encode_part_sheet_for_db;
+
+use super::part_sheet::{
+    SavedPartSheetItem, decode_cached_part_sheet, encode_part_sheet_for_cache,
+};
 
 /// Table definition for the daily serial numbers.
 const SERIAL_TABLE: TableDefinition<&str, u32> = TableDefinition::new("daily_serial");
 
-const GENERAL_PART_SHEET_TABLE: TableDefinition<&str, &[u8]> =
+/// Cached general part sheets.
+const GENERAL_PART_SHEET_CACHE: TableDefinition<&str, &[u8]> =
     TableDefinition::new("general_part_sheet");
+
+/// Global monotonic sequence number for part sheets archiving queue. Must NEVER be reset,
+/// even if the queue is empty.
+const QUEUE_SEQ: TableDefinition<(), u64> = TableDefinition::new("archive_seq");
+/// General part sheet `JSONEachRow` rows waiting to be inserted in database.
+const GENERAL_PART_SHEET_QUEUE: TableDefinition<u64, &str> = TableDefinition::new("general_queue");
 
 /// Errors that can occur during retrieval of general part sheet from the cache.
 #[derive(Debug, Error)]
 pub(super) enum GetGeneralPartSheetError {
     #[error(transparent)]
-    Redb(#[from] redb::Error),
+    RedbTransaction(#[from] redb::TransactionError),
+    #[error(transparent)]
+    RedbTable(#[from] redb::TableError),
+    #[error(transparent)]
+    RedbStorage(#[from] redb::StorageError),
     #[error("error decoding general part sheet")]
     Decoding(#[source] io::Error),
 }
@@ -29,8 +47,16 @@ pub(super) enum GetGeneralPartSheetError {
 pub(super) enum SavePartSheetsError {
     #[error("number of elements does not fit in an u16: {0}")]
     ElementsCount(TryFromIntError),
+    #[error("error serializing general part sheet for database: {0}")]
+    GeneralSerialization(serde_json::Error),
     #[error(transparent)]
-    Redb(#[from] redb::Error),
+    RedbTransaction(#[from] redb::TransactionError),
+    #[error(transparent)]
+    RedbTable(#[from] redb::TableError),
+    #[error(transparent)]
+    RedbStorage(#[from] redb::StorageError),
+    #[error(transparent)]
+    RedbCommit(#[from] redb::CommitError),
 }
 
 /// Wrapper around a redb [`Database`], providing helper methods.
@@ -72,11 +98,9 @@ impl TraceabilityCache {
         part_id: &str,
         ctx: &Context,
     ) -> Result<Option<Vec<(u32, Variant)>>, GetGeneralPartSheetError> {
-        let read_txn = self.0.begin_read().map_err(redb::Error::from)?;
-        let table = read_txn
-            .open_table(GENERAL_PART_SHEET_TABLE)
-            .map_err(redb::Error::from)?;
-        let value_guard = table.get(part_id).map_err(redb::Error::from)?;
+        let read_txn = self.0.begin_read()?;
+        let table = read_txn.open_table(GENERAL_PART_SHEET_CACHE)?;
+        let value_guard = table.get(part_id)?;
 
         value_guard
             .map(|g| {
@@ -88,30 +112,44 @@ impl TraceabilityCache {
     /// Provided general and operation part_sheets, save the general one to the cache
     /// and enqueue both for database insertion.
     ///
-    /// This function can block upon access to wrapped database.
-    #[instrument(err, skip_all, fields(part_id = part_id))]
+    /// This function blocks upon access to wrapped database.
+    #[instrument(err, skip_all, fields(part_id = %part_id))]
     pub(super) fn save_part_sheets(
         &self,
-        part_id: &str,
-        general_part_sheet: &[(u32, String, Variant)],
+        machine_id: Arc<str>,
+        part_id: AsciiDigitsOrUpper<23>,
+        general: &[SavedPartSheetItem],
         ctx: &Context,
     ) -> Result<(), SavePartSheetsError> {
-        let cache_encoding_iter = general_part_sheet
-            .iter()
-            .map(|(id, _, variant)| (*id, variant));
-        let encoded = encode_cached_part_sheet(cache_encoding_iter, ctx)
+        let saved_at = Timestamp::now();
+
+        let cached_general = encode_part_sheet_for_cache(general, ctx)
             .map_err(SavePartSheetsError::ElementsCount)?;
+        let json_general = encode_part_sheet_for_db(saved_at, &machine_id, part_id, general)
+            .map_err(SavePartSheetsError::GeneralSerialization)?;
 
-        // TODO: encode the two part sheets (adding required parameters to this function)
+        // TODO: encode the operation part sheet (adding required parameters to this function)
         //       to JSON and enqueue them in to-be-created tables.
+        warn!(msg = "operation part sheet insertion to database is not yet implemented");
 
-        let write_txn = self.0.begin_write().map_err(redb::Error::from)?;
-        write_txn
-            .open_table(GENERAL_PART_SHEET_TABLE)
-            .map_err(redb::Error::from)?
-            .insert(part_id, encoded.as_slice())
-            .map_err(redb::Error::from)?;
-        write_txn.commit().map_err(redb::Error::from)?;
+        let write_txn = self.0.begin_write()?;
+        {
+            let mut seq_table = write_txn.open_table(QUEUE_SEQ)?;
+            let seq = seq_table
+                .entry(())?
+                // Increment by two, because we use two sequence numbers below.
+                .and_modify(|v| v.insert(v.value() + 2))?
+                .or_insert(0)?
+                .value();
+
+            write_txn
+                .open_table(GENERAL_PART_SHEET_CACHE)?
+                .insert(part_id.as_str(), cached_general.as_slice())?;
+            write_txn
+                .open_table(GENERAL_PART_SHEET_QUEUE)?
+                .insert(seq, json_general.as_str())?;
+        }
+        write_txn.commit()?;
 
         Ok(())
     }
