@@ -50,6 +50,7 @@ impl TraceabilityHandler<TraceabilityContext> {
             .await
             .map_err(HandleSaveError::ReadGeneralPartSheet)?;
 
+        // Ensure we have as many read nodes as requested.
         let expected_len = self.state.general_part_sheet.nodes.len();
         let got_len = general_part_sheet_values.len();
         if got_len != expected_len {
