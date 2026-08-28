@@ -65,7 +65,17 @@ impl OpcUaSession {
 
         // Stop the session.
         if let Err(err) = self.session.disconnect().await {
-            error!(error = "error disconnecting the session: {}", %err);
+            let status = err.status();
+            match status {
+                StatusCode::BadConnectionClosed
+                | StatusCode::BadSessionClosed
+                | StatusCode::BadServerNotConnected => {
+                    info!(msg = "remote closed the connection", %status);
+                }
+                _ => {
+                    error!(error = "error disconnecting the session: {}", %err);
+                }
+            }
         }
         if let Err(err) = self.event_loop_handle.await {
             error!(error = "error joining session event loop task: {}", %err);
