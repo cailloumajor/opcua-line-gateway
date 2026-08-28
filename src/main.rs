@@ -17,7 +17,7 @@ use tracing_subscriber::util::SubscriberInitExt;
 
 use self::opcua::{create_client, sessions_manager};
 use self::timezone::{init_system_timezone, system_timezone};
-use self::traceability::TraceabilityCache;
+use self::traceability::{TraceabilityCache, TraceabilityDatabase};
 
 mod opcua;
 mod timezone;
@@ -72,6 +72,12 @@ async fn main() -> anyhow::Result<()> {
     let tz = system_timezone();
     info!(msg = "got system timezone", ?tz);
 
+    // Create traceability database client and fetch the general part sheet columns.
+    let db_config = &config.traceability.database;
+    let db_cache = Arc::clone(&traceability_cache);
+    let traceability_database = TraceabilityDatabase::new(db_config, db_cache)
+        .context("Failed to create traceability database client")?;
+
     // Create OPC-UA client.
     let client = create_client(&config).context("Failed to create OPC-UA client")?;
 
@@ -79,6 +85,12 @@ async fn main() -> anyhow::Result<()> {
     let signals_handle = signals.handle();
     let shutdown_token = CancellationToken::new();
     let signals_task = tokio::spawn(handle_signals(signals, shutdown_token.clone()));
+
+    // Start part sheets draining task.
+    let draining_task = traceability_database.drain_part_sheets_task(
+        config.traceability.database.part_sheets_drain_period,
+        shutdown_token.clone(),
+    );
 
     // Start the sessions manager, acting as the main program loop.
     sessions_manager(
@@ -91,9 +103,7 @@ async fn main() -> anyhow::Result<()> {
 
     signals_handle.close();
 
-    signals_task
-        .await
-        .context("Failed to join signals handling task")?;
+    tokio::try_join!(draining_task, signals_task).context("failed to join tasks")?;
 
     Ok(())
 }

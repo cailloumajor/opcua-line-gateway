@@ -1,12 +1,12 @@
-use std::io;
 use std::num::TryFromIntError;
 use std::sync::Arc;
+use std::{fmt, io};
 
 use jiff::Timestamp;
 use jiff::civil::Date;
 use opcua::types::{Context, Variant};
 use opcua_line_gateway_config::AsciiDigitsOrUpper;
-use redb::{Database, ReadableDatabase, ReadableTable, TableDefinition};
+use redb::{Database, ReadableDatabase, ReadableTable, TableDefinition, TableHandle};
 use thiserror::Error;
 use tracing::{instrument, warn};
 
@@ -28,6 +28,34 @@ const GENERAL_PART_SHEET_CACHE: TableDefinition<&str, &[u8]> =
 const QUEUE_SEQ: TableDefinition<(), u64> = TableDefinition::new("archive_seq");
 /// General part sheet `JSONEachRow` rows waiting to be inserted in database.
 const GENERAL_PART_SHEET_QUEUE: TableDefinition<u64, &str> = TableDefinition::new("general_queue");
+/// Operation part sheet `JSONEachRow` rows waiting to be inserted in database.
+const OPERATION_PART_SHEET_QUEUE: TableDefinition<u64, &str> =
+    TableDefinition::new("operation_queue");
+
+/// Part sheet queue table dispatch. Allows to reduce exposition of symbols from
+/// this module (e.g. table definitions).
+#[derive(Clone, Copy)]
+pub(super) enum QueueTable {
+    /// General part sheet queue table.
+    General,
+    /// Operation part sheet queue table.
+    Operation,
+}
+
+impl QueueTable {
+    fn table_definition<'a>(self) -> TableDefinition<'static, u64, &'a str> {
+        match self {
+            Self::General => GENERAL_PART_SHEET_QUEUE,
+            Self::Operation => OPERATION_PART_SHEET_QUEUE,
+        }
+    }
+}
+
+impl fmt::Display for QueueTable {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.table_definition().name())
+    }
+}
 
 /// Errors that can occur during retrieval of general part sheet from the cache.
 #[derive(Debug, Error)]
@@ -148,6 +176,50 @@ impl TraceabilityCache {
             write_txn
                 .open_table(GENERAL_PART_SHEET_QUEUE)?
                 .insert(seq, json_general.as_str())?;
+        }
+        write_txn.commit()?;
+
+        Ok(())
+    }
+
+    /// Get a batch from a rows queue, as a couple of keys (sequence numbers)
+    /// and the `JSON Lines` body, provided the queue table to get a batch from.
+    pub(super) fn get_queue_batch(
+        &self,
+        queue_table: QueueTable,
+    ) -> Result<(Vec<u64>, String), redb::Error> {
+        let mut keys = Vec::new();
+        let mut body = String::new();
+
+        let read_txn = self.0.begin_read()?;
+        let table_result = read_txn.open_table(queue_table.table_definition());
+        if let Err(redb::TableError::TableDoesNotExist(_)) = table_result {
+            return Ok(Default::default());
+        }
+        let table = table_result?;
+        for item in table.iter()? {
+            let (k, v) = item?;
+            keys.push(k.value());
+            body.push_str(v.value());
+            body.push('\n');
+        }
+
+        Ok((keys, body))
+    }
+
+    /// Remove entries of a batch with provided keys from the queue with provided
+    /// table definition.
+    pub(super) fn remove_entries(
+        &self,
+        queue_table: QueueTable,
+        keys: &[u64],
+    ) -> Result<(), redb::Error> {
+        let write_txn = self.0.begin_write()?;
+        {
+            let mut table = write_txn.open_table(queue_table.table_definition())?;
+            for key in keys {
+                table.remove(key)?;
+            }
         }
         write_txn.commit()?;
 

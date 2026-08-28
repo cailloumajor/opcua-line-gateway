@@ -116,8 +116,14 @@ pub struct TraceabilityDatabaseConfig {
     pub password_file: PathBuf,
     /// Default database to use.
     pub default_database: String,
+    /// Part sheets draining task execution period.
+    #[serde(with = "jiff::fmt::serde::unsigned_duration::friendly::compact::required")]
+    #[schemars(with = "String")]
+    pub part_sheets_drain_period: Duration,
     /// Table to use for general part sheet.
     pub general_part_sheet_table: String,
+    /// Table to use for operation part sheet.
+    pub operation_part_sheet_table: String,
 }
 
 /// Connected machine configuration.

@@ -25,6 +25,7 @@ thiserror = "2.0.18"
 [dependencies]
 anyhow.workspace = true
 async-opcua = { workspace = true, features = ["client"] }
+clickhouse = { version = "0.15.1", features = ["opentelemetry", "rustls-tls-native-roots"] }
 futures-util = "0.3.32"
 jiff.workspace = true
 opcua-line-gateway-config = { path = "crates/config" }

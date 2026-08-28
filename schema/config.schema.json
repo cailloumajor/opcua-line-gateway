@@ -213,6 +213,14 @@
           "description": "Table to use for general part sheet.",
           "type": "string"
         },
+        "operation_part_sheet_table": {
+          "description": "Table to use for operation part sheet.",
+          "type": "string"
+        },
+        "part_sheets_drain_period": {
+          "description": "Part sheets draining task execution period.",
+          "type": "string"
+        },
         "password_file": {
           "description": "Path to a file containing the ClickHouse user's password. Whitespaces around\nthe password will be removed.",
           "type": "string"
@@ -232,7 +240,9 @@
         "user",
         "password_file",
         "default_database",
-        "general_part_sheet_table"
+        "part_sheets_drain_period",
+        "general_part_sheet_table",
+        "operation_part_sheet_table"
       ]
     },
     "TraceabilityOpcUaNodesConfig": {
