@@ -4,10 +4,11 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::Context as _;
-use clickhouse::Client;
+use clickhouse::{Client, Compression};
 use futures_util::StreamExt;
 use opcua_line_gateway_config::TraceabilityDatabaseConfig;
 use thiserror::Error;
+use tokio::sync::oneshot;
 use tokio::task::{JoinError, JoinHandle};
 use tokio::time::{MissedTickBehavior, interval};
 use tokio_stream::wrappers::IntervalStream;
@@ -77,14 +78,23 @@ impl TraceabilityDatabase {
 
     /// Start a task to periodically drain the part sheets to the database, according
     /// to provided period. Runs forever until provided shutdown is triggered.
+    ///
+    /// Returns the receiver side of a channel where the result (successful or not)
+    /// of the first run will be sent.
     pub(crate) fn drain_part_sheets_task(
         self,
         period: Duration,
         shutdown: CancellationToken,
-    ) -> JoinHandle<()> {
-        tokio::spawn(
+    ) -> (oneshot::Receiver<bool>, JoinHandle<()>) {
+        // Create the channel for reporting first task run status.
+        let (tx, rx) = oneshot::channel();
+
+        let task = tokio::spawn(
             async move {
                 info!(msg = "part sheets draining task started");
+
+                // Wrap the sender in an `Option`, allowing to use it only once.
+                let mut first_run_tx = Some(tx);
 
                 // Build a stream producing periodically until shutdown is triggered.
                 let mut interval = interval(period);
@@ -99,6 +109,13 @@ impl TraceabilityDatabase {
                     let drain_operation_fut = self.drain_part_sheet_queue(QueueTable::Operation);
                     let (general_result, operation_result) =
                         tokio::join!(drain_general_fut, drain_operation_fut);
+
+                    // Send the status of the first run to the channel.
+                    if let Some(tx) = first_run_tx.take() {
+                        tx.send(general_result.is_ok() && operation_result.is_ok())
+                            .expect("sending the first run outcome should not fail");
+                    }
+
                     if general_result.is_err() {
                         error!(msg = "error draining general part sheet queue");
                     }
@@ -110,7 +127,9 @@ impl TraceabilityDatabase {
                 info!(msg = "part sheets draining task terminated");
             }
             .instrument(info_span!(parent: None, "part_sheets_drain_task")),
-        )
+        );
+
+        (rx, task)
     }
 
     /// Drain part sheet queues to the database.
@@ -131,19 +150,18 @@ impl TraceabilityDatabase {
             .map_err(DrainQueuesError::GetBatchTask)?
             .map_err(DrainQueuesError::GetBatch)?;
 
-        // Return early without inserting if the queue is empty.
-        if keys.is_empty() {
-            debug!(msg = "part sheets queue empty");
-            return Ok(());
-        }
-
         // Insert the part sheet rows in database.
         let query = format!(
             "INSERT INTO {} FORMAT JSONEachRow",
             self.part_sheet_table(queue_table)
         );
-        let mut inserter = self
-            .client
+        // Disable compression if body to send is empty, preventing server errors.
+        let client = if !body.is_empty() {
+            &self.client
+        } else {
+            &self.client.clone().with_compression(Compression::None)
+        };
+        let mut inserter = client
             .insert_formatted_with(query)
             .with_timeouts(SEND_TIMEOUT, END_TIMEOUT);
         inserter

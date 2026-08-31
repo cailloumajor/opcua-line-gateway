@@ -81,10 +81,21 @@ async fn main() -> anyhow::Result<()> {
         .context("Failed to create traceability database client")?;
 
     // Start part sheets draining task.
-    let draining_task = traceability_database.drain_part_sheets_task(
+    let (first_drain_status_rx, draining_task) = traceability_database.drain_part_sheets_task(
         config.traceability.database.part_sheets_drain_period,
         shutdown_token.clone(),
     );
+
+    // Wait for the result of the first draining task run, and exit with error
+    // if unsuccessful.
+    let first_drain_successful = first_drain_status_rx
+        .await
+        .context("Failed to get the first draining task run status")?;
+    if first_drain_successful {
+        info!(msg = "first draining task run was successful");
+    } else {
+        return Err(anyhow!("First run of draining task was not successful"));
+    }
 
     // Create OPC-UA client.
     let client = create_client(&config).context("Failed to create OPC-UA client")?;
