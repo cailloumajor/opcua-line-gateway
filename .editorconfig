@@ -9,7 +9,7 @@ indent_style = space
 insert_final_newline = true
 trim_trailing_whitespace = true
 
-[*.{json,pkl,toml,xml}]
+[*.{json,pkl,toml,xml,yml,yaml}]
 indent_size = 2
 
 [Makefile]

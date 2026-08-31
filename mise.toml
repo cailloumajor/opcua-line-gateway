@@ -16,6 +16,9 @@ usage = "latest"
 rust = { version = "1.98.0", components = "rust-analyzer", profile = "default" }
 cargo-binstall = "latest"
 "cargo:clickhousectl" = "latest"
+"npm:yaml-language-server" = "latest"
+node = "lts"
+shellcheck = "latest"
 
 [tools."cargo:https://github.com/ClickHouse/clickhouse-analyzer"]
 version = "latest"
