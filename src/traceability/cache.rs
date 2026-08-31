@@ -19,8 +19,8 @@ use super::part_sheet::{
     SavedPartSheetItem, decode_cached_part_sheet, encode_part_sheet_for_cache,
 };
 
-/// The lower limit from which enqueueing will not be allowed.
-const QUEUES_THRESHOLD: u64 = 2;
+/// The lower limit on enqueued part sheets from which enqueueing will not be allowed.
+const QUEUES_THRESHOLD: u64 = 20;
 
 /// Table definition for the daily serial numbers.
 const SERIAL_TABLE: TableDefinition<&str, u32> = TableDefinition::new("daily_serial");
