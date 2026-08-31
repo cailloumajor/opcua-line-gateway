@@ -61,6 +61,8 @@ async fn main() -> anyhow::Result<()> {
     // Initialize the cached system timezone.
     init_system_timezone().context("Failed to get the system timezone")?;
 
+    let shutdown_token = CancellationToken::new();
+
     // Initialize tracing.
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
@@ -78,19 +80,18 @@ async fn main() -> anyhow::Result<()> {
     let traceability_database = TraceabilityDatabase::new(db_config, db_cache)
         .context("Failed to create traceability database client")?;
 
-    // Create OPC-UA client.
-    let client = create_client(&config).context("Failed to create OPC-UA client")?;
-
-    let signals = Signals::new(TERM_SIGNALS).context("Failed to register termination signals")?;
-    let signals_handle = signals.handle();
-    let shutdown_token = CancellationToken::new();
-    let signals_task = tokio::spawn(handle_signals(signals, shutdown_token.clone()));
-
     // Start part sheets draining task.
     let draining_task = traceability_database.drain_part_sheets_task(
         config.traceability.database.part_sheets_drain_period,
         shutdown_token.clone(),
     );
+
+    // Create OPC-UA client.
+    let client = create_client(&config).context("Failed to create OPC-UA client")?;
+
+    let signals = Signals::new(TERM_SIGNALS).context("Failed to register termination signals")?;
+    let signals_handle = signals.handle();
+    let signals_task = tokio::spawn(handle_signals(signals, shutdown_token.clone()));
 
     // Start the sessions manager, acting as the main program loop.
     sessions_manager(
