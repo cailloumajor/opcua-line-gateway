@@ -10,7 +10,7 @@ use thiserror::Error;
 use tokio::task::{JoinHandle, JoinSet};
 use tokio_util::sync::CancellationToken;
 use tokio_util::task::AbortOnDropHandle;
-use tracing::{Instrument, error, info, info_span, instrument};
+use tracing::{Instrument, error, field, info, info_span, instrument};
 
 use crate::traceability::{
     TraceabilityCache, TraceabilityHandler, TraceabilityInitializeError, TraceabilityInstallError,
@@ -51,7 +51,13 @@ impl OpcUaSession {
     /// Ask the session to stop and wait for the operation to complete.
     ///
     /// This function takes ownership of the [`OpcUaSession`].
-    #[instrument(skip_all, fields(server_id = self.server_id))]
+    #[instrument(
+        skip_all,
+        fields(
+            server_id = self.server_id,
+            session_id = %self.session.server_session_id().identifier
+        )
+    )]
     pub(super) async fn stop(mut self) {
         info!(msg = "stopping session");
 
@@ -108,11 +114,9 @@ pub(super) async fn start_session(
     session.disable_reconnects();
 
     // Start polling the event loop to bring the session alive.
-    let event_loop_handle = tokio::spawn(
-        event_loop
-            .run()
-            .instrument(info_span!(parent: None, "session_event_loop", server_id)),
-    );
+    let evloop_span =
+        info_span!(parent: None, "session_event_loop", server_id, session_id = field::Empty);
+    let event_loop_handle = tokio::spawn(event_loop.run().instrument(evloop_span.clone()));
 
     // Allow the event loop handling task to be aborted if anything goes wrong before
     // the end of this scope.
@@ -121,6 +125,12 @@ pub(super) async fn start_session(
     if !session.wait_for_connection().await {
         return Err(CreateSessionError::SessionConnect);
     }
+
+    // Set the server session ID on the event loop tracing span.
+    evloop_span.record(
+        "session_id",
+        session.server_session_id().identifier.to_string(),
+    );
 
     let traceability_cancel = CancellationToken::new();
     let traceability_handler = TraceabilityHandler::new(
