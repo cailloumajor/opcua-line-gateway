@@ -126,13 +126,13 @@ impl TraceabilityDatabase {
         let sent_cache = Arc::clone(&self.cache);
         let get_batch_task =
             tokio::task::spawn_blocking(move || sent_cache.get_queue_batch(queue_table));
-        let (general_keys, general_body) = get_batch_task
+        let (keys, body) = get_batch_task
             .await
             .map_err(DrainQueuesError::GetBatchTask)?
             .map_err(DrainQueuesError::GetBatch)?;
 
         // Return early without inserting if the queue is empty.
-        if general_keys.is_empty() {
+        if keys.is_empty() {
             debug!(msg = "part sheets queue empty");
             return Ok(());
         }
@@ -147,16 +147,15 @@ impl TraceabilityDatabase {
             .insert_formatted_with(query)
             .with_timeouts(SEND_TIMEOUT, END_TIMEOUT);
         inserter
-            .send(general_body.into())
+            .send(body.into())
             .await
             .map_err(DrainQueuesError::Insert)?;
         inserter.end().await.map_err(DrainQueuesError::Insert)?;
 
         // Remove the part sheet queue elements.
         let sent_cache = Arc::clone(&self.cache);
-        let remove_task = tokio::task::spawn_blocking(move || {
-            sent_cache.remove_entries(queue_table, &general_keys)
-        });
+        let remove_task =
+            tokio::task::spawn_blocking(move || sent_cache.remove_entries(queue_table, &keys));
         remove_task
             .await
             .map_err(DrainQueuesError::RemoveQueuedTask)?
