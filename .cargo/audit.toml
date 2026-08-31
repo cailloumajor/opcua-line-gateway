@@ -1,0 +1,7 @@
+[advisories]
+ignore = [
+  # Marvin Attack: potential key recovery through timing sidechannels
+  # This attack seems to target servers, and this project acts as a client
+  # as far as this vulnerability is out of concern.
+  "RUSTSEC-2023-0071",
+]
