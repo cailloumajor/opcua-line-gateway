@@ -56,7 +56,10 @@ async fn main() -> anyhow::Result<()> {
     // Create or open the traceability cache database (redb).
     let traceability_cache_db = Database::create(&config.traceability.redb_file)
         .context("Failed to open traceability cache database file")?;
-    let traceability_cache = Arc::new(TraceabilityCache::new(traceability_cache_db));
+    let traceability_cache = Arc::new(TraceabilityCache::new(
+        traceability_cache_db,
+        config.traceability.queues_not_draining_threshold,
+    ));
 
     // Initialize the cached system timezone.
     init_system_timezone().context("Failed to get the system timezone")?;

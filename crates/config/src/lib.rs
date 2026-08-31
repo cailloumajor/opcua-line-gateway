@@ -99,6 +99,8 @@ pub struct CommonTraceabilityConfig {
     /// Path to the redb file to use for traceability cache. It will be created
     /// if it does not exist.
     pub redb_file: PathBuf,
+    /// The upper limit of enqueued part sheets to consider draining as working.
+    pub queues_not_draining_threshold: u64,
     /// ClickHouse database client configuration for archiving traceability data.
     pub database: TraceabilityDatabaseConfig,
 }

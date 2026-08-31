@@ -19,9 +19,6 @@ use super::part_sheet::{
     SavedPartSheetItem, decode_cached_part_sheet, encode_part_sheet_for_cache,
 };
 
-/// The lower limit on enqueued part sheets from which enqueueing will not be allowed.
-const QUEUES_THRESHOLD: u64 = 20;
-
 /// Table definition for the daily serial numbers.
 const SERIAL_TABLE: TableDefinition<&str, u32> = TableDefinition::new("daily_serial");
 
@@ -44,7 +41,7 @@ const OPERATION_PART_SHEET_QUEUE: TableDefinition<u64, &str> =
 pub(super) enum QueueTable {
     /// General part sheet queue table.
     General,
-    /// Operation part sheet queue table.
+    /// The lower limit on enqueued part sheets from which enqueueing will not be allowed.
     Operation,
 }
 
@@ -102,17 +99,25 @@ pub(super) enum CheckEnqueuingError {
     RedbTable(#[from] redb::TableError),
     #[error(transparent)]
     RedbStorage(#[from] redb::StorageError),
-    #[error("too much enqueued part sheets: {0}, max {QUEUES_THRESHOLD}")]
-    TooMuchEnqueued(u64),
+    #[error("too much enqueued part sheets: {0}, max {1}")]
+    TooMuchEnqueued(u64, u64),
 }
 
 /// Wrapper around a redb [`Database`], providing helper methods.
-pub(crate) struct TraceabilityCache(Database);
+pub(crate) struct TraceabilityCache {
+    /// Inner redb database.
+    redb: Database,
+    /// Threshold for draining not working state.
+    queues_threshold: u64,
+}
 
 impl TraceabilityCache {
     /// Create a new [`TraceabilityCache`], provided a shareable [`Database`].
-    pub(crate) fn new(db: Database) -> Self {
-        Self(db)
+    pub(crate) fn new(redb: Database, queues_threshold: u64) -> Self {
+        Self {
+            redb,
+            queues_threshold,
+        }
     }
 
     /// Get the next serial number for the provided date.
@@ -122,7 +127,7 @@ impl TraceabilityCache {
     pub(super) fn next_serial(&self, today: Date) -> Result<u32, redb::Error> {
         let date_str = today.strftime("%Y%m%d").to_string();
 
-        let write_txn = self.0.begin_write()?;
+        let write_txn = self.redb.begin_write()?;
         let next = {
             let mut table = write_txn.open_table(SERIAL_TABLE)?;
             let next = table
@@ -145,7 +150,7 @@ impl TraceabilityCache {
         part_id: &str,
         ctx: &Context,
     ) -> Result<Option<Vec<(u32, Variant)>>, GetGeneralPartSheetError> {
-        let read_txn = self.0.begin_read()?;
+        let read_txn = self.redb.begin_read()?;
         let table = read_txn.open_table(GENERAL_PART_SHEET_CACHE)?;
         let value_guard = table.get(part_id)?;
 
@@ -179,7 +184,7 @@ impl TraceabilityCache {
         //       to JSON and enqueue them in to-be-created tables.
         warn!(msg = "operation part sheet insertion to database is not yet implemented");
 
-        let write_txn = self.0.begin_write()?;
+        let write_txn = self.redb.begin_write()?;
         {
             let mut seq_table = write_txn.open_table(QUEUE_SEQ)?;
             let seq = seq_table
@@ -207,7 +212,7 @@ impl TraceabilityCache {
     pub(super) fn check_enqueuing_allowed(&self) -> Result<(), CheckEnqueuingError> {
         let mut total_enqueued = 0u64;
 
-        let read_txn = self.0.begin_read()?;
+        let read_txn = self.redb.begin_read()?;
 
         for queue_table in QueueTable::VARIANTS {
             let table_result = read_txn.open_untyped_table(queue_table.table_definition());
@@ -221,8 +226,11 @@ impl TraceabilityCache {
             total_enqueued += len;
         }
 
-        if total_enqueued >= QUEUES_THRESHOLD {
-            return Err(CheckEnqueuingError::TooMuchEnqueued(total_enqueued));
+        if total_enqueued >= self.queues_threshold {
+            return Err(CheckEnqueuingError::TooMuchEnqueued(
+                total_enqueued,
+                self.queues_threshold,
+            ));
         }
 
         Ok(())
@@ -237,7 +245,7 @@ impl TraceabilityCache {
         let mut keys = Vec::new();
         let mut body = String::new();
 
-        let read_txn = self.0.begin_read()?;
+        let read_txn = self.redb.begin_read()?;
         let table_result = read_txn.open_table(queue_table.table_definition());
         if let Err(redb::TableError::TableDoesNotExist(_)) = table_result {
             return Ok(Default::default());
@@ -260,7 +268,7 @@ impl TraceabilityCache {
         queue_table: QueueTable,
         keys: &[u64],
     ) -> Result<(), redb::Error> {
-        let write_txn = self.0.begin_write()?;
+        let write_txn = self.redb.begin_write()?;
         {
             let mut table = write_txn.open_table(queue_table.table_definition())?;
             for key in keys {

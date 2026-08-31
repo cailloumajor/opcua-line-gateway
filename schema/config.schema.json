@@ -42,6 +42,12 @@
           "description": "ClickHouse database client configuration for archiving traceability data.",
           "$ref": "#/$defs/TraceabilityDatabaseConfig"
         },
+        "queues_not_draining_threshold": {
+          "description": "The upper limit of enqueued part sheets to consider draining as working.",
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
         "redb_file": {
           "description": "Path to the redb file to use for traceability cache. It will be created\nif it does not exist.",
           "type": "string"
@@ -49,6 +55,7 @@
       },
       "required": [
         "redb_file",
+        "queues_not_draining_threshold",
         "database"
       ]
     },
