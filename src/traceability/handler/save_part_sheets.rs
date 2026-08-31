@@ -6,7 +6,7 @@ use tokio::task::JoinError;
 use tracing::{info, instrument};
 
 use crate::opcua::{DataValueExt, TryFromOpcUaValueError, TryFromVariant};
-use crate::traceability::cache::SavePartSheetsError;
+use crate::traceability::cache::{CheckEnqueuingError, SavePartSheetsError};
 use crate::traceability::part_id::{PartIdentifierError, validate_part_identifier};
 
 use super::{ReadError, TraceabilityContext, TraceabilityHandler};
@@ -28,6 +28,8 @@ pub(super) enum HandleSaveError {
     CacheSave(#[source] SavePartSheetsError),
     #[error("blocking task to cache general part sheet failed: {0}")]
     CacheSaveTask(JoinError),
+    #[error("enqueuing part sheets is forbidden")]
+    Enqueuing(#[source] CheckEnqueuingError),
 }
 
 impl TraceabilityHandler<TraceabilityContext> {
@@ -38,6 +40,11 @@ impl TraceabilityHandler<TraceabilityContext> {
     /// * write all the part sheets to the database.
     #[instrument(err, skip_all)]
     pub(super) async fn handle_save(&self) -> Result<(), HandleSaveError> {
+        // Check we are allowed to enqueue part sheets.
+        self.cache
+            .check_enqueuing_allowed()
+            .map_err(HandleSaveError::Enqueuing)?;
+
         // Read general part sheet values from the server.
         let general_part_sheet_ids = self
             .state

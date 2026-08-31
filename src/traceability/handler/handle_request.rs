@@ -56,6 +56,7 @@ impl HandleRequestError {
             Self::HandleSave(HandleSaveError::InvalidPartId(_, _)) => 35,
             Self::HandleSave(HandleSaveError::CacheSave(_)) => 36,
             Self::HandleSave(HandleSaveError::CacheSaveTask(_)) => 37,
+            Self::HandleSave(HandleSaveError::Enqueuing(_)) => 38,
         }
     }
 }

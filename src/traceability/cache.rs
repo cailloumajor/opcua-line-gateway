@@ -6,7 +6,10 @@ use jiff::Timestamp;
 use jiff::civil::Date;
 use opcua::types::{Context, Variant};
 use opcua_line_gateway_config::AsciiDigitsOrUpper;
-use redb::{Database, ReadableDatabase, ReadableTable, TableDefinition, TableHandle};
+use redb::{
+    Database, ReadableDatabase, ReadableTable, ReadableTableMetadata, TableDefinition, TableHandle,
+};
+use strum::VariantArray;
 use thiserror::Error;
 use tracing::{instrument, warn};
 
@@ -15,6 +18,9 @@ use crate::traceability::part_sheet::encode_part_sheet_for_db;
 use super::part_sheet::{
     SavedPartSheetItem, decode_cached_part_sheet, encode_part_sheet_for_cache,
 };
+
+/// The lower limit from which enqueueing will not be allowed.
+const QUEUES_THRESHOLD: u64 = 2;
 
 /// Table definition for the daily serial numbers.
 const SERIAL_TABLE: TableDefinition<&str, u32> = TableDefinition::new("daily_serial");
@@ -34,7 +40,7 @@ const OPERATION_PART_SHEET_QUEUE: TableDefinition<u64, &str> =
 
 /// Part sheet queue table dispatch. Allows to reduce exposition of symbols from
 /// this module (e.g. table definitions).
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, VariantArray)]
 pub(super) enum QueueTable {
     /// General part sheet queue table.
     General,
@@ -85,6 +91,19 @@ pub(super) enum SavePartSheetsError {
     RedbStorage(#[from] redb::StorageError),
     #[error(transparent)]
     RedbCommit(#[from] redb::CommitError),
+}
+
+/// Errors that can occur during checking if enqueuing is allowed.
+#[derive(Debug, Error)]
+pub(super) enum CheckEnqueuingError {
+    #[error(transparent)]
+    RedbTransaction(#[from] redb::TransactionError),
+    #[error(transparent)]
+    RedbTable(#[from] redb::TableError),
+    #[error(transparent)]
+    RedbStorage(#[from] redb::StorageError),
+    #[error("too much enqueued part sheets: {0}, max {QUEUES_THRESHOLD}")]
+    TooMuchEnqueued(u64),
 }
 
 /// Wrapper around a redb [`Database`], providing helper methods.
@@ -178,6 +197,33 @@ impl TraceabilityCache {
                 .insert(seq, json_general.as_str())?;
         }
         write_txn.commit()?;
+
+        Ok(())
+    }
+
+    /// Returns success if enqueuing part sheet is possible, according to queues length
+    /// threshold.
+    #[instrument(err, skip_all)]
+    pub(super) fn check_enqueuing_allowed(&self) -> Result<(), CheckEnqueuingError> {
+        let mut total_enqueued = 0u64;
+
+        let read_txn = self.0.begin_read()?;
+
+        for queue_table in QueueTable::VARIANTS {
+            let table_result = read_txn.open_untyped_table(queue_table.table_definition());
+            if let Err(redb::TableError::TableDoesNotExist(_)) = table_result {
+                // Count a not existing table as an empty one.
+                continue;
+            }
+            let table = table_result?;
+            let len = table.len()?;
+
+            total_enqueued += len;
+        }
+
+        if total_enqueued >= QUEUES_THRESHOLD {
+            return Err(CheckEnqueuingError::TooMuchEnqueued(total_enqueued));
+        }
 
         Ok(())
     }
