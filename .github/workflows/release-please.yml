@@ -1,0 +1,22 @@
+name: Releases management
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release-please:
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - id: release-please
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          # Token permissions: read access to metadata, read and write access to
+          # actions, code and pull requests.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
