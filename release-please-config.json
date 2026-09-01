@@ -1,9 +1,24 @@
 {
   "$schema": "https://github.com/googleapis/release-please/raw/refs/heads/main/schemas/config.json",
-  "release-type": "rust",
+  "release-type": "simple",
   "include-component-in-tag": false,
   "packages": {
     ".": {}
   },
-  "plugins": ["cargo-workspace"]
+  "extra-files": [
+    {
+      "type": "toml",
+      "path": "Cargo.toml",
+      "jsonpath": "$.workspace.package.version"
+    },
+    {
+      "type": "generic",
+      "path": "Cargo.toml"
+    },
+    {
+      "type": "toml",
+      "path": "Cargo.lock",
+      "jsonpath": "$.package[?(!@.source)].version"
+    }
+  ]
 }
