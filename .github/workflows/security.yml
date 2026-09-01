@@ -5,17 +5,9 @@ on:
     branches:
       - main
       - "renovate/*"
-    paths:
-      - "**/Cargo.toml"
-      - "**/Cargo.lock"
-      - .github/workflows/security.yml
   pull_request:
     branches:
       - main
-    paths:
-      - "**/Cargo.toml"
-      - "**/Cargo.lock"
-      - .github/workflows/security.yml
   schedule:
     - cron: "0 6 * * 1"
   workflow_dispatch:
@@ -33,8 +25,9 @@ jobs:
       - id: skip_check
         uses: fkirc/skip-duplicate-actions@b974a9395958c231af965b70070979a577efa578 # v5.3.2
         with:
+          paths: '["**/Cargo.toml", "**/Cargo.lock"]'
           concurrent_skipping: same_content
-          do_not_skip: '["pull_request", "release", "workflow_dispatch", "schedule"]'
+          do_not_skip: '["release", "workflow_dispatch", "schedule"]'
           skip_after_successful_duplicate: true
 
   security_audit:
