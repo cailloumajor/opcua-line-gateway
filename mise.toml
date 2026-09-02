@@ -1,4 +1,4 @@
-[tools] # tombi: format.rules.table-keys-order = "ascending"
+[tools]  # tombi: format.rules.table-keys-order = "ascending"
 actionlint = "latest"
 betterleaks = "latest"
 editorconfig-checker = "latest"
