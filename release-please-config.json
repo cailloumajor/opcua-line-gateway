@@ -14,7 +14,7 @@
     {
       "type": "toml",
       "path": "Cargo.lock",
-      "jsonpath": "$.package[?(!@.source && value(@.version) != '0.0.0')].version"
+      "jsonpath": "$.package[?(!@.source && @.version != '0.0.0')].version"
     }
   ]
 }
