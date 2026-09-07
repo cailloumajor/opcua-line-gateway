@@ -35,7 +35,7 @@ jobs:
       contents: read
       issues: write
       checks: write
-      security-events: read
+      security-events: write
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: pre_job
