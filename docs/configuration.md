@@ -64,12 +64,6 @@ Traceability related configuration for a machine.
 | publish_interval | `string` | ✅ | string | Publish interval for OPC-UA subscription to request variable. |
 | part_identifier | `object` or `null` |  | [CreatePartIdConfig](#createpartidconfig) | Configuration for part identifier creation, if applicable. |
 
-## MessageSecurityMode
-
-A copy of [`opcua::crypto::MessageSecurityMode`] to allow using serde remote functionality.
-
-#### Type: `object(?)`
-
 ## OpcUaServerConfig
 
 Connected OPC-UA server configuration.
@@ -78,17 +72,11 @@ Connected OPC-UA server configuration.
 
 | Property | Type | Required | Possible values | Description |
 | -------- | ---- | -------- | --------------- | ----------- |
-| security_mode | Missing type | ✅ | [MessageSecurityMode](#messagesecuritymode) | OPC-UA security mode. |
-| security_policy | Missing type | ✅ | [SecurityPolicy](#securitypolicy) | OPC_UA security policy. |
+| security_mode | `string` | ✅ | `None` `Sign` `SignAndEncrypt` | OPC-UA security mode. |
+| security_policy | `string` | ✅ | `None` `Aes128Sha256RsaOaep` `Basic256Sha256` `Aes256Sha256RsaPss` `Basic128Rsa15` `Basic256` | OPC-UA security policy. |
 | url | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | OPC-UA server URL. |
 | password | `string` or `null` |  | string | Password to use if using username/password authentication. |
 | user | `string` or `null` |  | string | Username if authenticating to the OPC-UA server with username/password.<br />If not provided, anonymous authentication will be used. |
-
-## SecurityPolicy
-
-A copy of [`opcua::crypto::SecurityPolicy`] to allow using serde remote functionality.
-
-#### Type: `object(?)`
 
 ## TraceabilityDatabaseConfig
 

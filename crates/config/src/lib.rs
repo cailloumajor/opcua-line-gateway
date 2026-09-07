@@ -143,7 +143,7 @@ pub struct OpcUaServerConfig {
     /// OPC-UA server URL.
     #[schemars(url)]
     pub url: String,
-    /// OPC_UA security policy.
+    /// OPC-UA security policy.
     #[serde(with = "foreign::SecurityPolicy")]
     pub security_policy: SecurityPolicy,
     /// OPC-UA security mode.
