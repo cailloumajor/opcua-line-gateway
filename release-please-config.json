@@ -1,6 +1,8 @@
 {
   "$schema": "https://github.com/googleapis/release-please/raw/refs/heads/main/schemas/config.json",
   "release-type": "simple",
+  "draft": true,
+  "force-tag-creation": true,
   "include-component-in-tag": false,
   "bump-minor-pre-major": true,
   "bump-patch-for-minor-pre-major": true,

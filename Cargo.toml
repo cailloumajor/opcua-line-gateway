@@ -5,6 +5,15 @@ edition.workspace = true
 description = "OPC-UA gateway for production line"
 publish.workspace = true
 
+[package.metadata.deb]
+extended-description = """
+Gateway for machines of an industrial production line, using OPC-UA to connect to
+PLCs, with data caching and archiving.
+"""
+revision = ""
+separate-debug-symbols = true
+profile = "deb"
+
 [workspace]
 members = ["crates/*"]
 
@@ -46,3 +55,8 @@ tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 
 [dev-dependencies]
 serde_test = "1.0.177"
+
+[profile.deb]
+inherits = "release"
+debug = "line-tables-only"
+lto = true

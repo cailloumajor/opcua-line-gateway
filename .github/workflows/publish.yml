@@ -1,0 +1,31 @@
+name: Publish Release
+
+on:
+  release:
+    types:
+      - created
+
+jobs:
+  publish_release:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+        with:
+          cache: false
+          install: false
+      - name: Ensure Rust toolchain and components are installed
+        run: mise install --force rust
+      - name: Build Debian package
+        run: mise exec cargo:cargo-deb@latest -- cargo deb --verbose
+      - name: Upload Debian package to release and publish it
+        env:
+          tag: ${{ github.ref_name }}
+        run: |
+          gh release upload "$tag" target/debian/*.deb
+          gh release edit "$tag" --draft=false
