@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+#USAGE flag "--diff" help="Output a diff of generated file changes"
+
+set -eo pipefail
+
+# Dummy use variables set by `usage` to avoid SC2154
+: "${usage_diff:=}"
+
+#MISE description="Generate the JSON schema for the configuration"
+
+readonly gencmd="cargo generate-config-schema"
+readonly outfile=schema/config.schema.json
+
+if [[ "$usage_diff" = "true" ]]; then
+    diff -u $outfile <($gencmd)
+else
+    $gencmd >$outfile
+fi

@@ -9,9 +9,15 @@ local linters = new Mapping<String, Step> {
   ["cargo-fmt"] = Builtins.cargo_fmt
   ["editorconfig-checker"] = Builtins.editorconfig_checker
   ["ghalint"] = Builtins.ghalint_workflow
-  ["json-config-schema"] {
-    check_diff = "diff schema/config.schema.json <(cargo generate-config-schema)"
-    shell = "bash -o errexit -c"
+  ["config-schema"] {
+    check_diff = "mise run config-schema --diff"
+    fix = "mise run config-schema"
+    stage = "schema/config.schema.json"
+  }
+  ["config-doc"] {
+    check_diff = "mise run config-doc --diff"
+    fix = "mise run config-doc"
+    stage = "docs/configuration.md"
   }
   ["pinact"] = Builtins.pinact
   ["pkl"] = Builtins.pkl

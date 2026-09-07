@@ -17,25 +17,10 @@ forever.
 
 ### Configuration
 
-This section summarizes the configuration contents.
+The application binary expects the path to a TOML configuration file as its first
+command line argument.
 
-#### Common
-
-* Application URI
-* OPC-UA PKI directory
-
-#### For each OPC-UA server
-
-* Target URL (e.g. `opc.tcp://ip-or-hostname:port`)
-* Security Policy (e.g. `Basic256Sha256 - Sign & Encrypt`)
-* Authentication mode (anonymous, user/pass, …)
-
-#### For each traceability-enabled machine
-
-* Namespace URL for Traceability NodeSet
-* Request byte NodeId
-* Response byte NodeId
-* Part data sheet Objects NodeIds
+The configuration structure is described in this [documentation](docs/configuration.md).
 
 ## Traceability
 

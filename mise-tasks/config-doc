@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+#USAGE flag "--diff" help="Output a diff of generated file changes"
+
+set -eo pipefail
+
+# Dummy use variables set by `usage` to avoid SC2154
+: "${usage_diff:=}"
+
+#MISE description="Generate configuration documentation"
+#MISE tools={"pipx:jsonschema-markdown"="latest"}
+
+readonly gencmd="jsonschema-markdown --no-empty-columns schema/config.schema.json"
+readonly outfile=docs/configuration.md
+
+if [[ "$usage_diff" = "true" ]]; then
+    diff -u $outfile <($gencmd)
+else
+    $gencmd >$outfile
+fi

@@ -1,6 +1,6 @@
 [[language]]
-name = "sql"
-language-servers = ["clickhouse-lsp"]
+name = "bash"
+auto-format = true
 
 [[language]]
 name = "markdown"
@@ -11,6 +11,10 @@ formatter = { command = "rumdl", args = ["check", "--fix", "--stdin"] }
 [[language]]
 name = "pkl"
 auto-format = true
+
+[[language]]
+name = "sql"
+language-servers = ["clickhouse-lsp"]
 
 [language-server.clickhouse-lsp]
 command = "clickhouse-lsp"
