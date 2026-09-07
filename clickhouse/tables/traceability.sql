@@ -143,7 +143,7 @@ CREATE TABLE IF NOT EXISTS traceability.general_part_sheet
     INDEX idx_batch data.LotMati TYPE bloom_filter(0.01) GRANULARITY 4
 )
 ENGINE = MergeTree
-PARTITION BY toYYYYMM(saved_at)
+PARTITION BY toISOYear(saved_at)
 -- Part-centric ordering: the critical query is "everything about this part"
 -- (customer claim, recall, expertise), so `part_id` leads despite being high
 -- cardinality — a point lookup on a non-leading key would scan. `line_id` is a
@@ -189,7 +189,7 @@ CREATE TABLE IF NOT EXISTS traceability.operation_part_sheet
     INDEX idx_ref  part_ref TYPE bloom_filter(0.01) GRANULARITY 4
 )
 ENGINE = MergeTree
-PARTITION BY toYYYYMM(saved_at)
+PARTITION BY toISOYear(saved_at)
 -- Process-centric ordering, deliberately the opposite of the general sheet.
 -- This table answers "how did station PLC2 behave this week" (SPC, drift,
 -- maintenance), which scans machine and time ranges; the general sheet answers
