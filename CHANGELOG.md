@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.1.0...v0.1.1) (2026-09-08)
+
+
+### Bug Fixes
+
+* **ci:** include configuration schema in release artifacts ([e332ce0](https://github.com/cailloumajor/opcua-line-gateway/commit/e332ce0b6fd4cef3d82c01ad37c20e531be2f834))
+
 ## 0.1.0 (2026-09-07)
 
 
