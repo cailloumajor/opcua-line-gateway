@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.1.1...v0.1.2) (2026-09-08)
+
+
+### Bug Fixes
+
+* **deb:** add systemd service and sysusers configuration ([efbfd44](https://github.com/cailloumajor/opcua-line-gateway/commit/efbfd4416aa1f12085b0ab960100751edc0e3a90))
+
 ## [0.1.1](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.1.0...v0.1.1) (2026-09-08)
 
 
