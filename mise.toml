@@ -1,7 +1,7 @@
 [tools]  # tombi: format.rules.table-keys-order = "ascending"
 actionlint = "latest"
 betterleaks = "latest"
-editorconfig-checker = "latest"
+editorconfig-checker = "3"
 ghalint = "latest"
 "github:ClickHouse/clickhousectl" = "latest"
 "github:mhersson/mpls" = "latest"
@@ -27,18 +27,23 @@ crate = "clickhouse-analyzer"
 bin = "clickhouse-lsp"
 features = "lsp"
 
-[settings]
-minimum_release_age = "7d"
-
 [hooks]
 enter = "mise outdated --local --silent"
 
 [shell_alias]
 chctl = "clickhousectl"
 
-[tasks.test]
-description = "Run tests"
-run = "cargo test"
+[tasks."test:unit"]
+description = "Run unit tests and generate code coverage"
+run = "cargo llvm-cov --workspace --lcov --output-path lcov.info"
+
+[tasks."test:unit".tools]
+"aqua:taiki-e/cargo-llvm-cov" = "latest"
+
+# llvm-cov doesn't run doc tests, so run them separately
+[tasks."test:doc"]
+description = "Run documentation tests"
+run = "cargo test --workspace --doc"
 
 [tasks.lint]
 description = "Run hk lints"
@@ -46,5 +51,5 @@ run = "hk check --all"
 
 [tasks.ci]
 description = "Run CI related tasks"
-depends = ["lint", "test"]
+depends = ["lint", "test:*"]
 run = "echo 'CI completed successfully'"
