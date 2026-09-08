@@ -1214,7 +1214,7 @@ checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
 
 [[package]]
 name = "opcua-line-gateway"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anyhow",
  "async-opcua",
@@ -1241,7 +1241,7 @@ dependencies = [
 
 [[package]]
 name = "opcua-line-gateway-config"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "async-opcua",
  "jiff",
