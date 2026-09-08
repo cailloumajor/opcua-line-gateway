@@ -7,11 +7,12 @@ publish.workspace = true
 
 [package.metadata.deb]
 extended-description = """
-Gateway for machines of an industrial production line, using OPC-UA to connect to
-PLCs, with data caching and archiving.
+Gateway for machines of an industrial production line, using OPC-UA to connect \
+to PLCs, with data caching and archiving.
 """
 revision = ""
 separate-debug-symbols = true
+compress-debug-symbols = true
 profile = "deb"
 
 [workspace]
