@@ -28,5 +28,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           tag: ${{ github.ref_name }}
         run: |
-          gh release upload "$tag" target/debian/*.deb
+          gh release upload "$tag" target/debian/*.deb schema/*
           gh release edit "$tag" --draft=false
