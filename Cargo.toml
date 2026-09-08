@@ -11,9 +11,12 @@ Gateway for machines of an industrial production line, using OPC-UA to connect \
 to PLCs, with data caching and archiving.
 """
 revision = ""
+maintainer-scripts = "debian/"
 separate-debug-symbols = true
 compress-debug-symbols = true
 profile = "deb"
+
+[package.metadata.deb.systemd-units]
 
 [workspace]
 members = ["crates/*"]

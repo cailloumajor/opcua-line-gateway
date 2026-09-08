@@ -1,0 +1,62 @@
+[Unit]
+Description=OPC-UA gateway for production line
+# The gateway connects to the PLCs and to ClickHouse as soon as it starts, and
+# exits if the first draining task run fails, so wait for a usable network.
+Wants=network-online.target
+After=network-online.target
+# Never give up restarting: this service is meant to run forever, and the PLCs
+# or the database may stay unreachable for a long time.
+StartLimitIntervalSec=0
+
+[Service]
+Type=exec
+User=opcua-line-gateway
+Group=opcua-line-gateway
+
+# The configuration file path is the first positional argument.
+ExecStart=/usr/bin/opcua-line-gateway /etc/opcua-line-gateway/config.toml
+
+# /etc/opcua-line-gateway, holding config.toml and the database password file.
+ConfigurationDirectory=opcua-line-gateway
+ConfigurationDirectoryMode=0750
+# /var/lib/opcua-line-gateway, holding the redb cache file and the OPC-UA PKI.
+StateDirectory=opcua-line-gateway
+StateDirectoryMode=0750
+# Relative paths in the configuration file resolve against the state directory.
+WorkingDirectory=%S/opcua-line-gateway
+
+# Logs are emitted on stdout by `tracing`; keep the journal free of ANSI
+# escape sequences.
+Environment=RUST_LOG=info
+Environment=NO_COLOR=1
+
+# Termination signals trigger a graceful shutdown of the OPC-UA sessions and of
+# the part sheets draining task.
+KillSignal=SIGTERM
+TimeoutStopSec=30s
+Restart=always
+RestartSec=5s
+
+# Hardening
+CapabilityBoundingSet=
+NoNewPrivileges=yes
+LockPersonality=yes
+PrivateDevices=yes
+PrivateTmp=yes
+ProtectClock=yes
+ProtectControlGroups=yes
+ProtectHome=yes
+ProtectHostname=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectProc=invisible
+ProtectSystem=strict
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+SystemCallArchitectures=native
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

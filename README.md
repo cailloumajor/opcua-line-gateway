@@ -22,6 +22,61 @@ command line argument.
 
 The configuration structure is described in this [documentation](docs/configuration.md).
 
+## Systemd service
+
+The service and user setup is handled by the Debian package, for a single gateway
+instance per host.
+
+### Configuration
+
+Systemd creates `/etc/opcua-line-gateway` and `/var/lib/opcua-line-gateway`,
+owned by the service user, on the first start. Create the configuration
+directory beforehand to be able to install the configuration:
+
+The unit passes `/etc/opcua-line-gateway/config.toml` as the first positional
+argument. Paths inside it may be relative, in which case they resolve against
+`/var/lib/opcua-line-gateway` (the unit's working directory):
+
+```toml
+#:schema https://github.com/cailloumajor/opcua-line-gateway/releases/latest/download/config.schema.json
+
+application_uri = "urn:example:line-gateway:line1"
+
+pki_dir = "pki"
+
+[traceability]
+redb_file = "cache.redb"
+# …
+
+[traceability.database]
+password_file = "/etc/opcua-line-gateway/db_password"
+# …
+```
+
+The application refuses to start unless the database password file mode is
+exactly `0600`, so it must belong to the service user:
+
+```sh
+sudo install -m 0600 -o opcua-line-gateway -g opcua-line-gateway \
+    /dev/null /etc/opcua-line-gateway/db_password
+sudo -u opcua-line-gateway tee /etc/opcua-line-gateway/db_password <<<"…"
+```
+
+The OPC-UA certificate and private key are expected at
+`pki_dir/own/opcua-line-gateway-cert.der` and
+`pki_dir/private/opcua-line-gateway-key.pem`. Servers' certificates to trust go
+into `pki_dir/trusted`.
+
+### Operation
+
+```sh
+journalctl -u opcua-line-gateway -f
+```
+
+Log verbosity is set by `RUST_LOG` in the unit (`info` by default); override it
+with `sudo systemctl edit opcua-line-gateway` rather than by editing the
+installed unit.
+
 ## Traceability
 
 This service handles traceability management, which involves moving data between,
