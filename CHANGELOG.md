@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.1.2...v0.1.3) (2026-09-09)
+
+
+### Bug Fixes
+
+* **deb:** add maintainer field to prevent apt warnings ([9158fd3](https://github.com/cailloumajor/opcua-line-gateway/commit/9158fd3288cf56c571862985332bf8c44425a21a))
+
 ## [0.1.2](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.1.1...v0.1.2) (2026-09-08)
 
 
