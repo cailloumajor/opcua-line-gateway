@@ -25,6 +25,7 @@ lcov.info
 
 # Mise local configuration
 mise.local.toml
+mise.local.lock
 
 # Development files
 /dev/
