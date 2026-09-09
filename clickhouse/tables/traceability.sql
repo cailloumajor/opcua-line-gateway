@@ -31,7 +31,7 @@ CREATE DATABASE IF NOT EXISTS traceability;
 -- One row per Save request, i.e. one row per part per operation. History is
 -- kept: the sheet is enriched as the part travels, and each version is a row.
 -- ----------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS traceability.general_part_sheet
+CREATE TABLE IF NOT EXISTS traceability.part_sheet_general
 (
     -- Produced by the gateway, never read from a machine. Stamped when the row
     -- is queued in redb, never at insertion time: a retried insert must be
@@ -159,7 +159,7 @@ COMMENT 'General part sheet — one row per Save request, full history kept';
 -- ----------------------------------------------------------------------------
 -- Operation part sheet: data specific to each operation on the line.
 -- ----------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS traceability.operation_part_sheet
+CREATE TABLE IF NOT EXISTS traceability.part_sheet_operation
 (
     -- Same gateway-owned columns as above, same rationale.
     saved_at   DateTime64(3, 'UTC') CODEC(DoubleDelta, ZSTD(1)),
