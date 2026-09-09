@@ -6,6 +6,7 @@ description = "OPC-UA gateway for production line"
 publish.workspace = true
 
 [package.metadata.deb]
+maintainer = "Not Relevant <mail@example.com>"
 extended-description = """
 Gateway for machines of an industrial production line, using OPC-UA to connect \
 to PLCs, with data caching and archiving.
