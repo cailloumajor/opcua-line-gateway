@@ -34,8 +34,13 @@ enter = "mise outdated --local --silent"
 [shell_alias]
 chctl = "clickhousectl"
 
+[tasks.build]
+description = "Build the workspace"
+run = "cargo build --workspace"
+
 [tasks."test:unit"]
 description = "Run unit tests and generate code coverage"
+depends = ["build"]
 run = "cargo llvm-cov --workspace --lcov --output-path lcov.info"
 
 [tasks."test:unit".tools]
@@ -44,6 +49,7 @@ run = "cargo llvm-cov --workspace --lcov --output-path lcov.info"
 # llvm-cov doesn't run doc tests, so run them separately
 [tasks."test:doc"]
 description = "Run documentation tests"
+depends = ["build"]
 run = "cargo test --workspace --doc"
 
 [tasks.lint]
