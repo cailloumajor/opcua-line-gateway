@@ -13,18 +13,18 @@
   "minimumReleaseAge": "7 days",
   "packageRules": [
     {
-      "matchDepNames": [
-        "rust"
-      ],
-      "matchManagers": [
-        "mise"
-      ],
+      "matchDepNames": ["rust"],
+      "matchManagers": ["mise"],
       "semanticCommitType": "fix"
     },
     {
-      "matchDepTypes": [
-        "dev-dependencies"
-      ],
+      "matchDepTypes": ["dependencies", "workspace.dependencies"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true,
+      "automergeType": "branch"
+    },
+    {
+      "matchDepTypes": ["dev-dependencies"],
       "automerge": true,
       "automergeType": "branch"
     }
