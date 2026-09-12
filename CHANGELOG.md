@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.1.3...v0.1.4) (2026-09-12)
+
+
+### Bug Fixes
+
+* **deps:** update dependency rust to v1.98.1 ([cc5d1be](https://github.com/cailloumajor/opcua-line-gateway/commit/cc5d1bec0f485435098afb7e5ebfea68be1fe91a))
+
 ## [0.1.3](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.1.2...v0.1.3) (2026-09-09)
 
 
