@@ -524,11 +524,6 @@ url = "https://github.com/suzuki-shunsuke/pinact/releases/download/v5.0.0/pinact
 url_api = "https://api.github.com/repos/suzuki-shunsuke/pinact/releases/assets/558638100"
 provenance = "github-attestations"
 
-[[tools."pipx:jsonschema-markdown"]]
-version = "2026.8.0"
-backend = "pipx:jsonschema-markdown"
-specifiers = ["latest"]
-
 [[tools.pkl]]
 version = "0.32.1"
 backend = "aqua:apple/pkl"
@@ -568,6 +563,11 @@ url_api = "https://api.github.com/repos/apple/pkl/releases/assets/487426599"
 checksum = "sha256:8550a00fcf027335e42c5e2cd553b88e98845408cb1880b3e3d1860caf46d22a"
 url = "https://github.com/apple/pkl/releases/download/0.32.1/pkl-windows-amd64.exe"
 url_api = "https://api.github.com/repos/apple/pkl/releases/assets/487426668"
+
+[[tools."pypi:jsonschema-markdown"]]
+version = "2026.8.0"
+backend = "pypi:jsonschema-markdown"
+specifiers = ["latest"]
 
 [[tools.rumdl]]
 version = "0.2.73"
