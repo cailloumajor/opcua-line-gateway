@@ -25,7 +25,7 @@ jobs:
       - id: skip_check
         uses: fkirc/skip-duplicate-actions@b974a9395958c231af965b70070979a577efa578 # v5.3.2
         with:
-          paths: '["**/Cargo.toml", "**/Cargo.lock"]'
+          paths: '["**/Cargo.toml", "**/Cargo.lock", ".github/workflows/security.yml"]'
           concurrent_skipping: same_content
           do_not_skip: '["release", "workflow_dispatch", "schedule"]'
           skip_after_successful_duplicate: true
@@ -44,10 +44,14 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: taiki-e/install-action@3f74d7c16a4242f1c95561e98edc25d36adb4375 # v2.87.12
+      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
         with:
-          tool: cargo-audit
-      - run: cargo-audit audit --format sarif >cargo-audit.sarif
+          install: false
+      - name: Ensure Rust toolchain and components are installed
+        run: mise install --force rust
+      - name: Add a job summary
+        run: mise exec aqua:rustsec/rustsec/cargo-audit -c "cargo audit >>$GITHUB_STEP_SUMMARY 2>&1 || true"
+      - run: mise exec aqua:rustsec/rustsec/cargo-audit -c "cargo audit --format sarif >cargo-audit.sarif"
       - uses: github/codeql-action/upload-sarif@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
         if: always()
         with:
