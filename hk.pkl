@@ -15,6 +15,7 @@ steps {
     stage = "schema/config.schema.json"
   }
   ["config-doc"] {
+    depends = "config-schema"
     check_diff = "mise run config-doc --diff"
     fix = "mise run config-doc"
     stage = "docs/configuration.md"
