@@ -7,7 +7,8 @@
   "automergeType": "branch",
   "lockFileMaintenance": {
     "enabled": true,
-    "automerge": true
+    "automerge": true,
+    "minimumReleaseAgeBehaviour": "timestamp-optional"
   },
   "semanticCommits": "enabled",
   "minimumReleaseAge": "7 days",
