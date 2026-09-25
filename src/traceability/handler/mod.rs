@@ -10,7 +10,7 @@ use opcua::types::{
     NodeClassMask, NodeId, ReadValueId, ReferenceTypeId, StatusCode, TimestampsToReturn, Variant,
     WriteValue,
 };
-use opcua_line_gateway_config::MachineTraceabilityConfig;
+use opcua_line_gateway_config::{MachineTraceabilityConfig, TraceabilityCommonOpcUaConfig};
 use thiserror::Error;
 use tracing::instrument;
 
@@ -80,7 +80,9 @@ pub(crate) struct InitialState;
 pub(crate) struct TraceabilityHandler<S> {
     /// The ID of the machine this handler works with.
     server_id: Arc<str>,
-    /// The configuration for this server.
+    /// The OPC-UA traceability configuration, common to all machines.
+    opc_ua: TraceabilityCommonOpcUaConfig,
+    /// The configuration for this machine.
     config: MachineTraceabilityConfig,
     /// The OPC-UA session.
     session: Arc<Session>,
@@ -94,12 +96,14 @@ impl TraceabilityHandler<InitialState> {
     /// Create a new [`TraceabilityHandler`].
     pub(crate) fn new(
         server_id: Arc<str>,
+        opc_ua: TraceabilityCommonOpcUaConfig,
         config: MachineTraceabilityConfig,
         session: Arc<Session>,
         cache: Arc<TraceabilityCache>,
     ) -> Self {
         Self {
             server_id,
+            opc_ua,
             config,
             session,
             cache,
@@ -120,7 +124,7 @@ impl TraceabilityHandler<InitialState> {
         // Get the traceability namespace index.
         let ns_index = self
             .session
-            .get_namespace_index(&self.config.namespace_url)
+            .get_namespace_index(&self.opc_ua.namespace_url)
             .await
             .map_err(BrowsePartSheetError::GetNamespaceIndex)?;
 
@@ -208,7 +212,7 @@ impl<T> TraceabilityHandler<T> {
     {
         let ns_index = self
             .session
-            .get_namespace_index(&self.config.namespace_url)
+            .get_namespace_index(&self.opc_ua.namespace_url)
             .await
             .map_err(ReadError::GetNamespaceIndex)?;
         let nodes_to_read = ids
@@ -233,7 +237,7 @@ impl<T> TraceabilityHandler<T> {
     {
         let ns_index = self
             .session
-            .get_namespace_index(&self.config.namespace_url)
+            .get_namespace_index(&self.opc_ua.namespace_url)
             .await
             .map_err(WriteError::GetNamespaceIndex)?;
         let nodes_to_write = pairs

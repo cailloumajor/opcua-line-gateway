@@ -7,7 +7,7 @@ use std::time::Duration;
 
 use futures_util::StreamExt;
 use opcua::client::Client;
-use opcua_line_gateway_config::MachineConfig;
+use opcua_line_gateway_config::{MachineConfig, TraceabilityCommonOpcUaConfig};
 use parking_lot::Mutex;
 use tokio::time::{MissedTickBehavior, interval, timeout};
 use tokio_stream::wrappers::IntervalStream;
@@ -30,6 +30,7 @@ const CONNECT_TIMEOUT: Duration = Duration::from_secs(2);
 pub(crate) async fn sessions_manager(
     client: Arc<Client>,
     servers: BTreeMap<String, MachineConfig>,
+    traceability_opc_ua: TraceabilityCommonOpcUaConfig,
     shutdown: CancellationToken,
     traceability_cache: Arc<TraceabilityCache>,
 ) {
@@ -66,6 +67,7 @@ pub(crate) async fn sessions_manager(
             let sent_client = Arc::clone(&client);
             let server_id = id.clone();
             let srv_config = config.clone();
+            let sent_traceability_opc_ua = traceability_opc_ua.clone();
             let sent_traceability_cache = Arc::clone(&traceability_cache);
             let registry = Arc::clone(&sessions);
             tokio::spawn(async move {
@@ -73,6 +75,7 @@ pub(crate) async fn sessions_manager(
                     sent_client,
                     server_id.clone(),
                     srv_config,
+                    sent_traceability_opc_ua,
                     sent_traceability_cache,
                     registry,
                 );

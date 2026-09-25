@@ -34,16 +34,15 @@ impl TraceabilityHandler<TraceabilityContext> {
     /// generated ID.
     #[instrument(err, skip_all)]
     pub(super) async fn create_part_id(&self) -> Result<(), CreatePartIdError> {
-        let config = self
+        let line_id = self
             .config
-            .part_identifier
-            .as_ref()
+            .line_id
             // Return an error if this instance has no part reference configuration.
             .ok_or(CreatePartIdError::NotConfigured)?;
 
         // Read and convert needed OPC-UA variables.
         let values = self
-            .read_values([config.raw_part_ref_node, config.raw_batch_node])
+            .read_values([self.opc_ua.raw_part_ref_nid, self.opc_ua.raw_batch_nid])
             .await
             .map_err(CreatePartIdError::ReadVariables)?;
         let [part_ref_value, batch_value] = values
@@ -66,10 +65,10 @@ impl TraceabilityHandler<TraceabilityContext> {
         })?;
 
         // Create the part identifier.
-        let part_id = create_part_identifier(&part_ref, batch, config.line_id, today, serial)
+        let part_id = create_part_identifier(&part_ref, batch, line_id, today, serial)
             .map_err(CreatePartIdError::PartIdentifier)?;
 
-        self.write_values([(self.config.nodes.part_id, part_id.clone().into())])
+        self.write_values([(self.opc_ua.part_id_nid, part_id.clone().into())])
             .map_err(CreatePartIdError::WritePartId)
             .await?;
 

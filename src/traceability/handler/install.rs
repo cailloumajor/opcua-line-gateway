@@ -78,10 +78,10 @@ impl TraceabilityHandler<TraceabilityContext> {
 
         let ns_index = self
             .session
-            .get_namespace_index(&self.config.namespace_url)
+            .get_namespace_index(&self.opc_ua.namespace_url)
             .await
             .map_err(TraceabilityInstallError::GetNamespaceIndex)?;
-        let request_node_id = NodeId::new(ns_index, self.config.nodes.request);
+        let request_node_id = NodeId::new(ns_index, self.opc_ua.request_nid);
 
         // Create the monitored item. Given that we only have one item, we use sane
         // defaults, including not attributing client ID to monitored item.
@@ -134,7 +134,7 @@ impl TraceabilityHandler<TraceabilityContext> {
                     // Ignore the result, it is handled (logging) by the instrumentation
                     // of `write_value`.
                     let _ = cloned_self
-                        .write_values([(self.config.nodes.heartbeat, value.into())])
+                        .write_values([(cloned_self.opc_ua.heartbeat_nid, value.into())])
                         .await;
                 }
 
@@ -164,7 +164,7 @@ impl TraceabilityHandler<TraceabilityContext> {
                     // Ignore the result, as error logging is handled by the function
                     // `instrument` attribute.
                     let _ = self
-                        .write_values([(self.config.nodes.response, response_value.into())])
+                        .write_values([(self.opc_ua.response_nid, response_value.into())])
                         .await;
                 }
 

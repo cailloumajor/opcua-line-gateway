@@ -111,6 +111,7 @@ async fn main() -> anyhow::Result<()> {
     sessions_manager(
         client.into(),
         config.machines,
+        config.traceability.opc_ua,
         shutdown_token,
         traceability_cache,
     )
