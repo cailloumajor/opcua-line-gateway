@@ -37,12 +37,12 @@ impl TraceabilityHandler<InitialState> {
         self,
     ) -> Result<TraceabilityHandler<TraceabilityContext>, TraceabilityInitializeError> {
         let general_part_sheet_nodes = self
-            .browse_part_sheet(self.config.nodes.general_part_sheet)
+            .browse_part_sheet(self.opc_ua.general_part_sheet_nid)
             .await
             .map_err(TraceabilityInitializeError::BrowseGeneralPartSheet)?;
         let part_id_index = general_part_sheet_nodes
             .iter()
-            .position(|(id, _)| *id == self.config.nodes.part_id)
+            .position(|(id, _)| *id == self.opc_ua.part_id_nid)
             .ok_or(TraceabilityInitializeError::NoPartIdNode)?;
 
         info!(
@@ -59,6 +59,7 @@ impl TraceabilityHandler<InitialState> {
 
         Ok(TraceabilityHandler {
             server_id: self.server_id,
+            opc_ua: self.opc_ua,
             config: self.config,
             session: self.session,
             cache: self.cache,

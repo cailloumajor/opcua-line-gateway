@@ -25,20 +25,9 @@ Traceability configuration for all machines.
 | Property | Type | Required | Possible values | Description |
 | -------- | ---- | -------- | --------------- | ----------- |
 | database | `object` | ✅ | [TraceabilityDatabaseConfig](#traceabilitydatabaseconfig) | ClickHouse database client configuration for archiving traceability data. |
+| opc_ua | `object` | ✅ | [TraceabilityCommonOpcUaConfig](#traceabilitycommonopcuaconfig) | OPC-UA traceability information model, common to all machines. |
 | queues_not_draining_threshold | `integer` | ✅ | `0 <= x ` | The upper limit of enqueued part sheets to consider draining as working. |
 | redb_file | `string` | ✅ | string | Path to the redb file to use for traceability cache. It will be created<br />if it does not exist. |
-
-## CreatePartIdConfig
-
-Configuration related to part ID creation for a machine.
-
-#### Type: `object`
-
-| Property | Type | Required | Possible values | Description |
-| -------- | ---- | -------- | --------------- | ----------- |
-| line_id | `string` | ✅ | Length: `2 <= string <= 2` | Two character production line identifier. |
-| raw_batch_node | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the raw material batch variable. |
-| raw_part_ref_node | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the raw part reference variable. |
 
 ## MachineConfig
 
@@ -59,10 +48,8 @@ Traceability related configuration for a machine.
 
 | Property | Type | Required | Possible values | Description |
 | -------- | ---- | -------- | --------------- | ----------- |
-| namespace_url | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | OPC-UA namespace URL used for traceability. |
-| nodes | `object` | ✅ | [TraceabilityOpcUaNodesConfig](#traceabilityopcuanodesconfig) | Traceability-related OPC-UA nodes. |
 | publish_interval | `string` | ✅ | string | Publish interval for OPC-UA subscription to request variable. |
-| part_identifier | `object` or `null` |  | [CreatePartIdConfig](#createpartidconfig) | Configuration for part identifier creation, if applicable. |
+| line_id | `string` or `null` |  | string | Two character production line identifier, only present if the machine makes<br />part identifier creation requests. |
 
 ## OpcUaServerConfig
 
@@ -77,6 +64,23 @@ Connected OPC-UA server configuration.
 | url | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | OPC-UA server URL. |
 | password | `string` or `null` |  | string | Password to use if using username/password authentication. |
 | user | `string` or `null` |  | string | Username if authenticating to the OPC-UA server with username/password.<br />If not provided, anonymous authentication will be used. |
+
+## TraceabilityCommonOpcUaConfig
+
+OPC-UA traceability information model, as implemented by all machines.
+
+#### Type: `object`
+
+| Property | Type | Required | Possible values | Description |
+| -------- | ---- | -------- | --------------- | ----------- |
+| general_part_sheet_nid | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the general part sheet object. |
+| heartbeat_nid | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the heartbeat variable. |
+| namespace_url | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | OPC-UA namespace URL used for traceability. |
+| part_id_nid | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the `part ID` variable. |
+| raw_batch_nid | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the raw material batch variable. |
+| raw_part_ref_nid | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the raw part reference variable. |
+| request_nid | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the request variable. |
+| response_nid | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the response variable. |
 
 ## TraceabilityDatabaseConfig
 
@@ -93,20 +97,6 @@ ClickHouse database configuration for traceability.
 | password_file | `string` | ✅ | string | Path to a file containing the ClickHouse user's password. Whitespaces around<br />the password will be removed. |
 | url | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | URL of the ClickHouse HTTP(S) endpoint. |
 | user | `string` | ✅ | string | ClickHouse user. |
-
-## TraceabilityOpcUaNodesConfig
-
-OPC-UA nodes used for traceability.
-
-#### Type: `object`
-
-| Property | Type | Required | Possible values | Description |
-| -------- | ---- | -------- | --------------- | ----------- |
-| general_part_sheet | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the general part sheet object. |
-| heartbeat | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the heartbeat variable. |
-| part_id | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the `part ID` variable. |
-| request | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the request variable. |
-| response | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the response variable. |
 
 
 ---

@@ -34,7 +34,7 @@ impl TraceabilityHandler<TraceabilityContext> {
     pub(super) async fn handle_read(&self) -> Result<(), HandleReadError> {
         // Get the part ID from the OPC-UA server.
         let values = self
-            .read_values([self.config.nodes.part_id])
+            .read_values([self.opc_ua.part_id_nid])
             .await
             .map_err(HandleReadError::ReadPartId)?;
         let [part_id_value] = values

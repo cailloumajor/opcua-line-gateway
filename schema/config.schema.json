@@ -42,6 +42,10 @@
           "description": "ClickHouse database client configuration for archiving traceability data.",
           "$ref": "#/$defs/TraceabilityDatabaseConfig"
         },
+        "opc_ua": {
+          "description": "OPC-UA traceability information model, common to all machines.",
+          "$ref": "#/$defs/TraceabilityCommonOpcUaConfig"
+        },
         "queues_not_draining_threshold": {
           "description": "The upper limit of enqueued part sheets to consider draining as working.",
           "type": "integer",
@@ -56,36 +60,8 @@
       "required": [
         "redb_file",
         "queues_not_draining_threshold",
+        "opc_ua",
         "database"
-      ]
-    },
-    "CreatePartIdConfig": {
-      "description": "Configuration related to part ID creation for a machine.",
-      "type": "object",
-      "properties": {
-        "line_id": {
-          "description": "Two character production line identifier.",
-          "type": "string",
-          "maxLength": 2,
-          "minLength": 2
-        },
-        "raw_batch_node": {
-          "description": "OPC-UA node identifier of the raw material batch variable.",
-          "type": "integer",
-          "format": "uint32",
-          "minimum": 0
-        },
-        "raw_part_ref_node": {
-          "description": "OPC-UA node identifier of the raw part reference variable.",
-          "type": "integer",
-          "format": "uint32",
-          "minimum": 0
-        }
-      },
-      "required": [
-        "raw_part_ref_node",
-        "raw_batch_node",
-        "line_id"
       ]
     },
     "MachineConfig": {
@@ -110,25 +86,14 @@
       "description": "Traceability related configuration for a machine.",
       "type": "object",
       "properties": {
-        "namespace_url": {
-          "description": "OPC-UA namespace URL used for traceability.",
-          "type": "string",
-          "format": "uri"
-        },
-        "nodes": {
-          "description": "Traceability-related OPC-UA nodes.",
-          "$ref": "#/$defs/TraceabilityOpcUaNodesConfig"
-        },
-        "part_identifier": {
-          "description": "Configuration for part identifier creation, if applicable.",
-          "anyOf": [
-            {
-              "$ref": "#/$defs/CreatePartIdConfig"
-            },
-            {
-              "type": "null"
-            }
-          ]
+        "line_id": {
+          "description": "Two character production line identifier, only present if the machine makes\npart identifier creation requests.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 2,
+          "minLength": 2
         },
         "publish_interval": {
           "description": "Publish interval for OPC-UA subscription to request variable.",
@@ -136,9 +101,7 @@
         }
       },
       "required": [
-        "namespace_url",
-        "publish_interval",
-        "nodes"
+        "publish_interval"
       ]
     },
     "OpcUaServerConfig": {
@@ -192,6 +155,69 @@
         "security_mode"
       ]
     },
+    "TraceabilityCommonOpcUaConfig": {
+      "description": "OPC-UA traceability information model, as implemented by all machines.",
+      "type": "object",
+      "properties": {
+        "general_part_sheet_nid": {
+          "description": "OPC-UA node identifier of the general part sheet object.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "heartbeat_nid": {
+          "description": "OPC-UA node identifier of the heartbeat variable.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "namespace_url": {
+          "description": "OPC-UA namespace URL used for traceability.",
+          "type": "string",
+          "format": "uri"
+        },
+        "part_id_nid": {
+          "description": "OPC-UA node identifier of the `part ID` variable.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "raw_batch_nid": {
+          "description": "OPC-UA node identifier of the raw material batch variable.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "raw_part_ref_nid": {
+          "description": "OPC-UA node identifier of the raw part reference variable.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "request_nid": {
+          "description": "OPC-UA node identifier of the request variable.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "response_nid": {
+          "description": "OPC-UA node identifier of the response variable.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "namespace_url",
+        "request_nid",
+        "response_nid",
+        "heartbeat_nid",
+        "general_part_sheet_nid",
+        "part_id_nid",
+        "raw_part_ref_nid",
+        "raw_batch_nid"
+      ]
+    },
     "TraceabilityDatabaseConfig": {
       "description": "ClickHouse database configuration for traceability.",
       "type": "object",
@@ -234,49 +260,6 @@
         "part_sheets_drain_period",
         "general_part_sheet_table",
         "operation_part_sheet_table"
-      ]
-    },
-    "TraceabilityOpcUaNodesConfig": {
-      "description": "OPC-UA nodes used for traceability.",
-      "type": "object",
-      "properties": {
-        "general_part_sheet": {
-          "description": "OPC-UA node identifier of the general part sheet object.",
-          "type": "integer",
-          "format": "uint32",
-          "minimum": 0
-        },
-        "heartbeat": {
-          "description": "OPC-UA node identifier of the heartbeat variable.",
-          "type": "integer",
-          "format": "uint32",
-          "minimum": 0
-        },
-        "part_id": {
-          "description": "OPC-UA node identifier of the `part ID` variable.",
-          "type": "integer",
-          "format": "uint32",
-          "minimum": 0
-        },
-        "request": {
-          "description": "OPC-UA node identifier of the request variable.",
-          "type": "integer",
-          "format": "uint32",
-          "minimum": 0
-        },
-        "response": {
-          "description": "OPC-UA node identifier of the response variable.",
-          "type": "integer",
-          "format": "uint32",
-          "minimum": 0
-        }
-      },
-      "required": [
-        "request",
-        "response",
-        "heartbeat",
-        "general_part_sheet",
-        "part_id"
       ]
     }
   }

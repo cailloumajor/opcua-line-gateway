@@ -101,8 +101,32 @@ pub struct CommonTraceabilityConfig {
     pub redb_file: PathBuf,
     /// The upper limit of enqueued part sheets to consider draining as working.
     pub queues_not_draining_threshold: u64,
+    /// OPC-UA traceability information model, common to all machines.
+    pub opc_ua: TraceabilityCommonOpcUaConfig,
     /// ClickHouse database client configuration for archiving traceability data.
     pub database: TraceabilityDatabaseConfig,
+}
+
+/// OPC-UA traceability information model, as implemented by all machines.
+#[derive(Clone, Deserialize, JsonSchema)]
+pub struct TraceabilityCommonOpcUaConfig {
+    /// OPC-UA namespace URL used for traceability.
+    #[schemars(url)]
+    pub namespace_url: String,
+    /// OPC-UA node identifier of the request variable.
+    pub request_nid: u32,
+    /// OPC-UA node identifier of the response variable.
+    pub response_nid: u32,
+    /// OPC-UA node identifier of the heartbeat variable.
+    pub heartbeat_nid: u32,
+    /// OPC-UA node identifier of the general part sheet object.
+    pub general_part_sheet_nid: u32,
+    /// OPC-UA node identifier of the `part ID` variable.
+    pub part_id_nid: u32,
+    /// OPC-UA node identifier of the raw part reference variable.
+    pub raw_part_ref_nid: u32,
+    /// OPC-UA node identifier of the raw material batch variable.
+    pub raw_batch_nid: u32,
 }
 
 /// ClickHouse database configuration for traceability.
@@ -179,41 +203,11 @@ impl OpcUaServerConfig {
 /// Traceability related configuration for a machine.
 #[derive(Clone, Deserialize, JsonSchema)]
 pub struct MachineTraceabilityConfig {
-    /// OPC-UA namespace URL used for traceability.
-    #[schemars(url)]
-    pub namespace_url: String,
     /// Publish interval for OPC-UA subscription to request variable.
     #[serde(with = "jiff::fmt::serde::unsigned_duration::friendly::compact::required")]
     #[schemars(with = "String")]
     pub publish_interval: Duration,
-    /// Traceability-related OPC-UA nodes.
-    pub nodes: TraceabilityOpcUaNodesConfig,
-    /// Configuration for part identifier creation, if applicable.
-    pub part_identifier: Option<CreatePartIdConfig>,
-}
-
-/// OPC-UA nodes used for traceability.
-#[derive(Clone, Deserialize, JsonSchema)]
-pub struct TraceabilityOpcUaNodesConfig {
-    /// OPC-UA node identifier of the request variable.
-    pub request: u32,
-    /// OPC-UA node identifier of the response variable.
-    pub response: u32,
-    /// OPC-UA node identifier of the heartbeat variable.
-    pub heartbeat: u32,
-    /// OPC-UA node identifier of the general part sheet object.
-    pub general_part_sheet: u32,
-    /// OPC-UA node identifier of the `part ID` variable.
-    pub part_id: u32,
-}
-
-/// Configuration related to part ID creation for a machine.
-#[derive(Clone, Deserialize, JsonSchema)]
-pub struct CreatePartIdConfig {
-    /// OPC-UA node identifier of the raw part reference variable.
-    pub raw_part_ref_node: u32,
-    /// OPC-UA node identifier of the raw material batch variable.
-    pub raw_batch_node: u32,
-    /// Two character production line identifier.
-    pub line_id: AsciiDigitsOrUpper<2>,
+    /// Two character production line identifier, only present if the machine makes
+    /// part identifier creation requests.
+    pub line_id: Option<AsciiDigitsOrUpper<2>>,
 }
