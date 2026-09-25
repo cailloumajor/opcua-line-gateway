@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.2.0](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.1.3...v0.2.0) (2026-09-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* rework the configuration with common traceability OPC-UA
+
+### Features
+
+* rework the configuration with common traceability OPC-UA ([b362e44](https://github.com/cailloumajor/opcua-line-gateway/commit/b362e4474b910a35d7c4e521c487fd811b45e012))
+
+
+### Bug Fixes
+
+* **deps:** update dependency rust to v1.98.1 ([cc5d1be](https://github.com/cailloumajor/opcua-line-gateway/commit/cc5d1bec0f485435098afb7e5ebfea68be1fe91a))
+* update general part sheet table structure according to last changes ([a161195](https://github.com/cailloumajor/opcua-line-gateway/commit/a1611955a96e8b43d147dbd729697da60528bdb1))
+
 ## [0.1.3](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.1.2...v0.1.3) (2026-09-09)
 
 
