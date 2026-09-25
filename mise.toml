@@ -28,9 +28,6 @@ crate = "clickhouse-analyzer"
 bin = "clickhouse-lsp"
 features = "lsp"
 
-[hooks]
-enter = "mise outdated --local --silent"
-
 [shell_alias]
 chctl = "clickhousectl"
 
