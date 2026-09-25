@@ -55,7 +55,10 @@ CREATE TABLE IF NOT EXISTS traceability.part_sheet_general
     -- byte-for-byte against the browse result — no case folding, no
     -- normalisation.
     --
-    -- `NumeUniq` is deliberately absent: it is carried by `part_id` above.
+    -- `NumeUniq` is SKIPPED: the gateway sends it inside `data` like any other
+    -- general part sheet variable, but it is already carried by `part_id`
+    -- above. Without the SKIP it would land as a Dynamic path and be stored
+    -- twice.
     --
     -- Why a JSON column rather than 17 typed columns: it gives the gateway one
     -- single code path for both part sheets, and it removes the whole "schema
@@ -71,7 +74,7 @@ CREATE TABLE IF NOT EXISTS traceability.part_sheet_general
     -- `"42"`). Monitor drift with:
     --
     --     SELECT DISTINCT arrayJoin(JSONDynamicPathsWithTypes(data))
-    --     FROM traceability.general_part_sheet
+    --     FROM traceability.part_sheet_general
     --     WHERE saved_at > now() - INTERVAL 1 DAY
     --
     -- Two consequences of declaring a path: it is ALWAYS materialised, so an
@@ -93,6 +96,9 @@ CREATE TABLE IF NOT EXISTS traceability.part_sheet_general
         PiecAnnoChgtLotMati     Bool,                   -- announces a batch change
         SuivTravPiecParPost     Array(Bool),            -- worked, by station
         SuivConfPiecParPost     Array(Bool),            -- conforming, by station
+        QuiDeclNonConf          LowCardinality(String), -- non-conforming declaration issuer
+        QuiDeclConf             LowCardinality(String), -- conforming declaration issuer
+        ProgReceMach            LowCardinality(String), -- machine recipe program full name
         SuivPostAvecPassTrav    Array(Bool),            -- pass-through, by station
         SuivPrelPiecParPost     Array(Bool),            -- sampled, by station
         SuivRejePiecParPost     Array(Bool),            -- rejected, by station
@@ -102,7 +108,8 @@ CREATE TABLE IF NOT EXISTS traceability.part_sheet_general
         LotMatiInco             Bool,                   -- inconsistent material batch
         PiecRebu                Bool,                   -- scrapped
         DeclRebuMoti            LowCardinality(String), -- scrap reason
-        DeclRebuQui             LowCardinality(String)  -- scrap declared by
+        DeclRebuQui             LowCardinality(String), -- scrap declared by
+        SKIP NumeUniq                                   -- carried by `part_id`
     ),
 
     -- Decomposition of `part_id`, as built by `create_part_identifier`:
