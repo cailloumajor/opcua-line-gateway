@@ -7,11 +7,11 @@
   "automergeType": "branch",
   "lockFileMaintenance": {
     "enabled": true,
-    "automerge": true,
-    "minimumReleaseAgeBehaviour": "timestamp-optional"
+    "schedule": ["* 0-4 * * *"],
+    "automerge": true
   },
   "semanticCommits": "enabled",
-  "minimumReleaseAge": "7 days",
+  "minimumReleaseAge": "3 days",
   "packageRules": [
     {
       "matchDepNames": ["rust"],
@@ -21,13 +21,22 @@
     {
       "matchDepTypes": ["dependencies", "workspace.dependencies"],
       "matchUpdateTypes": ["patch"],
-      "automerge": true,
-      "automergeType": "branch"
+      "automerge": true
     },
     {
       "matchDepTypes": ["dev-dependencies"],
-      "automerge": true,
-      "automergeType": "branch"
+      "automerge": true
+    },
+    {
+      "description": "Do not require Minimum Release Age for update types that are controlled by the package manager",
+      "matchUpdateTypes": ["lockFileMaintenance"],
+      "minimumReleaseAge": null
+    },
+    {
+      "description": "Disable update PRs (in favor of lock file maintenance) for mise tools with requested version being latest",
+      "matchDepTypes": ["tools"],
+      "matchCurrentValue": "latest",
+      "enabled": false
     }
   ]
 }
