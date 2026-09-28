@@ -21,7 +21,7 @@
     },
     "traceability": {
       "description": "Traceability configuration for all machines.",
-      "$ref": "#/$defs/CommonTraceabilityConfig"
+      "$ref": "#/$defs/TraceabilityCommonConfig"
     }
   },
   "required": [
@@ -34,36 +34,6 @@
     "uri"
   ],
   "$defs": {
-    "CommonTraceabilityConfig": {
-      "description": "Traceability configuration for all machines.",
-      "type": "object",
-      "properties": {
-        "database": {
-          "description": "ClickHouse database client configuration for archiving traceability data.",
-          "$ref": "#/$defs/TraceabilityDatabaseConfig"
-        },
-        "opc_ua": {
-          "description": "OPC-UA traceability information model, common to all machines.",
-          "$ref": "#/$defs/TraceabilityCommonOpcUaConfig"
-        },
-        "queues_not_draining_threshold": {
-          "description": "The upper limit of enqueued part sheets to consider draining as working.",
-          "type": "integer",
-          "format": "uint64",
-          "minimum": 0
-        },
-        "redb_file": {
-          "description": "Path to the redb file to use for traceability cache. It will be created\nif it does not exist.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "redb_file",
-        "queues_not_draining_threshold",
-        "opc_ua",
-        "database"
-      ]
-    },
     "MachineConfig": {
       "description": "Connected machine configuration.",
       "type": "object",
@@ -74,34 +44,12 @@
         },
         "traceability": {
           "description": "Traceability settings for this machine.",
-          "$ref": "#/$defs/MachineTraceabilityConfig"
+          "$ref": "#/$defs/TraceabilityMachineConfig"
         }
       },
       "required": [
         "opc_ua_server",
         "traceability"
-      ]
-    },
-    "MachineTraceabilityConfig": {
-      "description": "Traceability related configuration for a machine.",
-      "type": "object",
-      "properties": {
-        "line_id": {
-          "description": "Two character production line identifier, only present if the machine makes\npart identifier creation requests.",
-          "type": [
-            "string",
-            "null"
-          ],
-          "maxLength": 2,
-          "minLength": 2
-        },
-        "publish_interval": {
-          "description": "Publish interval for OPC-UA subscription to request variable.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "publish_interval"
       ]
     },
     "OpcUaServerConfig": {
@@ -153,6 +101,36 @@
         "url",
         "security_policy",
         "security_mode"
+      ]
+    },
+    "TraceabilityCommonConfig": {
+      "description": "Traceability configuration for all machines.",
+      "type": "object",
+      "properties": {
+        "database": {
+          "description": "ClickHouse database client configuration for archiving traceability data.",
+          "$ref": "#/$defs/TraceabilityDatabaseConfig"
+        },
+        "opc_ua": {
+          "description": "OPC-UA traceability information model, common to all machines.",
+          "$ref": "#/$defs/TraceabilityCommonOpcUaConfig"
+        },
+        "queues_not_draining_threshold": {
+          "description": "The upper limit of enqueued part sheets to consider draining as working.",
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "redb_file": {
+          "description": "Path to the redb file to use for traceability cache. It will be created\nif it does not exist.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "redb_file",
+        "queues_not_draining_threshold",
+        "opc_ua",
+        "database"
       ]
     },
     "TraceabilityCommonOpcUaConfig": {
@@ -260,6 +238,28 @@
         "part_sheets_drain_period",
         "general_part_sheet_table",
         "operation_part_sheet_table"
+      ]
+    },
+    "TraceabilityMachineConfig": {
+      "description": "Traceability related configuration for a machine.",
+      "type": "object",
+      "properties": {
+        "line_id": {
+          "description": "Two character production line identifier, only present if the machine makes\npart identifier creation requests.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 2,
+          "minLength": 2
+        },
+        "publish_interval": {
+          "description": "Publish interval for OPC-UA subscription to request variable.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "publish_interval"
       ]
     }
   }

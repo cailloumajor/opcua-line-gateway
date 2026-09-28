@@ -9,25 +9,12 @@ OPC-UA line gateway configuration.
 | application_uri | `string` | ✅ | string | Globally unique identifier for the application instance, as of OPC-UA. |
 | machines | `object` | ✅ | [MachineConfig](#machineconfig) | Connected machines configuration, mapped by machine identifier. |
 | pki_dir | `string` | ✅ | string | Root directory of the OPC-UA PKI. |
-| traceability | `object` | ✅ | [CommonTraceabilityConfig](#commontraceabilityconfig) | Traceability configuration for all machines. |
+| traceability | `object` | ✅ | [TraceabilityCommonConfig](#traceabilitycommonconfig) | Traceability configuration for all machines. |
 
 
 ---
 
 # Definitions
-
-## CommonTraceabilityConfig
-
-Traceability configuration for all machines.
-
-#### Type: `object`
-
-| Property | Type | Required | Possible values | Description |
-| -------- | ---- | -------- | --------------- | ----------- |
-| database | `object` | ✅ | [TraceabilityDatabaseConfig](#traceabilitydatabaseconfig) | ClickHouse database client configuration for archiving traceability data. |
-| opc_ua | `object` | ✅ | [TraceabilityCommonOpcUaConfig](#traceabilitycommonopcuaconfig) | OPC-UA traceability information model, common to all machines. |
-| queues_not_draining_threshold | `integer` | ✅ | `0 <= x ` | The upper limit of enqueued part sheets to consider draining as working. |
-| redb_file | `string` | ✅ | string | Path to the redb file to use for traceability cache. It will be created<br />if it does not exist. |
 
 ## MachineConfig
 
@@ -38,18 +25,7 @@ Connected machine configuration.
 | Property | Type | Required | Possible values | Description |
 | -------- | ---- | -------- | --------------- | ----------- |
 | opc_ua_server | `object` | ✅ | [OpcUaServerConfig](#opcuaserverconfig) | OPC-UA server configuration for this machine. |
-| traceability | `object` | ✅ | [MachineTraceabilityConfig](#machinetraceabilityconfig) | Traceability settings for this machine. |
-
-## MachineTraceabilityConfig
-
-Traceability related configuration for a machine.
-
-#### Type: `object`
-
-| Property | Type | Required | Possible values | Description |
-| -------- | ---- | -------- | --------------- | ----------- |
-| publish_interval | `string` | ✅ | string | Publish interval for OPC-UA subscription to request variable. |
-| line_id | `string` or `null` |  | string | Two character production line identifier, only present if the machine makes<br />part identifier creation requests. |
+| traceability | `object` | ✅ | [TraceabilityMachineConfig](#traceabilitymachineconfig) | Traceability settings for this machine. |
 
 ## OpcUaServerConfig
 
@@ -64,6 +40,19 @@ Connected OPC-UA server configuration.
 | url | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | OPC-UA server URL. |
 | password | `string` or `null` |  | string | Password to use if using username/password authentication. |
 | user | `string` or `null` |  | string | Username if authenticating to the OPC-UA server with username/password.<br />If not provided, anonymous authentication will be used. |
+
+## TraceabilityCommonConfig
+
+Traceability configuration for all machines.
+
+#### Type: `object`
+
+| Property | Type | Required | Possible values | Description |
+| -------- | ---- | -------- | --------------- | ----------- |
+| database | `object` | ✅ | [TraceabilityDatabaseConfig](#traceabilitydatabaseconfig) | ClickHouse database client configuration for archiving traceability data. |
+| opc_ua | `object` | ✅ | [TraceabilityCommonOpcUaConfig](#traceabilitycommonopcuaconfig) | OPC-UA traceability information model, common to all machines. |
+| queues_not_draining_threshold | `integer` | ✅ | `0 <= x ` | The upper limit of enqueued part sheets to consider draining as working. |
+| redb_file | `string` | ✅ | string | Path to the redb file to use for traceability cache. It will be created<br />if it does not exist. |
 
 ## TraceabilityCommonOpcUaConfig
 
@@ -97,6 +86,17 @@ ClickHouse database configuration for traceability.
 | password_file | `string` | ✅ | string | Path to a file containing the ClickHouse user's password. Whitespaces around<br />the password will be removed. |
 | url | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | URL of the ClickHouse HTTP(S) endpoint. |
 | user | `string` | ✅ | string | ClickHouse user. |
+
+## TraceabilityMachineConfig
+
+Traceability related configuration for a machine.
+
+#### Type: `object`
+
+| Property | Type | Required | Possible values | Description |
+| -------- | ---- | -------- | --------------- | ----------- |
+| publish_interval | `string` | ✅ | string | Publish interval for OPC-UA subscription to request variable. |
+| line_id | `string` or `null` |  | string | Two character production line identifier, only present if the machine makes<br />part identifier creation requests. |
 
 
 ---

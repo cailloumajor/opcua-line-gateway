@@ -43,7 +43,7 @@ pub struct LineGatewayConfig {
     /// Root directory of the OPC-UA PKI.
     pub pki_dir: PathBuf,
     /// Traceability configuration for all machines.
-    pub traceability: CommonTraceabilityConfig,
+    pub traceability: TraceabilityCommonConfig,
     /// Connected machines configuration, mapped by machine identifier.
     pub machines: BTreeMap<String, MachineConfig>,
 }
@@ -95,7 +95,7 @@ impl LineGatewayConfig {
 
 /// Traceability configuration for all machines.
 #[derive(Clone, Deserialize, JsonSchema)]
-pub struct CommonTraceabilityConfig {
+pub struct TraceabilityCommonConfig {
     /// Path to the redb file to use for traceability cache. It will be created
     /// if it does not exist.
     pub redb_file: PathBuf,
@@ -158,7 +158,7 @@ pub struct MachineConfig {
     /// OPC-UA server configuration for this machine.
     pub opc_ua_server: OpcUaServerConfig,
     /// Traceability settings for this machine.
-    pub traceability: MachineTraceabilityConfig,
+    pub traceability: TraceabilityMachineConfig,
 }
 
 /// Connected OPC-UA server configuration.
@@ -202,7 +202,7 @@ impl OpcUaServerConfig {
 
 /// Traceability related configuration for a machine.
 #[derive(Clone, Deserialize, JsonSchema)]
-pub struct MachineTraceabilityConfig {
+pub struct TraceabilityMachineConfig {
     /// Publish interval for OPC-UA subscription to request variable.
     #[serde(with = "jiff::fmt::serde::unsigned_duration::friendly::compact::required")]
     #[schemars(with = "String")]
