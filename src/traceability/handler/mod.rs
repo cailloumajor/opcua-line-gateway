@@ -6,13 +6,12 @@ use futures_util::TryStreamExt;
 use opcua::client::browser::{Browser, NoneBrowserPolicy};
 use opcua::client::{DefaultRetryPolicy, ExponentialBackoff, Session};
 use opcua::types::{
-    BrowseDescription, BrowseDirection, BrowseResultMaskFlags, DataValue, Identifier,
-    NodeClassMask, NodeId, ReadValueId, ReferenceTypeId, StatusCode, TimestampsToReturn, Variant,
-    WriteValue,
+    BrowseDescription, BrowseDirection, BrowseResultMaskFlags, NodeClassMask, NodeId, ReadValueId,
+    ReferenceTypeId, StatusCode, TimestampsToReturn,
 };
 use opcua_line_gateway_config::{TraceabilityCommonOpcUaConfig, TraceabilityMachineConfig};
 use thiserror::Error;
-use tracing::instrument;
+use tracing::{instrument, warn};
 
 use crate::opcua::{DataValueExt, SerializeVariant, TryFromOpcUaValueError};
 
@@ -29,41 +28,17 @@ mod install;
 mod read_part_sheet;
 mod save_part_sheets;
 
-/// Errors that can occur during reading from the server.
-#[derive(Debug, Error)]
-pub(crate) enum ReadError {
-    #[error("error getting traceability namespace index")]
-    GetNamespaceIndex(#[source] opcua::types::Error),
-    #[error("read request error")]
-    ReadRequest(#[source] opcua::types::Error),
-}
-
-/// Errors that can be encountered during writing to the server.
-#[derive(Debug, Error)]
-enum WriteError {
-    #[error("error getting traceability namespace index")]
-    GetNamespaceIndex(#[source] opcua::types::Error),
-    #[error("write request error")]
-    WriteRequest(#[source] opcua::types::Error),
-    #[error("write operation error: {0}")]
-    WriteStatus(StatusCode),
-}
-
 /// Error that can occur during browsing a part sheet object.
 #[derive(Debug, Error)]
 pub(crate) enum BrowsePartSheetError {
-    #[error("error getting traceability namespace index")]
-    GetNamespaceIndex(#[source] opcua::types::Error),
     #[error("error browsing general part sheet OPC-UA nodes")]
     BrowseGeneralPartSheet(#[source] opcua::types::Error),
     #[error("bad BrowseResult status code: {0}")]
     BrowseResultStatus(StatusCode),
-    #[error("invalid node identifier, expected numeric, got {0}")]
-    NonNumericId(Identifier),
     #[error("browse name for node identifier {0} is null")]
-    NullBrowseName(u32),
-    #[error("error reading browsed values")]
-    ReadValues(#[source] ReadError),
+    NullBrowseName(NodeId),
+    #[error("error with OPC-UA read request")]
+    ReadRequest(#[source] opcua::types::Error),
     #[error("invalid number of read variables (discovered {0}, read {1})")]
     ValuesCount(usize, usize),
     #[error("invalid discovered data value for node {1}, cause: {0}")]
@@ -76,7 +51,6 @@ pub(crate) enum BrowsePartSheetError {
 pub(crate) struct InitialState;
 
 /// Manages traceability for an OPC-UA session.
-#[derive(Clone)]
 pub(crate) struct TraceabilityHandler<S> {
     /// The ID of the machine this handler works with.
     server_id: Arc<str>,
@@ -119,15 +93,8 @@ impl TraceabilityHandler<InitialState> {
     #[instrument(err, skip(self))]
     async fn browse_part_sheet(
         &self,
-        root_node_id: u32,
-    ) -> Result<Vec<(u32, Arc<str>)>, BrowsePartSheetError> {
-        // Get the traceability namespace index.
-        let ns_index = self
-            .session
-            .get_namespace_index(&self.common_opcua_config.namespace_url)
-            .await
-            .map_err(BrowsePartSheetError::GetNamespaceIndex)?;
-
+        root_node_id: NodeId,
+    ) -> Result<Vec<(NodeId, Arc<str>)>, BrowsePartSheetError> {
         // Prepare the browser configuration.
         let retry_policy = DefaultRetryPolicy::new(ExponentialBackoff::new(
             Duration::from_secs(5),     // max sleep
@@ -138,7 +105,7 @@ impl TraceabilityHandler<InitialState> {
         let browser = Browser::new(&cloned_session, NoneBrowserPolicy, retry_policy);
         let initial = BrowseDescription {
             // Start browsing at the part sheet object.
-            node_id: NodeId::new(ns_index, root_node_id),
+            node_id: root_node_id,
             // Browse forward.
             browse_direction: BrowseDirection::Forward,
             // Only follow `HasProperty` references.
@@ -151,7 +118,7 @@ impl TraceabilityHandler<InitialState> {
             result_mask: BrowseResultMaskFlags::BrowseName.bits(),
         };
 
-        let mut nodes = Vec::new();
+        let mut nodes: Vec<(NodeId, Arc<str>)> = Vec::new();
 
         // Browse the part sheet object to build the node identifiers list.
         let mut pinned_stream = pin!(browser.run(vec![initial]));
@@ -165,27 +132,28 @@ impl TraceabilityHandler<InitialState> {
                 return Err(BrowsePartSheetError::BrowseResultStatus(status));
             }
             for ref_description in item.references() {
-                let identifier = &ref_description.node_id.node_id.identifier;
-                let Identifier::Numeric(numeric_id) = identifier else {
-                    return Err(BrowsePartSheetError::NonNumericId(identifier.clone()));
+                let node_id = ref_description.node_id.node_id.clone();
+                if !node_id.is_numeric() {
+                    warn!(msg = "non-numeric NodeId found", %node_id);
+                }
+                let Some(browse_name) = ref_description.browse_name.name.value() else {
+                    return Err(BrowsePartSheetError::NullBrowseName(node_id));
                 };
-                let browse_name: Arc<str> = ref_description
-                    .browse_name
-                    .name
-                    .value()
-                    .clone()
-                    .map(From::from)
-                    .ok_or(BrowsePartSheetError::NullBrowseName(*numeric_id))?;
 
-                nodes.push((*numeric_id, browse_name));
+                nodes.push((node_id, browse_name.as_str().into()));
             }
         }
 
         // Read the nodes values and ensure we can serialize them.
+        let read_value_ids = nodes
+            .iter()
+            .map(|(id, _)| ReadValueId::new_value(id.clone()))
+            .collect::<Vec<_>>();
         let values = self
-            .read_values(nodes.iter().map(|(id, _)| *id))
+            .session
+            .read(&read_value_ids, TimestampsToReturn::Neither, 0.0)
             .await
-            .map_err(BrowsePartSheetError::ReadValues)?;
+            .map_err(BrowsePartSheetError::ReadRequest)?;
         let expected_len = nodes.len();
         let got_len = values.len();
         if got_len != expected_len {
@@ -200,59 +168,5 @@ impl TraceabilityHandler<InitialState> {
         }
 
         Ok(nodes)
-    }
-}
-
-impl<T> TraceabilityHandler<T> {
-    /// Read the values of nodes with provided identifiers.
-    #[instrument(err, skip_all)]
-    async fn read_values<I>(&self, ids: I) -> Result<Vec<DataValue>, ReadError>
-    where
-        I: IntoIterator<Item = u32>,
-    {
-        let ns_index = self
-            .session
-            .get_namespace_index(&self.common_opcua_config.namespace_url)
-            .await
-            .map_err(ReadError::GetNamespaceIndex)?;
-        let nodes_to_read = ids
-            .into_iter()
-            .map(|id| {
-                let node_id = NodeId::new(ns_index, id);
-                ReadValueId::new_value(node_id)
-            })
-            .collect::<Vec<_>>();
-        self.session
-            .read(&nodes_to_read, TimestampsToReturn::Neither, 0.0)
-            .await
-            .map_err(ReadError::ReadRequest)
-    }
-
-    /// Write provided values — an iterable of tuples of node identifier ([`u32`])
-    /// and [`Variant`] — to the server.
-    #[instrument(err, skip_all)]
-    async fn write_values<I>(&self, pairs: I) -> Result<(), WriteError>
-    where
-        I: IntoIterator<Item = (u32, Variant)>,
-    {
-        let ns_index = self
-            .session
-            .get_namespace_index(&self.common_opcua_config.namespace_url)
-            .await
-            .map_err(WriteError::GetNamespaceIndex)?;
-        let nodes_to_write = pairs
-            .into_iter()
-            .map(|(id, variant)| WriteValue::value_attr(NodeId::new(ns_index, id), variant))
-            .collect::<Vec<_>>();
-        let results = self
-            .session
-            .write(&nodes_to_write)
-            .await
-            .map_err(WriteError::WriteRequest)?;
-        if let Some(status) = results.into_iter().find(|s| !s.is_good()) {
-            return Err(WriteError::WriteStatus(status));
-        }
-
-        Ok(())
     }
 }

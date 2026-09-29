@@ -2,7 +2,7 @@ use std::num::TryFromIntError;
 use std::sync::Arc;
 
 use jiff::Timestamp;
-use opcua::types::{BinaryDecodable, BinaryEncodable, Context, Variant};
+use opcua::types::{BinaryDecodable, BinaryEncodable, Context, NodeId, Variant};
 use opcua_line_gateway_config::AsciiDigitsOrUpper;
 use serde::ser::SerializeMap;
 use serde::{Serialize, Serializer};
@@ -11,7 +11,7 @@ use tracing::instrument;
 use crate::opcua::SerializeVariant;
 
 /// Type of an item in a part sheet to be cached and/or archived.
-pub(super) type SavedPartSheetItem = (u32, Arc<str>, Variant);
+pub(super) type SavedPartSheetItem = (NodeId, Arc<str>, Variant);
 
 /// Encode a part sheet, provided as an iterator of element, to the format used
 /// for caching, returning the encoded bytes.
@@ -65,7 +65,7 @@ pub(super) fn encode_part_sheet_for_cache(
 pub(super) fn decode_cached_part_sheet(
     mut buf: &[u8],
     ctx: &Context,
-) -> std::io::Result<Vec<(u32, Variant)>> {
+) -> std::io::Result<Vec<(NodeId, Variant)>> {
     // Decode the number of elements.
     let count = u16::decode(&mut buf, ctx)?;
 
@@ -73,7 +73,7 @@ pub(super) fn decode_cached_part_sheet(
 
     for _ in 0..count {
         // Decode the node identifier.
-        let id = u32::decode(&mut buf, ctx)?;
+        let id = NodeId::decode(&mut buf, ctx)?;
         // Decode the variant (OPC-UA binary encoding).
         let variant = Variant::decode(&mut buf, ctx)?;
 
@@ -149,9 +149,9 @@ mod tests {
     #[test]
     fn cache_encoding_roudtrip() {
         let part_sheet: &[SavedPartSheetItem] = &[
-            (561, "".into(), true.into()),
-            (98, "".into(), 42u16.into()),
-            (43, "".into(), "blabla".into()),
+            (NodeId::new(1, 561), "".into(), true.into()),
+            (NodeId::new(2, "someval"), "".into(), 42u16.into()),
+            (NodeId::new(3, 43), "".into(), "blabla".into()),
         ];
 
         let ctx = ContextOwned::default();
@@ -161,10 +161,10 @@ mod tests {
         let decoded =
             decode_cached_part_sheet(&encoded, &ctx.context()).expect("decoding should not fail");
 
-        let expected: &[(u32, Variant)] = &[
-            (561, true.into()),
-            (98, 42u16.into()),
-            (43, "blabla".into()),
+        let expected: &[(NodeId, Variant)] = &[
+            (NodeId::new(1, 561), true.into()),
+            (NodeId::new(2, "someval"), 42u16.into()),
+            (NodeId::new(3, 43), "blabla".into()),
         ];
 
         assert_eq!(decoded, expected);
@@ -179,9 +179,9 @@ mod tests {
             .parse()
             .expect("parsing part identifier should not fail");
         let part_sheet: &[SavedPartSheetItem] = &[
-            (0, "first".into(), true.into()),
-            (0, "second".into(), 42u16.into()),
-            (0, "third".into(), "blabla".into()),
+            (NodeId::null(), "first".into(), true.into()),
+            (NodeId::null(), "second".into(), 42u16.into()),
+            (NodeId::null(), "third".into(), "blabla".into()),
         ];
         let row = PartSheetRow {
             saved_at,

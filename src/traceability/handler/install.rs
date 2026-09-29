@@ -1,9 +1,10 @@
 use std::pin::pin;
+use std::sync::Arc;
 use std::time::Duration;
 
 use futures_util::StreamExt;
 use opcua::client::DataChangeCallback;
-use opcua::types::{NodeId, StatusCode, TimestampsToReturn};
+use opcua::types::{NodeId, StatusCode, TimestampsToReturn, WriteValue};
 use thiserror::Error;
 use tokio::sync::mpsc;
 use tokio::task::JoinSet;
@@ -11,6 +12,8 @@ use tokio::time::{MissedTickBehavior, interval};
 use tokio_stream::wrappers::{IntervalStream, UnboundedReceiverStream};
 use tokio_util::sync::CancellationToken;
 use tracing::{Instrument, info, info_span, instrument, warn};
+
+use crate::opcua::SessionExt;
 
 use super::{TraceabilityContext, TraceabilityHandler};
 
@@ -24,8 +27,6 @@ pub(crate) enum TraceabilityInstallError {
     CreateSubscription(#[source] opcua::types::Error),
     #[error("server raised publishing interval (requested {0:?}, got {1:?})")]
     PublishIntervalRaised(Duration, Duration),
-    #[error("error getting traceability namespace index")]
-    GetNamespaceIndex(#[source] opcua::types::Error),
     #[error("error creating monitored items: {0}")]
     CreateMonitoredItems(#[source] opcua::types::Error),
     #[error("error on monitored item `{0}`: {1}")]
@@ -45,6 +46,7 @@ impl TraceabilityHandler<TraceabilityContext> {
     ) -> Result<JoinSet<()>, TraceabilityInstallError> {
         let publish_interval = self.machine_config.publish_interval;
 
+        // Create a channel to pass data change notifications to the traceability handler.
         let (tx, rx) = mpsc::unbounded_channel();
 
         let data_change_callback = DataChangeCallback::new(move |value, _monitored_item| {
@@ -76,13 +78,6 @@ impl TraceabilityHandler<TraceabilityContext> {
             ));
         }
 
-        let ns_index = self
-            .session
-            .get_namespace_index(&self.common_opcua_config.namespace_url)
-            .await
-            .map_err(TraceabilityInstallError::GetNamespaceIndex)?;
-        let request_node_id = NodeId::new(ns_index, self.common_opcua_config.request_nid);
-
         // Create the monitored item. Given that we only have one item, we use sane
         // defaults, including not attributing client ID to monitored item.
         let created = self
@@ -90,7 +85,7 @@ impl TraceabilityHandler<TraceabilityContext> {
             .create_monitored_items(
                 subscription_id,
                 TimestampsToReturn::Source,
-                vec![request_node_id.into()],
+                vec![self.state.protocol.request.clone().into()],
             )
             .await
             .map_err(TraceabilityInstallError::CreateMonitoredItems)?;
@@ -112,33 +107,27 @@ impl TraceabilityHandler<TraceabilityContext> {
         // Spawn heartbeat task.
         let heartbeat_shutdown = shutdown.clone();
         let server_id = self.server_id.clone();
-        let cloned_self = self.clone();
+        let sent_session = Arc::clone(&self.session);
+        let heartbeat_node = self.state.protocol.heartbeat.clone();
         tasks.spawn(
             async move {
                 info!(msg = "heartbeat handler started");
 
-                // Heartbeat value.
-                let mut hb_value = false;
+                // Heartbeat write value.
+                let mut hb_value = true;
 
                 let mut hb_interval = interval(HEARTBEAT_INTERVAL);
                 hb_interval.set_missed_tick_behavior(MissedTickBehavior::Delay);
-                let stream = IntervalStream::new(hb_interval)
-                    .map(|_| {
-                        // Revert heartbeat value and return it.
-                        hb_value ^= true;
-                        hb_value
-                    })
-                    .take_until(heartbeat_shutdown.cancelled());
+                let stream =
+                    IntervalStream::new(hb_interval).take_until(heartbeat_shutdown.cancelled());
                 let mut pinned_stream = pin!(stream);
-                while let Some(value) = pinned_stream.next().await {
-                    // Ignore the result, it is handled (logging) by the instrumentation
-                    // of `write_value`.
-                    let _ = cloned_self
-                        .write_values([(
-                            cloned_self.common_opcua_config.heartbeat_nid,
-                            value.into(),
-                        )])
-                        .await;
+                while pinned_stream.next().await.is_some() {
+                    let write_value =
+                        WriteValue::value_attr(heartbeat_node.clone(), hb_value.into());
+                    hb_value = !hb_value;
+                    // Ignore the result, as error logging is handled by the function
+                    // `instrument` attribute.
+                    let _ = sent_session.write_checked(&[write_value]).await;
                 }
 
                 info!(msg = "heartbeat handler terminated");
@@ -148,6 +137,8 @@ impl TraceabilityHandler<TraceabilityContext> {
 
         // Spawn traceability request handling task.
         let server_id = self.server_id.clone();
+        let sent_session = Arc::clone(&self.session);
+        let response_node = self.state.protocol.response.clone();
         tasks.spawn(
             async move {
                 info!(msg = "traceability handler started");
@@ -164,14 +155,11 @@ impl TraceabilityHandler<TraceabilityContext> {
                         .handle_request(request_value)
                         .await
                         .unwrap_or_else(|e| e.to_response_code());
+                    let write_value =
+                        WriteValue::value_attr(response_node.clone(), response_value.into());
                     // Ignore the result, as error logging is handled by the function
                     // `instrument` attribute.
-                    let _ = self
-                        .write_values([(
-                            self.common_opcua_config.response_nid,
-                            response_value.into(),
-                        )])
-                        .await;
+                    let _ = sent_session.write_checked(&[write_value]).await;
                 }
 
                 info!(msg = "traceability handler terminated");

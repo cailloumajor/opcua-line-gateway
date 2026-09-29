@@ -4,7 +4,7 @@ use std::{fmt, io};
 
 use jiff::Timestamp;
 use jiff::civil::Date;
-use opcua::types::{Context, Variant};
+use opcua::types::{Context, NodeId, Variant};
 use opcua_line_gateway_config::AsciiDigitsOrUpper;
 use redb::{
     Database, ReadableDatabase, ReadableTable, ReadableTableMetadata, TableDefinition, TableHandle,
@@ -149,7 +149,7 @@ impl TraceabilityCache {
         &self,
         part_id: &str,
         ctx: &Context,
-    ) -> Result<Option<Vec<(u32, Variant)>>, GetGeneralPartSheetError> {
+    ) -> Result<Option<Vec<(NodeId, Variant)>>, GetGeneralPartSheetError> {
         let read_txn = self.redb.begin_read()?;
         let table = read_txn.open_table(GENERAL_PART_SHEET_CACHE)?;
         let value_guard = table.get(part_id)?;
