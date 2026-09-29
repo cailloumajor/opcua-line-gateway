@@ -297,34 +297,34 @@ url = "https://github.com/ClickHouse/clickhousectl/releases/download/v0.4.2/clic
 url_api = "https://api.github.com/repos/ClickHouse/clickhousectl/releases/assets/543017750"
 
 [[tools."github:JFRyy/systemd-lsp"]]
-version = "2026.08.03"
+version = "2026.09.28"
 backend = "github:JFRyy/systemd-lsp"
 specifiers = ["latest"]
 
 [tools."github:JFRyy/systemd-lsp"."platforms.linux-x64"]
-checksum = "sha256:cdfc2dc5e49f94169a062e838e72c3e2128a2bb491abc90f9212493c1de8d226"
-url = "https://github.com/JFryy/systemd-lsp/releases/download/v2026.08.03/systemd-lsp-x86_64-unknown-linux-gnu"
-url_api = "https://api.github.com/repos/JFryy/systemd-lsp/releases/assets/500614692"
+checksum = "sha256:44faddc82a54e42483f51ae5616714fa699f54369d6f1eb1d925dbadd017101b"
+url = "https://github.com/JFryy/systemd-lsp/releases/download/v2026.09.28/systemd-lsp-x86_64-unknown-linux-gnu"
+url_api = "https://api.github.com/repos/JFryy/systemd-lsp/releases/assets/594269451"
 
 [tools."github:JFRyy/systemd-lsp"."platforms.linux-x64-musl"]
-checksum = "sha256:cdfc2dc5e49f94169a062e838e72c3e2128a2bb491abc90f9212493c1de8d226"
-url = "https://github.com/JFryy/systemd-lsp/releases/download/v2026.08.03/systemd-lsp-x86_64-unknown-linux-gnu"
-url_api = "https://api.github.com/repos/JFryy/systemd-lsp/releases/assets/500614692"
+checksum = "sha256:44faddc82a54e42483f51ae5616714fa699f54369d6f1eb1d925dbadd017101b"
+url = "https://github.com/JFryy/systemd-lsp/releases/download/v2026.09.28/systemd-lsp-x86_64-unknown-linux-gnu"
+url_api = "https://api.github.com/repos/JFryy/systemd-lsp/releases/assets/594269451"
 
 [tools."github:JFRyy/systemd-lsp"."platforms.macos-arm64"]
-checksum = "sha256:675c3c557dae45fab5775e6cb97cb3d1c39cb4bd8dc7521ed77eff0a2398c623"
-url = "https://github.com/JFryy/systemd-lsp/releases/download/v2026.08.03/systemd-lsp-aarch64-apple-darwin"
-url_api = "https://api.github.com/repos/JFryy/systemd-lsp/releases/assets/500614689"
+checksum = "sha256:dbd458dfd7b594987ff5d06eb8d384e470fe85f0d4a4303bb895d2788bbd9a79"
+url = "https://github.com/JFryy/systemd-lsp/releases/download/v2026.09.28/systemd-lsp-aarch64-apple-darwin"
+url_api = "https://api.github.com/repos/JFryy/systemd-lsp/releases/assets/594269450"
 
 [tools."github:JFRyy/systemd-lsp"."platforms.macos-x64"]
-checksum = "sha256:23688e565754d677976f82aa86c1401fe179d798c533cd44bcd3a8defcd6365a"
-url = "https://github.com/JFryy/systemd-lsp/releases/download/v2026.08.03/systemd-lsp-x86_64-apple-darwin"
-url_api = "https://api.github.com/repos/JFryy/systemd-lsp/releases/assets/500614691"
+checksum = "sha256:17d6ff826b5dff5688c4441232979e16e108e8cc1db9ee80215d686940938eb1"
+url = "https://github.com/JFryy/systemd-lsp/releases/download/v2026.09.28/systemd-lsp-x86_64-apple-darwin"
+url_api = "https://api.github.com/repos/JFryy/systemd-lsp/releases/assets/594269449"
 
 [tools."github:JFRyy/systemd-lsp"."platforms.windows-x64"]
-checksum = "sha256:8a11837858c01d819b907537fdf553e2122409e41d41b9f197ca75b03ca1f6d7"
-url = "https://github.com/JFryy/systemd-lsp/releases/download/v2026.08.03/systemd-lsp-x86_64-pc-windows-msvc.exe"
-url_api = "https://api.github.com/repos/JFryy/systemd-lsp/releases/assets/500614690"
+checksum = "sha256:8c79e374aaf97b00a1a0d79360f8870b646b3db94ee9e4f8f53223a9067c22f1"
+url = "https://github.com/JFryy/systemd-lsp/releases/download/v2026.09.28/systemd-lsp-x86_64-pc-windows-msvc.exe"
+url_api = "https://api.github.com/repos/JFryy/systemd-lsp/releases/assets/594269447"
 
 [[tools."github:mhersson/mpls"]]
 version = "0.23.0"
@@ -367,38 +367,38 @@ url = "https://github.com/mhersson/mpls/releases/download/v0.23.0/mpls_0.23.0_wi
 url_api = "https://api.github.com/repos/mhersson/mpls/releases/assets/574698529"
 
 [[tools.hk]]
-version = "2.3.0"
+version = "2.4.0"
 backend = "packslip:github.com/jdx/hk"
 specifiers = ["latest"]
 
 [tools.hk."platforms.linux-arm64"]
-checksum = "sha256:d0311080598527289f2d98cb9d4c1ec287ca595542b842ddecd8a6264ef18cf5"
-url = "https://github.com/jdx/hk/releases/download/v2.3.0/hk-aarch64-unknown-linux-gnu.tar.gz"
+checksum = "sha256:836235bd8aa06f25e7ff28591b32efb5297abe55366e912095636a49ffe4d363"
+url = "https://github.com/jdx/hk/releases/download/v2.4.0/hk-aarch64-unknown-linux-gnu.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 
 [tools.hk."platforms.linux-arm64-musl"]
-checksum = "sha256:477ce79246e62b29db95c034461f108d5019262bfeba14a4307e82689824687d"
-url = "https://github.com/jdx/hk/releases/download/v2.3.0/hk-aarch64-unknown-linux-musl.tar.gz"
+checksum = "sha256:ad5c5a556e0a505d9a3441868217976bd4ae610e1364e93516993b9717d9ef28"
+url = "https://github.com/jdx/hk/releases/download/v2.4.0/hk-aarch64-unknown-linux-musl.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 
 [tools.hk."platforms.linux-x64"]
-checksum = "sha256:79cabdccba39e1eef4e443e11713c923381f697b03c00ef4a12dfcd1ca5380b0"
-url = "https://github.com/jdx/hk/releases/download/v2.3.0/hk-x86_64-unknown-linux-gnu.tar.gz"
+checksum = "sha256:6efabe30aeabc4611a42ce6cf0fd46b9a19478e2cfd9acfd1bd93998736f3153"
+url = "https://github.com/jdx/hk/releases/download/v2.4.0/hk-x86_64-unknown-linux-gnu.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 
 [tools.hk."platforms.linux-x64-musl"]
-checksum = "sha256:307f760266af8a393c47a8039e2c966c78361eae33949865e9ab4cc163f517b4"
-url = "https://github.com/jdx/hk/releases/download/v2.3.0/hk-x86_64-unknown-linux-musl.tar.gz"
+checksum = "sha256:f34598671ca40be5c308324a60ef30b736dbbbf4259dfb511abd79009ee4de2a"
+url = "https://github.com/jdx/hk/releases/download/v2.4.0/hk-x86_64-unknown-linux-musl.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 
 [tools.hk."platforms.macos-arm64"]
-checksum = "sha256:45e83c2e891bb29280f7e816b244b960e1758f185802c7e0a21d25ff7bbebbde"
-url = "https://github.com/jdx/hk/releases/download/v2.3.0/hk-aarch64-apple-darwin.tar.gz"
+checksum = "sha256:6e1c970b9de7ab4ee52c85869b2ea9cfe8769d25a0fe9536062e0ba62366ec59"
+url = "https://github.com/jdx/hk/releases/download/v2.4.0/hk-aarch64-apple-darwin.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 
 [tools.hk."platforms.windows-x64"]
-checksum = "sha256:7df559b349a2bfd60cf5cab32b92b689d862445c08b3dd54777550f9057956fb"
-url = "https://github.com/jdx/hk/releases/download/v2.3.0/hk-x86_64-pc-windows-msvc.zip"
+checksum = "sha256:028931e00fd670ad891a428bf44e14ac8e2726a8f72b7fae80b27b6502af2be3"
+url = "https://github.com/jdx/hk/releases/download/v2.4.0/hk-x86_64-pc-windows-msvc.zip"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 
 [[tools.marksman]]
@@ -713,50 +713,50 @@ url = "https://github.com/mvdan/sh/releases/download/v3.14.1/shfmt_v3.14.1_windo
 url_api = "https://api.github.com/repos/mvdan/sh/releases/assets/547320827"
 
 [[tools.tombi]]
-version = "1.5.5"
+version = "1.5.7"
 backend = "aqua:tombi-toml/tombi"
 specifiers = ["latest"]
 
 [tools.tombi."platforms.linux-arm64"]
-checksum = "sha256:a545a471cec6baf982bcb8e274d097303cece1a72136ada79d240adb6d1354f6"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.5.5/tombi-cli-1.5.5-aarch64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/559313379"
+checksum = "sha256:9d4bbb33689a441599ac8b3c827e44ecee638e1624e4e146f3517019ff396bd4"
+url = "https://github.com/tombi-toml/tombi/releases/download/v1.5.7/tombi-cli-1.5.7-aarch64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/594191058"
 provenance = "github-attestations"
 
 [tools.tombi."platforms.linux-arm64-musl"]
-checksum = "sha256:a545a471cec6baf982bcb8e274d097303cece1a72136ada79d240adb6d1354f6"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.5.5/tombi-cli-1.5.5-aarch64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/559313379"
+checksum = "sha256:9d4bbb33689a441599ac8b3c827e44ecee638e1624e4e146f3517019ff396bd4"
+url = "https://github.com/tombi-toml/tombi/releases/download/v1.5.7/tombi-cli-1.5.7-aarch64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/594191058"
 provenance = "github-attestations"
 
 [tools.tombi."platforms.linux-x64"]
-checksum = "sha256:6c50d2589989e8182e9f6e774b4b25c9f5729b67a2a7e7dcaadddbedbe1da5ec"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.5.5/tombi-cli-1.5.5-x86_64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/559313407"
+checksum = "sha256:9695859dd6aca07c11dcf1b8a8dab70c23427d420fc231aac49371f9d3ec0754"
+url = "https://github.com/tombi-toml/tombi/releases/download/v1.5.7/tombi-cli-1.5.7-x86_64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/594191084"
 provenance = "github-attestations"
 
 [tools.tombi."platforms.linux-x64-musl"]
-checksum = "sha256:6c50d2589989e8182e9f6e774b4b25c9f5729b67a2a7e7dcaadddbedbe1da5ec"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.5.5/tombi-cli-1.5.5-x86_64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/559313407"
+checksum = "sha256:9695859dd6aca07c11dcf1b8a8dab70c23427d420fc231aac49371f9d3ec0754"
+url = "https://github.com/tombi-toml/tombi/releases/download/v1.5.7/tombi-cli-1.5.7-x86_64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/594191084"
 provenance = "github-attestations"
 
 [tools.tombi."platforms.macos-arm64"]
-checksum = "sha256:460b3269414d2ca26e05863908764f118bea3b4a52068081af6a3dae03c1320e"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.5.5/tombi-cli-1.5.5-aarch64-apple-darwin.tar.gz"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/559313381"
+checksum = "sha256:a962426f2af7f3ef23108291432ca7ff57d24637941ba09e9ebb05528c2e9c8d"
+url = "https://github.com/tombi-toml/tombi/releases/download/v1.5.7/tombi-cli-1.5.7-aarch64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/594191060"
 provenance = "github-attestations"
 
 [tools.tombi."platforms.macos-x64"]
-checksum = "sha256:9276c456e4a0217e95fb84ac3cde29d281d7b53e5eb168d83cb038ec07e2083d"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.5.5/tombi-cli-1.5.5-x86_64-apple-darwin.tar.gz"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/559313375"
+checksum = "sha256:cc320e1cee926ac256021f3727b241438eeeda601672ab6220604445fd077b8c"
+url = "https://github.com/tombi-toml/tombi/releases/download/v1.5.7/tombi-cli-1.5.7-x86_64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/594191059"
 provenance = "github-attestations"
 
 [tools.tombi."platforms.windows-x64"]
-checksum = "sha256:49e8aa14e82038a13c5f9f50cc6524b56b9bce167734bead31439939e0830a3b"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.5.5/tombi-cli-1.5.5-x86_64-pc-windows-msvc.zip"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/559313401"
+checksum = "sha256:938b012abf29a30c5856cffd2eedbd03728c9b62450dd93388241ed840fd9daf"
+url = "https://github.com/tombi-toml/tombi/releases/download/v1.5.7/tombi-cli-1.5.7-x86_64-pc-windows-msvc.zip"
+url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/594191083"
 provenance = "github-attestations"
 
 [[tools.typos]]
