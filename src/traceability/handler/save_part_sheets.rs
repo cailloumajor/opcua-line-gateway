@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use opcua::types::{ReadValueId, TimestampsToReturn};
 use opcua_line_gateway_config::AsciiDigitsOrUpper;
 use thiserror::Error;
 use tokio::task::JoinError;
@@ -9,13 +10,13 @@ use crate::opcua::{DataValueExt, TryFromOpcUaValueError, TryFromVariant};
 use crate::traceability::cache::{CheckEnqueuingError, SavePartSheetsError};
 use crate::traceability::part_id::{PartIdentifierError, validate_part_identifier};
 
-use super::{ReadError, TraceabilityContext, TraceabilityHandler};
+use super::{TraceabilityContext, TraceabilityHandler};
 
 /// Errors that can occur during handling the request for saving part sheets.
 #[derive(Debug, Error)]
 pub(super) enum HandleSaveError {
     #[error("error reading general part sheet nodes")]
-    ReadGeneralPartSheet(#[source] ReadError),
+    ReadGeneralPartSheet(#[source] opcua::types::Error),
     #[error("invalid number of variables in general part sheet (discovered {0}, read {1})")]
     GeneralPartSheetLength(usize, usize),
     #[error("invalid general part sheet value for node {1}, cause: {0}")]
@@ -46,14 +47,16 @@ impl TraceabilityHandler<TraceabilityContext> {
             .map_err(HandleSaveError::Enqueuing)?;
 
         // Read general part sheet values from the server.
-        let general_part_sheet_ids = self
+        let general_part_sheet_nodes = self
             .state
             .general_part_sheet
             .nodes
             .iter()
-            .map(|(id, _)| *id);
+            .map(|(id, _)| ReadValueId::new_value(id.clone()))
+            .collect::<Vec<_>>();
         let general_part_sheet_values = self
-            .read_values(general_part_sheet_ids)
+            .session
+            .read(&general_part_sheet_nodes, TimestampsToReturn::Neither, 0.0)
             .await
             .map_err(HandleSaveError::ReadGeneralPartSheet)?;
 
@@ -76,7 +79,7 @@ impl TraceabilityHandler<TraceabilityContext> {
             .zip(general_part_sheet_values)
             .map(|((id, name), val)| {
                 val.try_into_variant()
-                    .map(|variant| (*id, name.clone(), variant))
+                    .map(|variant| (id.clone(), Arc::clone(name), variant))
                     .map_err(|err| HandleSaveError::GeneralPartSheetValue(err, name.to_string()))
             })
             .collect::<Result<Vec<_>, _>>()?;

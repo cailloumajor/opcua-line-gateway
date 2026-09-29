@@ -1,20 +1,21 @@
 use std::sync::Arc;
 
+use opcua::types::{ReadValueId, TimestampsToReturn, WriteValue};
 use opcua_line_gateway_config::AsciiDigitsOrUpper;
 use thiserror::Error;
 use tokio::task::JoinError;
 use tracing::{info, instrument};
 
-use crate::opcua::{DataValueExt, TryFromOpcUaValueError};
+use crate::opcua::{DataValueExt, SessionExt, TryFromOpcUaValueError, WriteError};
 use crate::traceability::cache::GetGeneralPartSheetError;
 
-use super::{ReadError, TraceabilityContext, TraceabilityHandler, WriteError};
+use super::{TraceabilityContext, TraceabilityHandler};
 
 /// Errors that can occur during handling the request to read the general part sheet.
 #[derive(Debug, Error)]
 pub(super) enum HandleReadError {
     #[error("error reading the part ID")]
-    ReadPartId(#[source] ReadError),
+    ReadPartId(#[source] opcua::types::Error),
     #[error("invalid part ID value, cause: {0}")]
     PartIdValue(#[source] TryFromOpcUaValueError),
     #[error("error getting general part sheet from cache")]
@@ -33,8 +34,10 @@ impl TraceabilityHandler<TraceabilityContext> {
     #[instrument(err, skip_all)]
     pub(super) async fn handle_read(&self) -> Result<(), HandleReadError> {
         // Get the part ID from the OPC-UA server.
+        let read_value_id = ReadValueId::new_value(self.state.general_part_sheet.part_id.clone());
         let values = self
-            .read_values([self.common_opcua_config.part_id_nid])
+            .session
+            .read(&[read_value_id], TimestampsToReturn::Neither, 0.0)
             .await
             .map_err(HandleReadError::ReadPartId)?;
         let [part_id_value] = values
@@ -58,7 +61,12 @@ impl TraceabilityHandler<TraceabilityContext> {
             .ok_or_else(|| HandleReadError::CacheMissing(part_id.to_string()))?;
 
         // Write the general part sheet to the server.
-        self.write_values(part_sheet)
+        let write_values = part_sheet
+            .into_iter()
+            .map(|(id, val)| WriteValue::value_attr(id, val))
+            .collect::<Vec<_>>();
+        self.session
+            .write_checked(&write_values)
             .await
             .map_err(HandleReadError::WritePartSheet)?;
 

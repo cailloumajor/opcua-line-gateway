@@ -1,14 +1,15 @@
 use futures_util::TryFutureExt;
 use jiff::Timestamp;
+use opcua::types::{ReadValueId, TimestampsToReturn, WriteValue};
 use opcua_line_gateway_config::AsciiDigitsOrUpper;
 use thiserror::Error;
 use tracing::{info, instrument};
 
-use crate::opcua::{DataValueExt, TryFromOpcUaValueError};
+use crate::opcua::{DataValueExt, SessionExt, TryFromOpcUaValueError, WriteError};
 use crate::timezone::system_timezone;
 use crate::traceability::part_id::{PartIdentifierError, create_part_identifier};
 
-use super::{ReadError, TraceabilityContext, TraceabilityHandler, WriteError};
+use super::{TraceabilityContext, TraceabilityHandler};
 
 /// Errors that can occur during part ID creation.
 #[derive(Debug, Error)]
@@ -16,7 +17,7 @@ pub(super) enum CreatePartIdError {
     #[error("part ID creation is not configured for this server")]
     NotConfigured,
     #[error("error reading required variables")]
-    ReadVariables(#[source] ReadError),
+    ReadVariables(#[source] opcua::types::Error),
     #[error("invalid raw part reference value, cause: {0}")]
     PartRefValue(TryFromOpcUaValueError),
     #[error("invalid raw batch value, cause: {0}")]
@@ -41,11 +42,13 @@ impl TraceabilityHandler<TraceabilityContext> {
             .ok_or(CreatePartIdError::NotConfigured)?;
 
         // Read and convert needed OPC-UA variables.
+        let read_value_ids = &[
+            ReadValueId::new_value(self.state.general_part_sheet.raw_part_ref.clone()),
+            ReadValueId::new_value(self.state.general_part_sheet.raw_batch.clone()),
+        ];
         let values = self
-            .read_values([
-                self.common_opcua_config.raw_part_ref_nid,
-                self.common_opcua_config.raw_batch_nid,
-            ])
+            .session
+            .read(read_value_ids, TimestampsToReturn::Neither, 0.0)
             .await
             .map_err(CreatePartIdError::ReadVariables)?;
         let [part_ref_value, batch_value] = values
@@ -71,7 +74,12 @@ impl TraceabilityHandler<TraceabilityContext> {
         let part_id = create_part_identifier(&part_ref, batch, line_id, today, serial)
             .map_err(CreatePartIdError::PartIdentifier)?;
 
-        self.write_values([(self.common_opcua_config.part_id_nid, part_id.clone().into())])
+        let write_values = &[WriteValue::value_attr(
+            self.state.general_part_sheet.part_id.clone(),
+            part_id.clone().into(),
+        )];
+        self.session
+            .write_checked(write_values)
             .map_err(CreatePartIdError::WritePartId)
             .await?;
 
