@@ -16,7 +16,7 @@ use super::{TraceabilityContext, TraceabilityHandler};
 pub(super) enum HandleReadError {
     #[error("error reading the part ID")]
     ReadPartId(#[source] opcua::types::Error),
-    #[error("invalid part ID value, cause: {0}")]
+    #[error("invalid part identifier value, cause: {0}")]
     PartIdValue(#[source] TryFromOpcUaValueError),
     #[error("error getting general part sheet from cache")]
     CacheGet(#[source] GetGeneralPartSheetError),
