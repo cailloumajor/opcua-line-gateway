@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.4.0](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.3.0...v0.4.0) (2026-09-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* implement credentials provided by systemd or equivalent
+
+### Features
+
+* implement credentials provided by systemd or equivalent ([1faefb9](https://github.com/cailloumajor/opcua-line-gateway/commit/1faefb94a33bc1092dfa7bf7ba0ad5634c4f9060))
+
 ## [0.3.0](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.2.0...v0.3.0) (2026-09-30)
 
 
