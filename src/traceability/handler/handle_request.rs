@@ -28,7 +28,7 @@ pub(super) enum HandleRequestError {
 impl HandleRequestError {
     /// Convert a request handling error to a traceability response code. This is intended
     /// to be used to generate a response code to write to the OPC-UA server in case
-    /// of failure. Return `None` if not applicable.
+    /// of failure.
     pub(super) fn to_response_code(&self) -> u8 {
         match self {
             Self::ValueError(_) => 91,
