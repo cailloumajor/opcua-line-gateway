@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.2.0...v0.3.0) (2026-09-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* use NodeIds instead of numeric identifiers at runtime
+
+### Features
+
+* implement operation part sheet data flow ([f06aff1](https://github.com/cailloumajor/opcua-line-gateway/commit/f06aff10cd6ac04393b052f54316c9215ab9afc0))
+* use NodeIds instead of numeric identifiers at runtime ([2334517](https://github.com/cailloumajor/opcua-line-gateway/commit/2334517a5e3352db721f72e4350c68b228f4197c))
+
 ## [0.2.0](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.1.3...v0.2.0) (2026-09-25)
 
 
