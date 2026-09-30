@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.4.0...v0.4.1) (2026-09-30)
+
+
+### Bug Fixes
+
+* adjust response error codes ([f78e244](https://github.com/cailloumajor/opcua-line-gateway/commit/f78e2441275071a345be3ffdc52b7b4bba2a8e9d))
+
 ## [0.4.0](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.3.0...v0.4.0) (2026-09-30)
 
 
