@@ -13,7 +13,7 @@ use super::{TraceabilityContext, TraceabilityHandler};
 /// Errors that can be encountered during request handling.
 #[derive(Debug, Error)]
 pub(super) enum HandleRequestError {
-    #[error("error getting request value, cause: {0}")]
+    #[error("invalid request value, cause: {0}")]
     ValueError(TryFromOpcUaValueError),
     #[error("unknown request value: {0}")]
     UnknownValue(u8),
