@@ -150,7 +150,7 @@
           "minimum": 0
         },
         "namespace_url": {
-          "description": "OPC-UA namespace URL used for traceability.",
+          "description": "OPC-UA namespace URL used for common part of traceability.",
           "type": "string",
           "format": "uri"
         },
@@ -253,13 +253,39 @@
           "maxLength": 2,
           "minLength": 2
         },
+        "opc_ua": {
+          "description": "OPC-UA traceability information model for this machine.",
+          "$ref": "#/$defs/TraceabilityMachineOpcUaConfig"
+        },
         "publish_interval": {
           "description": "Publish interval for OPC-UA subscription to request variable.",
           "type": "string"
         }
       },
       "required": [
-        "publish_interval"
+        "publish_interval",
+        "opc_ua"
+      ]
+    },
+    "TraceabilityMachineOpcUaConfig": {
+      "description": "OPC-UA traceability information model, specific for each machine.",
+      "type": "object",
+      "properties": {
+        "namespace_url": {
+          "description": "OPC-UA namespace URL used for operation part of traceability.",
+          "type": "string",
+          "format": "uri"
+        },
+        "operation_part_sheet_nid": {
+          "description": "OPC-UA node identifier of the operation part sheet object.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "namespace_url",
+        "operation_part_sheet_nid"
       ]
     }
   }

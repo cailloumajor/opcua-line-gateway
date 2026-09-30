@@ -44,19 +44,21 @@ impl HandleRequestError {
 
             Self::HandleRead(HandleReadError::ReadPartId(_)) => 21,
             Self::HandleRead(HandleReadError::PartIdValue(_)) => 22,
+            // Group the two following errors in the same error code.
             Self::HandleRead(HandleReadError::CacheGet(_)) => 23,
-            Self::HandleRead(HandleReadError::CacheGetTask(_)) => 24,
-            Self::HandleRead(HandleReadError::CacheMissing(_)) => 25,
-            Self::HandleRead(HandleReadError::WritePartSheet(_)) => 26,
+            Self::HandleRead(HandleReadError::CacheGetTask(_)) => 23,
+            Self::HandleRead(HandleReadError::CacheMissing(_)) => 24,
+            Self::HandleRead(HandleReadError::WritePartSheet(_)) => 25,
 
-            Self::HandleSave(HandleSaveError::ReadGeneralPartSheet(_)) => 31,
-            Self::HandleSave(HandleSaveError::GeneralPartSheetLength(_, _)) => 32,
-            Self::HandleSave(HandleSaveError::GeneralPartSheetValue(_, _)) => 33,
+            Self::HandleSave(HandleSaveError::ReadPartSheets(_)) => 31,
+            Self::HandleSave(HandleSaveError::PartSheetsLength(_, _)) => 32,
+            Self::HandleSave(HandleSaveError::PartSheetValue(_, _)) => 33,
             Self::HandleSave(HandleSaveError::PartIdValue(_)) => 34,
             Self::HandleSave(HandleSaveError::InvalidPartId(_, _)) => 35,
+            // Group the two following errors in the same error code.
             Self::HandleSave(HandleSaveError::CacheSave(_)) => 36,
-            Self::HandleSave(HandleSaveError::CacheSaveTask(_)) => 37,
-            Self::HandleSave(HandleSaveError::Enqueuing(_)) => 38,
+            Self::HandleSave(HandleSaveError::CacheSaveTask(_)) => 36,
+            Self::HandleSave(HandleSaveError::Enqueuing(_)) => 37,
         }
     }
 }

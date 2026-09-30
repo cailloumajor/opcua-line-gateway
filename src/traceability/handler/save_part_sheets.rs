@@ -15,12 +15,12 @@ use super::{TraceabilityContext, TraceabilityHandler};
 /// Errors that can occur during handling the request for saving part sheets.
 #[derive(Debug, Error)]
 pub(super) enum HandleSaveError {
-    #[error("error reading general part sheet nodes")]
-    ReadGeneralPartSheet(#[source] opcua::types::Error),
-    #[error("invalid number of variables in general part sheet (discovered {0}, read {1})")]
-    GeneralPartSheetLength(usize, usize),
-    #[error("invalid general part sheet value for node {1}, cause: {0}")]
-    GeneralPartSheetValue(TryFromOpcUaValueError, String),
+    #[error("error reading part sheets nodes")]
+    ReadPartSheets(#[source] opcua::types::Error),
+    #[error("invalid number of variables in part sheets (discovered {0}, read {1})")]
+    PartSheetsLength(usize, usize),
+    #[error("invalid part sheet value for node {1}, cause: {0}")]
+    PartSheetValue(TryFromOpcUaValueError, String),
     #[error("invalid part identifier value, cause: {0}")]
     PartIdValue(TryFromOpcUaValueError),
     #[error("invalid part identifier: {1}")]
@@ -46,46 +46,52 @@ impl TraceabilityHandler<TraceabilityContext> {
             .check_enqueuing_allowed()
             .map_err(HandleSaveError::Enqueuing)?;
 
-        // Read general part sheet values from the server.
-        let general_part_sheet_nodes = self
+        // Build the list of elements (`ReadValueId`s) we want to read from the server,
+        // i.e. general part sheet nodes and operation par sheet nodes.
+        // The order here is important (general part sheet first), because we take the
+        // part identifier value by index in the general part sheet, which must be the
+        // same as the index in the "nodes to read" list.
+        let read_value_ids = self
             .state
             .general_part_sheet
             .nodes
             .iter()
+            .chain(&self.state.operation_part_sheet.nodes)
             .map(|(id, _)| ReadValueId::new_value(id.clone()))
             .collect::<Vec<_>>();
-        let general_part_sheet_values = self
+
+        // Read nodes values from the server.
+        let read_values = self
             .session
-            .read(&general_part_sheet_nodes, TimestampsToReturn::Neither, 0.0)
+            .read(&read_value_ids, TimestampsToReturn::Neither, 0.0)
             .await
-            .map_err(HandleSaveError::ReadGeneralPartSheet)?;
+            .map_err(HandleSaveError::ReadPartSheets)?;
 
         // Ensure we have as many read nodes as requested.
-        let expected_len = self.state.general_part_sheet.nodes.len();
-        let got_len = general_part_sheet_values.len();
+        let expected_len = read_value_ids.len();
+        let got_len = read_values.len();
         if got_len != expected_len {
-            return Err(HandleSaveError::GeneralPartSheetLength(
-                expected_len,
-                got_len,
-            ));
+            return Err(HandleSaveError::PartSheetsLength(expected_len, got_len));
         }
 
-        // Build the part sheet.
-        let general_part_sheet = self
+        // Build the general part sheet and the operation part sheet, contiguous
+        // in the same collection.
+        let mut part_sheets = self
             .state
             .general_part_sheet
             .nodes
             .iter()
-            .zip(general_part_sheet_values)
+            .chain(&self.state.operation_part_sheet.nodes)
+            .zip(read_values)
             .map(|((id, name), val)| {
                 val.try_into_variant()
                     .map(|variant| (id.clone(), Arc::clone(name), variant))
-                    .map_err(|err| HandleSaveError::GeneralPartSheetValue(err, name.to_string()))
+                    .map_err(|err| HandleSaveError::PartSheetValue(err, name.to_string()))
             })
             .collect::<Result<Vec<_>, _>>()?;
 
         // Get the part identifier.
-        let part_id_variant = general_part_sheet
+        let part_id_variant = part_sheets
             .get(self.state.general_part_sheet.part_id_index)
             .map(|(_, _, v)| v)
             .expect("an element should exist at the part identifier index position");
@@ -94,7 +100,13 @@ impl TraceabilityHandler<TraceabilityContext> {
         validate_part_identifier(part_id)
             .map_err(|err| HandleSaveError::InvalidPartId(err, part_id.to_string()))?;
 
-        // Insert the general part sheet in the cache, using a blocking task.
+        // Get the operation part sheet out of the collection.
+        let operation_part_sheet = part_sheets.split_off(self.state.general_part_sheet.nodes.len());
+        // Remaining elements after splitting off the operation part sheet are
+        // general part sheet elements.
+        let general_part_sheet = part_sheets;
+
+        // Insert the part sheets in the cache, using a blocking task.
         let sent_cache = Arc::clone(&self.cache);
         let sent_server_id = Arc::clone(&self.server_id);
         let sent_context = self.session.context();
@@ -103,6 +115,7 @@ impl TraceabilityHandler<TraceabilityContext> {
                 sent_server_id,
                 part_id,
                 &general_part_sheet,
+                &operation_part_sheet,
                 &sent_context.read_arc().context(),
             )
         });

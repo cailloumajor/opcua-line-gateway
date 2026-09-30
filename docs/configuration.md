@@ -64,7 +64,7 @@ OPC-UA traceability information model, as implemented by all machines.
 | -------- | ---- | -------- | --------------- | ----------- |
 | general_part_sheet_nid | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the general part sheet object. |
 | heartbeat_nid | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the heartbeat variable. |
-| namespace_url | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | OPC-UA namespace URL used for traceability. |
+| namespace_url | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | OPC-UA namespace URL used for common part of traceability. |
 | part_id_nid | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the `part ID` variable. |
 | raw_batch_nid | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the raw material batch variable. |
 | raw_part_ref_nid | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the raw part reference variable. |
@@ -95,8 +95,20 @@ Traceability related configuration for a machine.
 
 | Property | Type | Required | Possible values | Description |
 | -------- | ---- | -------- | --------------- | ----------- |
+| opc_ua | `object` | ✅ | [TraceabilityMachineOpcUaConfig](#traceabilitymachineopcuaconfig) | OPC-UA traceability information model for this machine. |
 | publish_interval | `string` | ✅ | string | Publish interval for OPC-UA subscription to request variable. |
 | line_id | `string` or `null` |  | string | Two character production line identifier, only present if the machine makes<br />part identifier creation requests. |
+
+## TraceabilityMachineOpcUaConfig
+
+OPC-UA traceability information model, specific for each machine.
+
+#### Type: `object`
+
+| Property | Type | Required | Possible values | Description |
+| -------- | ---- | -------- | --------------- | ----------- |
+| namespace_url | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | OPC-UA namespace URL used for operation part of traceability. |
+| operation_part_sheet_nid | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the operation part sheet object. |
 
 
 ---
