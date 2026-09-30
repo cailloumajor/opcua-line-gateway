@@ -56,13 +56,6 @@
       "description": "Connected OPC-UA server configuration.",
       "type": "object",
       "properties": {
-        "password": {
-          "description": "Password to use if using username/password authentication.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
         "security_mode": {
           "description": "OPC-UA security mode.",
           "type": "string",
@@ -88,13 +81,6 @@
           "description": "OPC-UA server URL.",
           "type": "string",
           "format": "uri"
-        },
-        "user": {
-          "description": "Username if authenticating to the OPC-UA server with username/password.\nIf not provided, anonymous authentication will be used.",
-          "type": [
-            "string",
-            "null"
-          ]
         }
       },
       "required": [
@@ -216,24 +202,14 @@
           "description": "Part sheets draining task execution period.",
           "type": "string"
         },
-        "password_file": {
-          "description": "Path to a file containing the ClickHouse user's password. Whitespaces around\nthe password will be removed.",
-          "type": "string"
-        },
         "url": {
           "description": "URL of the ClickHouse HTTP(S) endpoint.",
           "type": "string",
           "format": "uri"
-        },
-        "user": {
-          "description": "ClickHouse user.",
-          "type": "string"
         }
       },
       "required": [
         "url",
-        "user",
-        "password_file",
         "default_database",
         "part_sheets_drain_period",
         "general_part_sheet_table",

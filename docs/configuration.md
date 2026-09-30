@@ -38,8 +38,6 @@ Connected OPC-UA server configuration.
 | security_mode | `string` | ✅ | `None` `Sign` `SignAndEncrypt` | OPC-UA security mode. |
 | security_policy | `string` | ✅ | `None` `Aes128Sha256RsaOaep` `Basic256Sha256` `Aes256Sha256RsaPss` `Basic128Rsa15` `Basic256` | OPC-UA security policy. |
 | url | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | OPC-UA server URL. |
-| password | `string` or `null` |  | string | Password to use if using username/password authentication. |
-| user | `string` or `null` |  | string | Username if authenticating to the OPC-UA server with username/password.<br />If not provided, anonymous authentication will be used. |
 
 ## TraceabilityCommonConfig
 
@@ -83,9 +81,7 @@ ClickHouse database configuration for traceability.
 | general_part_sheet_table | `string` | ✅ | string | Table to use for general part sheet. |
 | operation_part_sheet_table | `string` | ✅ | string | Table to use for operation part sheet. |
 | part_sheets_drain_period | `string` | ✅ | string | Part sheets draining task execution period. |
-| password_file | `string` | ✅ | string | Path to a file containing the ClickHouse user's password. Whitespaces around<br />the password will be removed. |
 | url | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | URL of the ClickHouse HTTP(S) endpoint. |
-| user | `string` | ✅ | string | ClickHouse user. |
 
 ## TraceabilityMachineConfig
 

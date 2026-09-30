@@ -22,6 +22,28 @@ command line argument.
 
 The configuration structure is described in this [documentation](docs/configuration.md).
 
+### Credentials
+
+Credentials (ClickHouse and OPC-UA servers usernames and passwords) are kept out
+of the configuration file. They are read from a `credentials.toml` file, in the
+directory pointed to by the `CREDENTIALS_DIRECTORY` environment variable, which
+is set by [systemd credentials](https://systemd.io/CREDENTIALS/) or a similar
+mechanism:
+
+```toml
+[database]
+user = "…"
+password = "…"
+
+# Keys are the machines identifiers of the configuration file.
+[opc_ua.machine1]
+user = "…"
+password = "…"
+```
+
+The database credential is required. Machines without an entry in the `opc_ua`
+table use anonymous authentication.
+
 ## Systemd service
 
 The service and user setup is handled by the Debian package, for a single gateway
@@ -47,20 +69,20 @@ pki_dir = "pki"
 [traceability]
 redb_file = "cache.redb"
 # …
-
-[traceability.database]
-password_file = "/etc/opcua-line-gateway/db_password"
-# …
 ```
 
-The application refuses to start unless the database password file mode is
-exactly `0600`, so it must belong to the service user:
+The unit loads the credentials file as a systemd credential, from
+`/etc/opcua-line-gateway/credentials.toml`. Systemd reads it as root when the
+service starts, so it can belong to root and be unreadable by the service user:
 
 ```sh
-sudo install -m 0600 -o opcua-line-gateway -g opcua-line-gateway \
-    /dev/null /etc/opcua-line-gateway/db_password
-sudo -u opcua-line-gateway tee /etc/opcua-line-gateway/db_password <<<"…"
+sudo install -m 0600 -o root -g root \
+    /dev/null /etc/opcua-line-gateway/credentials.toml
+sudoedit /etc/opcua-line-gateway/credentials.toml
 ```
+
+The credential is loaded when the service starts, so restart it after changing
+credentials.
 
 The OPC-UA certificate and private key are expected at
 `pki_dir/own/opcua-line-gateway-cert.der` and

@@ -14,6 +14,7 @@ use tokio_stream::wrappers::IntervalStream;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, instrument};
 
+use crate::credentials::Credential;
 use crate::opcua::session::{OpcUaSession, start_session};
 use crate::traceability::TraceabilityCache;
 
@@ -30,6 +31,7 @@ const CONNECT_TIMEOUT: Duration = Duration::from_secs(2);
 pub(crate) async fn sessions_manager(
     client: Arc<Client>,
     servers: BTreeMap<String, MachineConfig>,
+    credentials: BTreeMap<String, Credential>,
     traceability_opc_ua: TraceabilityCommonOpcUaConfig,
     shutdown: CancellationToken,
     traceability_cache: Arc<TraceabilityCache>,
@@ -67,6 +69,7 @@ pub(crate) async fn sessions_manager(
             let sent_client = Arc::clone(&client);
             let server_id = id.clone();
             let srv_config = config.clone();
+            let credential = credentials.get(id).cloned();
             let sent_traceability_opc_ua = traceability_opc_ua.clone();
             let sent_traceability_cache = Arc::clone(&traceability_cache);
             let registry = Arc::clone(&sessions);
@@ -75,6 +78,7 @@ pub(crate) async fn sessions_manager(
                     sent_client,
                     server_id.clone(),
                     srv_config,
+                    credential,
                     sent_traceability_opc_ua,
                     sent_traceability_cache,
                     registry,
