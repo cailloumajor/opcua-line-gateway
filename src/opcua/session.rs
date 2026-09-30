@@ -2,9 +2,9 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use opcua::client::transport::TcpConnector;
-use opcua::client::{Client, Session, SessionEventLoop};
-use opcua::types::StatusCode;
-use opcua_line_gateway_config::{MachineConfig, OpcUaServerConfig, TraceabilityCommonOpcUaConfig};
+use opcua::client::{Client, IdentityToken, Session, SessionEventLoop};
+use opcua::types::{EndpointDescription, StatusCode};
+use opcua_line_gateway_config::{MachineConfig, TraceabilityCommonOpcUaConfig};
 use parking_lot::Mutex;
 use thiserror::Error;
 use tokio::task::{JoinHandle, JoinSet};
@@ -12,6 +12,7 @@ use tokio_util::sync::CancellationToken;
 use tokio_util::task::AbortOnDropHandle;
 use tracing::{Instrument, error, field, info, info_span, instrument};
 
+use crate::credentials::Credential;
 use crate::traceability::{
     TraceabilityCache, TraceabilityHandler, TraceabilityInitializeError, TraceabilityInstallError,
 };
@@ -102,14 +103,23 @@ pub(super) async fn start_session(
     client: Arc<Client>,
     server_id: String,
     machine_config: MachineConfig,
+    credential: Option<Credential>,
     traceability_opc_ua: TraceabilityCommonOpcUaConfig,
     traceability_cache: Arc<TraceabilityCache>,
     registry: Arc<Mutex<BTreeMap<String, OpcUaSession>>>,
 ) -> Result<(), CreateSessionError> {
     info!(msg = "creating OPC-UA session");
 
+    let endpoint = EndpointDescription::from((
+        machine_config.opc_ua_server.url.as_str(),
+        machine_config.opc_ua_server.security_policy.to_str(),
+        machine_config.opc_ua_server.security_mode,
+    ));
+    let user_identity_token = credential
+        .map(|cred| IdentityToken::new_user_name(&cred.user, &cred.password))
+        .unwrap_or(IdentityToken::new_anonymous());
     let (session, event_loop) =
-        connect_to_matching_endpoint(&client, &machine_config.opc_ua_server).await?;
+        connect_to_matching_endpoint(&client, endpoint, user_identity_token).await?;
 
     // Disable session reconnection, we handle it ourselves.
     session.disable_reconnects();
@@ -168,12 +178,10 @@ pub(super) async fn start_session(
 /// This is a workaround which does not unnecessarily take an exclusive reference to the client.
 async fn connect_to_matching_endpoint(
     client: &Client,
-    server_config: &OpcUaServerConfig,
+    endpoint: EndpointDescription,
+    user_identity_token: IdentityToken,
 ) -> Result<(Arc<Session>, SessionEventLoop<TcpConnector>), CreateSessionError> {
-    let endpoint_description = server_config.endpoint_description();
-    let identity_token = server_config.identity_token();
-
-    let endpoint_url = endpoint_description.endpoint_url.as_ref();
+    let endpoint_url = endpoint.endpoint_url.as_ref();
     let endpoints = client
         .get_server_endpoints_from_url(endpoint_url)
         .await
@@ -181,8 +189,8 @@ async fn connect_to_matching_endpoint(
     let session_builder = client
         .session_builder()
         .with_endpoints(endpoints)
-        .user_identity_token(identity_token)
-        .connect_to_matching_endpoint(endpoint_description)
+        .user_identity_token(user_identity_token)
+        .connect_to_matching_endpoint(endpoint)
         .map_err(CreateSessionError::AddEndpointToSessionBuilder)?;
     session_builder
         .build(Arc::clone(client.certificate_store()))

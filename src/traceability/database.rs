@@ -1,9 +1,7 @@
-use std::fs;
 use std::pin::pin;
 use std::sync::Arc;
 use std::time::Duration;
 
-use anyhow::Context as _;
 use clickhouse::{Client, Compression};
 use futures_util::StreamExt;
 use opcua_line_gateway_config::TraceabilityDatabaseConfig;
@@ -15,6 +13,7 @@ use tokio_stream::wrappers::IntervalStream;
 use tokio_util::sync::CancellationToken;
 use tracing::{Instrument, debug, error, info, info_span, instrument};
 
+use crate::credentials::Credential;
 use crate::traceability::cache::QueueTable;
 
 use super::TraceabilityCache;
@@ -47,33 +46,32 @@ pub(crate) struct TraceabilityDatabase {
 }
 
 impl TraceabilityDatabase {
-    /// Create a new [`TraceabilityDatabase`], provided ClickHouse client configuration.
+    /// Create a new [`TraceabilityDatabase`], provided ClickHouse client configuration,
+    /// credentials and traceability cache.
     ///
     /// # Errors
     ///
     /// An error is returned if reading the password from the configured file fails.
     pub(crate) fn new(
         config: &TraceabilityDatabaseConfig,
+        credential: Credential,
         cache: Arc<TraceabilityCache>,
-    ) -> anyhow::Result<Self> {
-        let password =
-            fs::read_to_string(&config.password_file).context("Failed to read password file")?;
-
+    ) -> Self {
         let client = Client::default()
             .with_url(&config.url)
-            .with_user(&config.user)
-            .with_password(password)
+            .with_user(&credential.user)
+            .with_password(&credential.password)
             .with_database(&config.default_database);
 
         let general_part_sheet_table = config.general_part_sheet_table.clone();
         let operation_part_sheet_table = config.operation_part_sheet_table.clone();
 
-        Ok(Self {
+        Self {
             client,
             cache,
             general_part_sheet_table,
             operation_part_sheet_table,
-        })
+        }
     }
 
     /// Start a task to periodically drain the part sheets to the database, according

@@ -15,10 +15,12 @@ use tracing_subscriber::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
+use self::credentials::Credentials;
 use self::opcua::{create_client, sessions_manager};
 use self::timezone::{init_system_timezone, system_timezone};
 use self::traceability::{TraceabilityCache, TraceabilityDatabase};
 
+mod credentials;
 mod opcua;
 mod timezone;
 mod traceability;
@@ -53,6 +55,8 @@ async fn main() -> anyhow::Result<()> {
     let config = LineGatewayConfig::from_toml_file(config_path)
         .context("Failed to get configuration from file")?;
 
+    let credentials = Credentials::from_credentials_file().context("Failed to get credentials")?;
+
     // Create or open the traceability cache database (redb).
     let traceability_cache_db = Database::create(&config.traceability.redb_file)
         .context("Failed to open traceability cache database file")?;
@@ -80,8 +84,8 @@ async fn main() -> anyhow::Result<()> {
     // Create traceability database client and fetch the general part sheet columns.
     let db_config = &config.traceability.database;
     let db_cache = Arc::clone(&traceability_cache);
-    let traceability_database = TraceabilityDatabase::new(db_config, db_cache)
-        .context("Failed to create traceability database client")?;
+    let traceability_database =
+        TraceabilityDatabase::new(db_config, credentials.database, db_cache);
 
     // Start part sheets draining task.
     let (first_drain_status_rx, draining_task) = traceability_database.drain_part_sheets_task(
@@ -111,6 +115,7 @@ async fn main() -> anyhow::Result<()> {
     sessions_manager(
         client.into(),
         config.machines,
+        credentials.opc_ua,
         config.traceability.opc_ua,
         shutdown_token,
         traceability_cache,

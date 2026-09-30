@@ -1,12 +1,10 @@
 use std::collections::BTreeMap;
-use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use std::{fs, io};
 
-use opcua::client::IdentityToken;
 use opcua::crypto::SecurityPolicy;
-use opcua::types::{EndpointDescription, MessageSecurityMode};
+use opcua::types::MessageSecurityMode;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use thiserror::Error;
@@ -58,35 +56,9 @@ impl LineGatewayConfig {
         let config =
             toml::from_str::<Self>(&file_contents).map_err(LineGatewayConfigError::ParseToml)?;
 
-        // Validate database password file permissions.
-        let password_file_metadata = fs::metadata(&config.traceability.database.password_file)
-            .map_err(LineGatewayConfigError::DbPassFileMeta)?;
-        let password_file_mode = password_file_metadata.permissions().mode() & 0o7777;
-        if password_file_mode != 0o600 {
-            return Err(LineGatewayConfigError::DbPassFilePermissions(
-                password_file_mode,
-            ));
-        }
-
         // Validate that we have at least one server configured.
         if config.machines.is_empty() {
             return Err(LineGatewayConfigError::EmptyServers);
-        }
-
-        // Validate OPC-UA username and password.
-        for (machine_id, machine_config) in &config.machines {
-            match (
-                &machine_config.opc_ua_server.user,
-                &machine_config.opc_ua_server.password,
-            ) {
-                (None, Some(_)) => {
-                    return Err(LineGatewayConfigError::MissingUsername(machine_id.clone()));
-                }
-                (Some(_), None) => {
-                    return Err(LineGatewayConfigError::MissingPassword(machine_id.clone()));
-                }
-                _ => {}
-            }
         }
 
         Ok(config)
@@ -135,11 +107,6 @@ pub struct TraceabilityDatabaseConfig {
     /// URL of the ClickHouse HTTP(S) endpoint.
     #[schemars(url)]
     pub url: String,
-    /// ClickHouse user.
-    pub user: String,
-    /// Path to a file containing the ClickHouse user's password. Whitespaces around
-    /// the password will be removed.
-    pub password_file: PathBuf,
     /// Default database to use.
     pub default_database: String,
     /// Part sheets draining task execution period.
@@ -173,31 +140,6 @@ pub struct OpcUaServerConfig {
     /// OPC-UA security mode.
     #[serde(with = "foreign::MessageSecurityMode")]
     pub security_mode: MessageSecurityMode,
-    /// Username if authenticating to the OPC-UA server with username/password.
-    /// If not provided, anonymous authentication will be used.
-    pub user: Option<String>,
-    /// Password to use if using username/password authentication.
-    pub password: Option<String>,
-}
-
-impl OpcUaServerConfig {
-    /// Create an [`EndpointDescription`] from this server configuration.
-    pub fn endpoint_description(&self) -> EndpointDescription {
-        EndpointDescription::from((
-            self.url.as_str(),
-            self.security_policy.to_str(),
-            self.security_mode,
-        ))
-    }
-
-    /// Create an [`IdentityToken`] from this server configuration.
-    pub fn identity_token(&self) -> IdentityToken {
-        self.user
-            .as_ref()
-            .zip(self.password.as_ref())
-            .map(|(user, pass)| IdentityToken::new_user_name(user, pass))
-            .unwrap_or(IdentityToken::new_anonymous())
-    }
 }
 
 /// Traceability related configuration for a machine.

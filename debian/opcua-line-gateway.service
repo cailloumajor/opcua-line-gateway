@@ -16,9 +16,12 @@ Group=opcua-line-gateway
 # The configuration file path is the first positional argument.
 ExecStart=/usr/bin/opcua-line-gateway /etc/opcua-line-gateway/config.toml
 
-# /etc/opcua-line-gateway, holding config.toml and the database password file.
+# /etc/opcua-line-gateway, holding config.toml and the credentials file.
 ConfigurationDirectory=opcua-line-gateway
 ConfigurationDirectoryMode=0750
+# Credentials are read by systemd as root, so the source file may be unreadable
+# by the service user. They are exposed to the service in $CREDENTIALS_DIRECTORY.
+LoadCredential=credentials.toml:/etc/opcua-line-gateway/credentials.toml
 # /var/lib/opcua-line-gateway, holding the redb cache file and the OPC-UA PKI.
 StateDirectory=opcua-line-gateway
 StateDirectoryMode=0750
