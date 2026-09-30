@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.4.1...v0.4.2) (2026-09-30)
+
+
+### Bug Fixes
+
+* group similar error codes ([413bdaa](https://github.com/cailloumajor/opcua-line-gateway/commit/413bdaabe2097dc52cb5e366e588b24e7fa13835))
+
 ## [0.4.1](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.4.0...v0.4.1) (2026-09-30)
 
 
