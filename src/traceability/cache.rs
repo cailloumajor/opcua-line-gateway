@@ -11,7 +11,7 @@ use redb::{
 };
 use strum::VariantArray;
 use thiserror::Error;
-use tracing::{instrument, warn};
+use tracing::instrument;
 
 use crate::traceability::part_sheet::encode_part_sheet_for_db;
 
@@ -41,7 +41,7 @@ const OPERATION_PART_SHEET_QUEUE: TableDefinition<u64, &str> =
 pub(super) enum QueueTable {
     /// General part sheet queue table.
     General,
-    /// The lower limit on enqueued part sheets from which enqueueing will not be allowed.
+    /// Operation part sheet queue table.
     Operation,
 }
 
@@ -80,6 +80,8 @@ pub(super) enum SavePartSheetsError {
     ElementsCount(TryFromIntError),
     #[error("error serializing general part sheet for database: {0}")]
     GeneralSerialization(serde_json::Error),
+    #[error("error serializing operation part sheet for database: {0}")]
+    OperationSerialization(serde_json::Error),
     #[error(transparent)]
     RedbTransaction(#[from] redb::TransactionError),
     #[error(transparent)]
@@ -171,19 +173,22 @@ impl TraceabilityCache {
         machine_id: Arc<str>,
         part_id: AsciiDigitsOrUpper<23>,
         general: &[SavedPartSheetItem],
+        operation: &[SavedPartSheetItem],
         ctx: &Context,
     ) -> Result<(), SavePartSheetsError> {
         let saved_at = Timestamp::now();
 
+        // Encode general part sheet for caching and archiving.
         let cached_general = encode_part_sheet_for_cache(general, ctx)
             .map_err(SavePartSheetsError::ElementsCount)?;
         let json_general = encode_part_sheet_for_db(saved_at, &machine_id, part_id, general)
             .map_err(SavePartSheetsError::GeneralSerialization)?;
 
-        // TODO: encode the operation part sheet (adding required parameters to this function)
-        //       to JSON and enqueue them in to-be-created tables.
-        warn!(msg = "operation part sheet insertion to database is not yet implemented");
+        // Encode operation part sheet for archiving.
+        let json_operation = encode_part_sheet_for_db(saved_at, &machine_id, part_id, operation)
+            .map_err(SavePartSheetsError::OperationSerialization)?;
 
+        // Write encoded part sheets to the cache and/or queues.
         let write_txn = self.redb.begin_write()?;
         {
             let mut seq_table = write_txn.open_table(QUEUE_SEQ)?;
@@ -200,6 +205,9 @@ impl TraceabilityCache {
             write_txn
                 .open_table(GENERAL_PART_SHEET_QUEUE)?
                 .insert(seq, json_general.as_str())?;
+            write_txn
+                .open_table(OPERATION_PART_SHEET_QUEUE)?
+                .insert(seq + 1, json_operation.as_str())?;
         }
         write_txn.commit()?;
 

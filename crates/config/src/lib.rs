@@ -110,7 +110,7 @@ pub struct TraceabilityCommonConfig {
 /// OPC-UA traceability information model, as implemented by all machines.
 #[derive(Clone, Deserialize, JsonSchema)]
 pub struct TraceabilityCommonOpcUaConfig {
-    /// OPC-UA namespace URL used for traceability.
+    /// OPC-UA namespace URL used for common part of traceability.
     #[schemars(url)]
     pub namespace_url: String,
     /// OPC-UA node identifier of the request variable.
@@ -210,4 +210,16 @@ pub struct TraceabilityMachineConfig {
     /// Two character production line identifier, only present if the machine makes
     /// part identifier creation requests.
     pub line_id: Option<AsciiDigitsOrUpper<2>>,
+    /// OPC-UA traceability information model for this machine.
+    pub opc_ua: TraceabilityMachineOpcUaConfig,
+}
+
+/// OPC-UA traceability information model, specific for each machine.
+#[derive(Clone, Deserialize, JsonSchema)]
+pub struct TraceabilityMachineOpcUaConfig {
+    /// OPC-UA namespace URL used for operation part of traceability.
+    #[schemars(url)]
+    pub namespace_url: String,
+    /// OPC-UA node identifier of the operation part sheet object.
+    pub operation_part_sheet_nid: u32,
 }

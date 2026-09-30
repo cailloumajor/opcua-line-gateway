@@ -15,6 +15,10 @@ pub(crate) enum TraceabilityInitializeError {
     BrowseGeneralPartSheet(#[source] BrowsePartSheetError),
     #[error("part identifier node not found in general part sheet")]
     NoPartIdNode,
+    #[error("error getting operation traceability namespace index")]
+    GetOperationNamespaceIndex(#[source] opcua::types::Error),
+    #[error("error browsing the operation part sheet object")]
+    BrowseOperationPartSheet(#[source] BrowsePartSheetError),
 }
 
 /// The traceability handler state after initialization.
@@ -23,6 +27,8 @@ pub(crate) struct TraceabilityContext {
     pub(super) protocol: ProtocolContext,
     /// General part sheet context.
     pub(super) general_part_sheet: GeneralPartSheetContext,
+    /// Operation part sheet context.
+    pub(super) operation_part_sheet: OperationPartSheetContext,
 }
 
 /// Traceability protocol context.
@@ -47,6 +53,13 @@ pub(super) struct GeneralPartSheetContext {
     pub(super) raw_part_ref: NodeId,
     /// [`NodeId`] of the raw part material batch.
     pub(super) raw_batch: NodeId,
+}
+
+/// Traceability context related to operation part sheet.
+#[derive(Clone)]
+pub(super) struct OperationPartSheetContext {
+    /// Discovered nodes, couples of numeric identifier and browse name.
+    pub(super) nodes: Vec<(NodeId, Arc<str>)>,
 }
 
 impl TraceabilityHandler<InitialState> {
@@ -85,6 +98,28 @@ impl TraceabilityHandler<InitialState> {
             count = general_part_sheet_nodes.len()
         );
 
+        // Get the namespace index for traceability operation part.
+        let operation_ns_index = self
+            .session
+            .get_namespace_index(&self.machine_config.opc_ua.namespace_url)
+            .await
+            .map_err(TraceabilityInitializeError::GetOperationNamespaceIndex)?;
+
+        // Browse the operation part sheet.
+        let operation_part_sheet_node_id = NodeId::new(
+            operation_ns_index,
+            self.machine_config.opc_ua.operation_part_sheet_nid,
+        );
+        let operation_part_sheet_nodes = self
+            .browse_part_sheet(operation_part_sheet_node_id)
+            .await
+            .map_err(TraceabilityInitializeError::BrowseOperationPartSheet)?;
+
+        info!(
+            msg = "operation part sheet nodes discovered",
+            count = operation_part_sheet_nodes.len()
+        );
+
         let state = TraceabilityContext {
             protocol: ProtocolContext {
                 request: NodeId::new(common_ns_index, self.common_opcua_config.request_nid),
@@ -100,6 +135,9 @@ impl TraceabilityHandler<InitialState> {
                     self.common_opcua_config.raw_part_ref_nid,
                 ),
                 raw_batch: NodeId::new(common_ns_index, self.common_opcua_config.raw_batch_nid),
+            },
+            operation_part_sheet: OperationPartSheetContext {
+                nodes: operation_part_sheet_nodes,
             },
         };
 
