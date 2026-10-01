@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.3](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.4.2...v0.4.3) (2026-10-01)
+
+
+### Bug Fixes
+
+* allow to skip insertion if there is no row to insert ([3895c6f](https://github.com/cailloumajor/opcua-line-gateway/commit/3895c6fbc60099fc4e0092eb7a2ad7b34e069353))
+
 ## [0.4.2](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.4.1...v0.4.2) (2026-09-30)
 
 
