@@ -103,8 +103,11 @@ impl TraceabilityDatabase {
                 while pinned_stream.next().await.is_some() {
                     debug!(msg = "draining part sheets rows from queues to the database");
 
-                    let drain_general_fut = self.drain_part_sheet_queue(QueueTable::General);
-                    let drain_operation_fut = self.drain_part_sheet_queue(QueueTable::Operation);
+                    let skip_if_empty = first_run_tx.is_none();
+                    let drain_general_fut =
+                        self.drain_part_sheet_queue(QueueTable::General, skip_if_empty);
+                    let drain_operation_fut =
+                        self.drain_part_sheet_queue(QueueTable::Operation, skip_if_empty);
                     let (general_result, operation_result) =
                         tokio::join!(drain_general_fut, drain_operation_fut);
 
@@ -130,11 +133,13 @@ impl TraceabilityDatabase {
         (rx, task)
     }
 
-    /// Drain part sheet queues to the database.
+    /// Drain part sheet queues to the database, provided the table to act on and
+    /// a flag allowing to skip insertion if the queue is empty.
     #[instrument(err, skip_all, fields(queue = %queue_table))]
     async fn drain_part_sheet_queue(
         &self,
         queue_table: QueueTable,
+        skip_if_empty: bool,
     ) -> Result<(), DrainQueuesError> {
         const SEND_TIMEOUT: Option<Duration> = Some(Duration::from_secs(2));
         const END_TIMEOUT: Option<Duration> = Some(Duration::from_secs(5));
@@ -147,6 +152,11 @@ impl TraceabilityDatabase {
             .await
             .map_err(DrainQueuesError::GetBatchTask)?
             .map_err(DrainQueuesError::GetBatch)?;
+
+        if skip_if_empty && keys.is_empty() {
+            debug!(msg = "no row to drain");
+            return Ok(());
+        }
 
         // Insert the part sheet rows in database.
         let query = format!(
@@ -167,6 +177,11 @@ impl TraceabilityDatabase {
             .await
             .map_err(DrainQueuesError::Insert)?;
         inserter.end().await.map_err(DrainQueuesError::Insert)?;
+
+        info!(
+            msg = "inserted drained rows in the database",
+            count = keys.len()
+        );
 
         // Remove the part sheet queue elements.
         let sent_cache = Arc::clone(&self.cache);
