@@ -3,23 +3,21 @@ use std::fmt;
 use std::str::FromStr;
 
 use schemars::{JsonSchema, Schema, SchemaGenerator, json_schema};
-use serde::de::Visitor;
-use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
+use serde::{Deserialize, Serialize, Serializer};
 use thiserror::Error;
 
-/// Errors that can occur with [`AsciiText`].
+/// Errors that can occur with [`AsciiDigitsOrUpper`].
 #[derive(Debug, Error)]
-pub enum AsciiTextError {
+pub enum AsciiDigitsOrUpperError {
     #[error("input length {0} is not expected length {1}")]
     BadLength(usize, usize),
-    #[error("non-printable ASCII byte 0x{0:02X} at position {1}")]
-    NonPrintable(u8, usize),
-    #[error("non digit or uppercase ASCII character `{0}` at position {1}")]
-    NonDigitOrUppercase(char, usize),
+    #[error("non digit or uppercase ASCII character `{char}` at position {1}", char = .0.escape_ascii())]
+    InvalidChar(u8, usize),
 }
 
-/// A fixed-size, immutable ASCII string.
-#[derive(Clone, Copy, Debug)]
+/// A fixed-size, immutable string made only of ASCII digits and uppercase letters.
+#[derive(Clone, Copy, Debug, Deserialize)]
+#[serde(try_from = "String")]
 pub struct AsciiDigitsOrUpper<const LENGTH: usize>([u8; LENGTH]);
 
 impl<const LENGTH: usize> AsciiDigitsOrUpper<LENGTH> {
@@ -35,32 +33,34 @@ impl<const LENGTH: usize> AsciiDigitsOrUpper<LENGTH> {
 }
 
 impl<const LENGTH: usize> TryFrom<&[u8]> for AsciiDigitsOrUpper<LENGTH> {
-    type Error = AsciiTextError;
+    type Error = AsciiDigitsOrUpperError;
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-        if value.len() != LENGTH {
-            return Err(AsciiTextError::BadLength(value.len(), LENGTH));
-        }
-
-        for (pos, byte) in value.iter().enumerate() {
-            if !byte.is_ascii_graphic() {
-                return Err(AsciiTextError::NonPrintable(*byte, pos + 1));
-            }
-            if !byte.is_ascii_digit() && !byte.is_ascii_uppercase() {
-                return Err(AsciiTextError::NonDigitOrUppercase((*byte).into(), pos + 1));
-            }
-        }
-
-        let inner = value
+        let inner: [u8; LENGTH] = value
             .try_into()
-            .expect("converting slice to array should not fail");
+            .map_err(|_| AsciiDigitsOrUpperError::BadLength(value.len(), LENGTH))?;
+
+        if let Some(pos) = inner
+            .iter()
+            .position(|b| !b.is_ascii_digit() && !b.is_ascii_uppercase())
+        {
+            return Err(AsciiDigitsOrUpperError::InvalidChar(inner[pos], pos + 1));
+        }
 
         Ok(Self(inner))
     }
 }
 
+impl<const LENGTH: usize> TryFrom<String> for AsciiDigitsOrUpper<LENGTH> {
+    type Error = AsciiDigitsOrUpperError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        value.parse()
+    }
+}
+
 impl<const LENGTH: usize> FromStr for AsciiDigitsOrUpper<LENGTH> {
-    type Err = AsciiTextError;
+    type Err = AsciiDigitsOrUpperError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         s.as_bytes().try_into()
@@ -82,51 +82,13 @@ impl<const LENGTH: usize> Serialize for AsciiDigitsOrUpper<LENGTH> {
     }
 }
 
-impl<'de, const LENGTH: usize> Deserialize<'de> for AsciiDigitsOrUpper<LENGTH> {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        struct AsciiTextVisitor<const LENGTH: usize>;
-
-        impl<const LENGTH: usize> Visitor<'_> for AsciiTextVisitor<LENGTH> {
-            type Value = AsciiDigitsOrUpper<LENGTH>;
-
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                write!(
-                    formatter,
-                    "a printable ASCII string with {LENGTH} characters"
-                )
-            }
-
-            #[inline]
-            fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
-            where
-                E: de::Error,
-            {
-                v.try_into().map_err(E::custom)
-            }
-
-            #[inline]
-            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
-            where
-                E: de::Error,
-            {
-                v.parse().map_err(E::custom)
-            }
-        }
-
-        deserializer.deserialize_str(AsciiTextVisitor)
-    }
-}
-
 impl<const LENGTH: usize> JsonSchema for AsciiDigitsOrUpper<LENGTH> {
     fn inline_schema() -> bool {
         true
     }
 
     fn schema_name() -> Cow<'static, str> {
-        "AsciiText".into()
+        "AsciiDigitsOrUpper".into()
     }
 
     fn json_schema(_generator: &mut SchemaGenerator) -> Schema {
@@ -134,6 +96,7 @@ impl<const LENGTH: usize> JsonSchema for AsciiDigitsOrUpper<LENGTH> {
             "type": "string",
             "minLength": LENGTH,
             "maxLength": LENGTH,
+            "pattern": format!("^[0-9A-Z]{{{LENGTH}}}$"),
         })
     }
 }
@@ -148,28 +111,28 @@ mod tests {
     fn too_short() {
         let result = "ABC".parse::<AsciiDigitsOrUpper<4>>();
 
-        assert_matches!(result, Err(AsciiTextError::BadLength(3, 4)));
+        assert_matches!(result, Err(AsciiDigitsOrUpperError::BadLength(3, 4)));
     }
 
     #[test]
     fn too_long() {
         let result = "ABCDE".parse::<AsciiDigitsOrUpper<4>>();
 
-        assert_matches!(result, Err(AsciiTextError::BadLength(5, 4)));
+        assert_matches!(result, Err(AsciiDigitsOrUpperError::BadLength(5, 4)));
     }
 
     #[test]
-    fn non_ascii() {
+    fn non_printable() {
         let result = "AB\tD".parse::<AsciiDigitsOrUpper<4>>();
 
-        assert_matches!(result, Err(AsciiTextError::NonPrintable(0x09, 3)));
+        assert_matches!(result, Err(AsciiDigitsOrUpperError::InvalidChar(b'\t', 3)));
     }
 
     #[test]
     fn non_digit_or_uppercase() {
         let result = "ABCd".parse::<AsciiDigitsOrUpper<4>>();
 
-        assert_matches!(result, Err(AsciiTextError::NonDigitOrUppercase('d', 4)));
+        assert_matches!(result, Err(AsciiDigitsOrUpperError::InvalidChar(b'd', 4)));
     }
 
     #[test]

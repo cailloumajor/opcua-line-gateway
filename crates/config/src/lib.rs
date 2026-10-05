@@ -9,7 +9,7 @@ use schemars::JsonSchema;
 use serde::Deserialize;
 use thiserror::Error;
 
-pub use self::ascii_text::{AsciiDigitsOrUpper, AsciiTextError};
+pub use self::ascii_text::{AsciiDigitsOrUpper, AsciiDigitsOrUpperError};
 
 mod ascii_text;
 mod foreign;
