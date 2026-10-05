@@ -93,7 +93,7 @@ Traceability related configuration for a machine.
 | -------- | ---- | -------- | --------------- | ----------- |
 | opc_ua | `object` | ✅ | [TraceabilityMachineOpcUaConfig](#traceabilitymachineopcuaconfig) | OPC-UA traceability information model for this machine. |
 | publish_interval | `string` | ✅ | string | Publish interval for OPC-UA subscription to request variable. |
-| line_id | `string` or `null` |  | string | Two character production line identifier, only present if the machine makes<br />part identifier creation requests. |
+| line_id | `string` or `null` |  | [`^[0-9A-Z]{2}$`](https://regex101.com/?regex=%5E%5B0-9A-Z%5D%7B2%7D%24) | Two character production line identifier, only present if the machine makes<br />part identifier creation requests. |
 
 ## TraceabilityMachineOpcUaConfig
 

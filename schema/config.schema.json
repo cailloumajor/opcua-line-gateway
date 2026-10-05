@@ -227,7 +227,8 @@
             "null"
           ],
           "maxLength": 2,
-          "minLength": 2
+          "minLength": 2,
+          "pattern": "^[0-9A-Z]{2}$"
         },
         "opc_ua": {
           "description": "OPC-UA traceability information model for this machine.",

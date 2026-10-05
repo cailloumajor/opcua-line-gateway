@@ -1,5 +1,5 @@
 use opcua::types::{DataValue, StatusCode, UAString, Variant};
-use opcua_line_gateway_config::{AsciiDigitsOrUpper, AsciiTextError};
+use opcua_line_gateway_config::{AsciiDigitsOrUpper, AsciiDigitsOrUpperError};
 use thiserror::Error;
 
 /// Errors that can occur during conversion of OPC-UA value.
@@ -14,7 +14,7 @@ pub(crate) enum TryFromOpcUaValueError {
     #[error("string value is null")]
     NullString,
     #[error(transparent)]
-    AsciiText(#[from] AsciiTextError),
+    Ascii(#[from] AsciiDigitsOrUpperError),
 }
 
 impl TryFromOpcUaValueError {
