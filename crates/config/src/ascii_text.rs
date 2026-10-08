@@ -16,7 +16,7 @@ pub enum AsciiDigitsOrUpperError {
 }
 
 /// A fixed-size, immutable string made only of ASCII digits and uppercase letters.
-#[derive(Clone, Copy, Debug, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Deserialize)]
 #[serde(try_from = "String")]
 pub struct AsciiDigitsOrUpper<const LENGTH: usize>([u8; LENGTH]);
 

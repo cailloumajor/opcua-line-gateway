@@ -6,7 +6,7 @@ use std::{fs, io};
 use opcua::crypto::SecurityPolicy;
 use opcua::types::MessageSecurityMode;
 use schemars::JsonSchema;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 pub use self::ascii_text::{AsciiDigitsOrUpper, AsciiDigitsOrUpperError};
@@ -34,7 +34,7 @@ pub enum LineGatewayConfigError {
 }
 
 /// OPC-UA line gateway configuration.
-#[derive(Clone, Deserialize, JsonSchema)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize, JsonSchema)]
 pub struct LineGatewayConfig {
     /// Globally unique identifier for the application instance, as of OPC-UA.
     pub application_uri: String,
@@ -47,14 +47,9 @@ pub struct LineGatewayConfig {
 }
 
 impl LineGatewayConfig {
-    /// Create the [`LineGatewayConfig`] from the provided path to a TOML file.
-    pub fn from_toml_file<P>(path: P) -> Result<Self, LineGatewayConfigError>
-    where
-        P: AsRef<Path>,
-    {
-        let file_contents = fs::read_to_string(path).map_err(LineGatewayConfigError::ReadFile)?;
-        let config =
-            toml::from_str::<Self>(&file_contents).map_err(LineGatewayConfigError::ParseToml)?;
+    /// Create the [`LineGatewayConfig`] from a TOML string.
+    fn from_toml_str(s: &str) -> Result<Self, LineGatewayConfigError> {
+        let config = toml::from_str::<Self>(s).map_err(LineGatewayConfigError::ParseToml)?;
 
         // Validate that we have at least one server configured.
         if config.machines.is_empty() {
@@ -63,10 +58,20 @@ impl LineGatewayConfig {
 
         Ok(config)
     }
+
+    /// Create the [`LineGatewayConfig`] from the provided path to a TOML file.
+    pub fn from_toml_file<P>(path: P) -> Result<Self, LineGatewayConfigError>
+    where
+        P: AsRef<Path>,
+    {
+        let file_contents = fs::read_to_string(path).map_err(LineGatewayConfigError::ReadFile)?;
+
+        Self::from_toml_str(&file_contents)
+    }
 }
 
 /// Traceability configuration for all machines.
-#[derive(Clone, Deserialize, JsonSchema)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize, JsonSchema)]
 pub struct TraceabilityCommonConfig {
     /// Path to the redb file to use for traceability cache. It will be created
     /// if it does not exist.
@@ -80,7 +85,7 @@ pub struct TraceabilityCommonConfig {
 }
 
 /// OPC-UA traceability information model, as implemented by all machines.
-#[derive(Clone, Deserialize, JsonSchema)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize, JsonSchema)]
 pub struct TraceabilityCommonOpcUaConfig {
     /// OPC-UA namespace URL used for common part of traceability.
     #[schemars(url)]
@@ -102,7 +107,7 @@ pub struct TraceabilityCommonOpcUaConfig {
 }
 
 /// ClickHouse database configuration for traceability.
-#[derive(Clone, Deserialize, JsonSchema)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize, JsonSchema)]
 pub struct TraceabilityDatabaseConfig {
     /// URL of the ClickHouse HTTP(S) endpoint.
     #[schemars(url)]
@@ -120,7 +125,7 @@ pub struct TraceabilityDatabaseConfig {
 }
 
 /// Connected machine configuration.
-#[derive(Clone, Deserialize, JsonSchema)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize, JsonSchema)]
 pub struct MachineConfig {
     /// OPC-UA server configuration for this machine.
     pub opc_ua_server: OpcUaServerConfig,
@@ -129,7 +134,7 @@ pub struct MachineConfig {
 }
 
 /// Connected OPC-UA server configuration.
-#[derive(Clone, Deserialize, JsonSchema)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize, JsonSchema)]
 pub struct OpcUaServerConfig {
     /// OPC-UA server URL.
     #[schemars(url)]
@@ -143,7 +148,7 @@ pub struct OpcUaServerConfig {
 }
 
 /// Traceability related configuration for a machine.
-#[derive(Clone, Deserialize, JsonSchema)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize, JsonSchema)]
 pub struct TraceabilityMachineConfig {
     /// Publish interval for OPC-UA subscription to request variable.
     #[serde(with = "jiff::fmt::serde::unsigned_duration::friendly::compact::required")]
@@ -157,11 +162,90 @@ pub struct TraceabilityMachineConfig {
 }
 
 /// OPC-UA traceability information model, specific for each machine.
-#[derive(Clone, Deserialize, JsonSchema)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize, JsonSchema)]
 pub struct TraceabilityMachineOpcUaConfig {
     /// OPC-UA namespace URL used for operation part of traceability.
     #[schemars(url)]
     pub namespace_url: String,
     /// OPC-UA node identifier of the operation part sheet object.
     pub operation_part_sheet_nid: u32,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn serialize_round_trip() {
+        let config = LineGatewayConfig {
+            application_uri: "urn:example:line-gateway".to_owned(),
+            pki_dir: "pki".into(),
+            traceability: TraceabilityCommonConfig {
+                redb_file: "cache.redb".into(),
+                queues_not_draining_threshold: 100,
+                opc_ua: TraceabilityCommonOpcUaConfig {
+                    namespace_url: "urn:example:traceability".to_owned(),
+                    request_nid: 1,
+                    response_nid: 2,
+                    heartbeat_nid: 3,
+                    general_part_sheet_nid: 1000,
+                    part_id_nid: 1001,
+                    raw_part_ref_nid: 1002,
+                    raw_batch_nid: 1003,
+                },
+                database: TraceabilityDatabaseConfig {
+                    url: "http://localhost:8123".to_owned(),
+                    default_database: "traceability".to_owned(),
+                    part_sheets_drain_period: Duration::from_secs(90),
+                    general_part_sheet_table: "part_sheet_general".to_owned(),
+                    operation_part_sheet_table: "part_sheet_operation".to_owned(),
+                },
+            },
+            machines: BTreeMap::from([
+                (
+                    "machine1".to_owned(),
+                    MachineConfig {
+                        opc_ua_server: OpcUaServerConfig {
+                            url: "opc.tcp://machine1:4840/".to_owned(),
+                            security_policy: SecurityPolicy::Basic256Sha256,
+                            security_mode: MessageSecurityMode::SignAndEncrypt,
+                        },
+                        traceability: TraceabilityMachineConfig {
+                            publish_interval: Duration::from_millis(250),
+                            line_id: Some("01".parse().unwrap()),
+                            opc_ua: TraceabilityMachineOpcUaConfig {
+                                namespace_url: "urn:example:machine".to_owned(),
+                                operation_part_sheet_nid: 2000,
+                            },
+                        },
+                    },
+                ),
+                (
+                    "machine2".to_owned(),
+                    MachineConfig {
+                        opc_ua_server: OpcUaServerConfig {
+                            url: "opc.tcp://machine2:4840/".to_owned(),
+                            security_policy: SecurityPolicy::Basic256Sha256,
+                            security_mode: MessageSecurityMode::SignAndEncrypt,
+                        },
+                        traceability: TraceabilityMachineConfig {
+                            publish_interval: Duration::from_millis(250),
+                            line_id: None,
+                            opc_ua: TraceabilityMachineOpcUaConfig {
+                                namespace_url: "urn:example:machine".to_owned(),
+                                operation_part_sheet_nid: 2000,
+                            },
+                        },
+                    },
+                ),
+            ]),
+        };
+
+        let serialized = toml::to_string(&config).expect("serializing should not fail");
+
+        let deserialized =
+            LineGatewayConfig::from_toml_str(&serialized).expect("deserializing should not fail");
+
+        assert_eq!(deserialized, config);
+    }
 }
