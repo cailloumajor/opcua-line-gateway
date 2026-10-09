@@ -7,14 +7,13 @@ use std::time::Duration;
 
 use futures_util::StreamExt;
 use opcua::client::Client;
-use opcua_line_gateway_config::{MachineConfig, TraceabilityCommonOpcUaConfig};
+use opcua_line_gateway_config::{Credential, MachineConfig, TraceabilityCommonOpcUaConfig};
 use parking_lot::Mutex;
 use tokio::time::{MissedTickBehavior, interval, timeout};
 use tokio_stream::wrappers::IntervalStream;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, instrument};
 
-use crate::credentials::Credential;
 use crate::opcua::session::{OpcUaSession, start_session};
 use crate::traceability::TraceabilityCache;
 

@@ -4,7 +4,7 @@ use std::sync::Arc;
 use opcua::client::transport::TcpConnector;
 use opcua::client::{Client, IdentityToken, Session, SessionEventLoop};
 use opcua::types::{EndpointDescription, StatusCode};
-use opcua_line_gateway_config::{MachineConfig, TraceabilityCommonOpcUaConfig};
+use opcua_line_gateway_config::{Credential, MachineConfig, TraceabilityCommonOpcUaConfig};
 use parking_lot::Mutex;
 use thiserror::Error;
 use tokio::task::{JoinHandle, JoinSet};
@@ -12,7 +12,6 @@ use tokio_util::sync::CancellationToken;
 use tokio_util::task::AbortOnDropHandle;
 use tracing::{Instrument, error, field, info, info_span, instrument};
 
-use crate::credentials::Credential;
 use crate::traceability::{
     TraceabilityCache, TraceabilityHandler, TraceabilityInitializeError, TraceabilityInstallError,
 };

@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use clickhouse::{Client, Compression};
 use futures_util::StreamExt;
-use opcua_line_gateway_config::TraceabilityDatabaseConfig;
+use opcua_line_gateway_config::{Credential, TraceabilityDatabaseConfig};
 use thiserror::Error;
 use tokio::sync::oneshot;
 use tokio::task::{JoinError, JoinHandle};
@@ -13,7 +13,6 @@ use tokio_stream::wrappers::IntervalStream;
 use tokio_util::sync::CancellationToken;
 use tracing::{Instrument, debug, error, info, info_span, instrument};
 
-use crate::credentials::Credential;
 use crate::traceability::cache::QueueTable;
 
 use super::TraceabilityCache;

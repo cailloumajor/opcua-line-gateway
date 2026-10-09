@@ -1,11 +1,10 @@
 use std::env;
 use std::path::PathBuf;
-use std::sync::Arc;
 
 use anyhow::{Context as _, anyhow};
 use futures_util::StreamExt;
-use opcua_line_gateway_config::LineGatewayConfig;
-use redb::Database;
+use opcua_line_gateway::run_main;
+use opcua_line_gateway_config::{Credentials, LineGatewayConfig};
 use signal_hook::consts::TERM_SIGNALS;
 use signal_hook::low_level::signal_name;
 use signal_hook_tokio::Signals;
@@ -14,16 +13,6 @@ use tracing::{error, info, instrument};
 use tracing_subscriber::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
-
-use self::credentials::Credentials;
-use self::opcua::{create_client, sessions_manager};
-use self::timezone::{init_system_timezone, system_timezone};
-use self::traceability::{TraceabilityCache, TraceabilityDatabase};
-
-mod credentials;
-mod opcua;
-mod timezone;
-mod traceability;
 
 /// Handle signals as they are caught.
 #[instrument(skip_all)]
@@ -57,17 +46,6 @@ async fn main() -> anyhow::Result<()> {
 
     let credentials = Credentials::from_credentials_file().context("Failed to get credentials")?;
 
-    // Create or open the traceability cache database (redb).
-    let traceability_cache_db = Database::create(&config.traceability.redb_file)
-        .context("Failed to open traceability cache database file")?;
-    let traceability_cache = Arc::new(TraceabilityCache::new(
-        traceability_cache_db,
-        config.traceability.queues_not_draining_threshold,
-    ));
-
-    // Initialize the cached system timezone.
-    init_system_timezone().context("Failed to get the system timezone")?;
-
     let shutdown_token = CancellationToken::new();
 
     // Initialize tracing.
@@ -77,54 +55,14 @@ async fn main() -> anyhow::Result<()> {
         .with(EnvFilter::from_default_env())
         .init();
 
-    // Ensure cached timezone.
-    let tz = system_timezone();
-    info!(msg = "got system timezone", ?tz);
-
-    // Create traceability database client and fetch the general part sheet columns.
-    let db_config = &config.traceability.database;
-    let db_cache = Arc::clone(&traceability_cache);
-    let traceability_database =
-        TraceabilityDatabase::new(db_config, credentials.database, db_cache);
-
-    // Start part sheets draining task.
-    let (first_drain_status_rx, draining_task) = traceability_database.drain_part_sheets_task(
-        config.traceability.database.part_sheets_drain_period,
-        shutdown_token.clone(),
-    );
-
-    // Wait for the result of the first draining task run, and exit with error
-    // if unsuccessful.
-    let first_drain_successful = first_drain_status_rx
-        .await
-        .context("Failed to get the first draining task run status")?;
-    if first_drain_successful {
-        info!(msg = "first draining task run was successful");
-    } else {
-        return Err(anyhow!("First run of draining task was not successful"));
-    }
-
-    // Create OPC-UA client.
-    let client = create_client(&config).context("Failed to create OPC-UA client")?;
-
     let signals = Signals::new(TERM_SIGNALS).context("Failed to register termination signals")?;
     let signals_handle = signals.handle();
     let signals_task = tokio::spawn(handle_signals(signals, shutdown_token.clone()));
 
-    // Start the sessions manager, acting as the main program loop.
-    sessions_manager(
-        client.into(),
-        config.machines,
-        credentials.opc_ua,
-        config.traceability.opc_ua,
-        shutdown_token,
-        traceability_cache,
-    )
-    .await;
+    run_main(config, credentials, shutdown_token).await?;
 
     signals_handle.close();
-
-    tokio::try_join!(draining_task, signals_task).context("failed to join tasks")?;
+    signals_task.await.context("failed to join signals task")?;
 
     Ok(())
 }

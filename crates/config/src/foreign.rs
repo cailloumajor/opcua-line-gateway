@@ -1,11 +1,11 @@
 use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 /// A copy of [`opcua::crypto::SecurityPolicy`] to allow using serde remote functionality.
 ///
 /// The schema is inlined so that the possible values are documented directly on the
 /// configuration member instead of a reference to a separate definition.
-#[derive(Deserialize, Serialize, JsonSchema)]
+#[derive(Deserialize, JsonSchema)]
 #[schemars(inline)]
 #[serde(remote = "opcua::crypto::SecurityPolicy")]
 pub(crate) enum SecurityPolicy {
@@ -26,7 +26,7 @@ pub(crate) enum SecurityPolicy {
 ///
 /// The schema is inlined so that the possible values are documented directly on the
 /// configuration member instead of a reference to a separate definition.
-#[derive(Deserialize, Serialize, JsonSchema)]
+#[derive(Deserialize, JsonSchema)]
 #[schemars(inline)]
 #[serde(remote = "opcua::types::MessageSecurityMode")]
 pub(crate) enum MessageSecurityMode {
