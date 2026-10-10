@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.4](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.4.3...v0.4.4) (2026-10-10)
+
+
+### Features
+
+* enable configuration object serialization ([8d36c49](https://github.com/cailloumajor/opcua-line-gateway/commit/8d36c491434be15b9aa59a1e57768ea12e646db9))
+
+
+### Bug Fixes
+
+* **deps:** update dependency rust to v1.99.0 ([3b97692](https://github.com/cailloumajor/opcua-line-gateway/commit/3b97692df9dce38a221569dfe346ce98a739eb4c))
+
 ## [0.4.3](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.4.2...v0.4.3) (2026-10-01)
 
 
