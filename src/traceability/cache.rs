@@ -126,8 +126,8 @@ impl TraceabilityCache {
     ///
     /// This function can block upon access to wrapped database.
     #[instrument(err, skip(self))]
-    pub(super) fn next_serial(&self, today: Date) -> Result<u32, redb::Error> {
-        let date_str = today.strftime("%Y%m%d").to_string();
+    pub(super) fn next_serial(&self, date: Date) -> Result<u32, redb::Error> {
+        let date_str = date.strftime("%Y%m%d").to_string();
 
         let write_txn = self.redb.begin_write()?;
         let next = {
@@ -286,5 +286,318 @@ impl TraceabilityCache {
         write_txn.commit()?;
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use opcua::types::ContextOwned;
+    use redb::backends::InMemoryBackend;
+
+    use super::*;
+
+    /// Create a [`TraceabilityCache`] backed by an in-memory database, provided
+    /// the queues length threshold.
+    fn in_memory_cache(queues_threshold: u64) -> TraceabilityCache {
+        let database = Database::builder()
+            .create_with_backend(InMemoryBackend::new())
+            .expect("creating an in-memory database should not fail");
+        TraceabilityCache::new(database, queues_threshold)
+    }
+
+    /// Save the provided general and operation part sheets with a fixed machine
+    /// identifier and the provided part identifier.
+    fn save(
+        cache: &TraceabilityCache,
+        part_id: &str,
+        general: &[SavedPartSheetItem],
+        operation: &[SavedPartSheetItem],
+    ) {
+        let ctx = ContextOwned::default();
+        cache
+            .save_part_sheets(
+                "MAC1".into(),
+                part_id
+                    .parse()
+                    .expect("parsing part identifier should not fail"),
+                general,
+                operation,
+                &ctx.context(),
+            )
+            .expect("saving part sheets should not fail");
+    }
+
+    #[test]
+    fn next_serial() {
+        let cache = in_memory_cache(0);
+
+        const DAY_ONE: Date = Date::constant(1984, 12, 9);
+        const DAY_TWO: Date = Date::constant(1985, 4, 23);
+
+        let serial = cache
+            .next_serial(DAY_ONE)
+            .expect("getting a serial should not fail");
+        assert_eq!(serial, 1);
+        let serial = cache
+            .next_serial(DAY_ONE)
+            .expect("getting a serial should not fail");
+        assert_eq!(serial, 2);
+        let serial = cache
+            .next_serial(DAY_TWO)
+            .expect("getting a serial should not fail");
+        assert_eq!(serial, 1);
+    }
+
+    #[test]
+    fn check_enqueuing_allowed() {
+        let cache = in_memory_cache(3);
+
+        let part_sheet_item = (NodeId::new(0, 42), "SomeNode".into(), "somevalue".into());
+
+        let ctx = ContextOwned::default();
+
+        cache
+            .save_part_sheets(
+                "ID".into(),
+                "00000000000000000000000".parse().unwrap(),
+                std::slice::from_ref(&part_sheet_item),
+                std::slice::from_ref(&part_sheet_item),
+                &ctx.context(),
+            )
+            .expect("saving part sheets should not fail");
+
+        cache
+            .check_enqueuing_allowed()
+            .expect("checking that enqueuing is allowed should not fail");
+
+        cache
+            .save_part_sheets(
+                "ID".into(),
+                "00000000000000000000000".parse().unwrap(),
+                std::slice::from_ref(&part_sheet_item),
+                std::slice::from_ref(&part_sheet_item),
+                &ctx.context(),
+            )
+            .expect("saving part sheets should not fail");
+
+        cache
+            .check_enqueuing_allowed()
+            .expect_err("checking that enqueuing is allowed should fail");
+    }
+
+    #[test]
+    fn check_enqueuing_allowed_without_queue_tables() {
+        let cache = in_memory_cache(1);
+
+        cache
+            .check_enqueuing_allowed()
+            .expect("checking that enqueuing is allowed on empty cache should not fail");
+    }
+
+    #[test]
+    fn check_enqueuing_allowed_zero_threshold() {
+        let cache = in_memory_cache(0);
+
+        let err = cache
+            .check_enqueuing_allowed()
+            .expect_err("checking that enqueuing is allowed should fail");
+        assert!(matches!(err, CheckEnqueuingError::TooMuchEnqueued(0, 0)));
+    }
+
+    #[test]
+    fn check_enqueuing_allowed_after_draining() {
+        let cache = in_memory_cache(2);
+        let part_sheet_item = (NodeId::new(0, 42), "SomeNode".into(), "somevalue".into());
+        let items = std::slice::from_ref(&part_sheet_item);
+
+        save(&cache, "00000000000000000000000", items, items);
+        let err = cache
+            .check_enqueuing_allowed()
+            .expect_err("checking that enqueuing is allowed should fail");
+        assert!(matches!(err, CheckEnqueuingError::TooMuchEnqueued(2, 2)));
+
+        let (keys, _) = cache
+            .get_queue_batch(QueueTable::General)
+            .expect("getting a batch should not fail");
+        cache
+            .remove_entries(QueueTable::General, &keys)
+            .expect("removing entries should not fail");
+
+        cache
+            .check_enqueuing_allowed()
+            .expect("checking that enqueuing is allowed should not fail");
+    }
+
+    #[test]
+    fn get_general_part_sheet_missing() {
+        let cache = in_memory_cache(0);
+        let ctx = ContextOwned::default();
+
+        // Cache table does not exist yet.
+        let err = cache
+            .get_general_part_sheet("00000000000000000000000", &ctx.context())
+            .expect_err("getting from a not existing table should fail");
+        assert!(matches!(
+            err,
+            GetGeneralPartSheetError::RedbTable(redb::TableError::TableDoesNotExist(_))
+        ));
+
+        // Cache table exists, but not the entry.
+        let item = (NodeId::new(1, 1), "first".into(), 1u32.into());
+        save(
+            &cache,
+            "00000000000000000000000",
+            std::slice::from_ref(&item),
+            &[],
+        );
+        let part_sheet = cache
+            .get_general_part_sheet("11111111111111111111111", &ctx.context())
+            .expect("getting a general part sheet should not fail");
+        assert_eq!(part_sheet, None);
+    }
+
+    #[test]
+    fn save_and_get_general_part_sheet() {
+        let cache = in_memory_cache(0);
+        let ctx = ContextOwned::default();
+
+        let general: &[SavedPartSheetItem] = &[
+            (NodeId::new(1, 561), "first".into(), true.into()),
+            (NodeId::new(2, "someval"), "second".into(), 42u16.into()),
+        ];
+        let operation: &[SavedPartSheetItem] =
+            &[(NodeId::new(3, 43), "third".into(), "blabla".into())];
+        save(&cache, "123456789XX422611100001", general, operation);
+
+        let part_sheet = cache
+            .get_general_part_sheet("123456789XX422611100001", &ctx.context())
+            .expect("getting a general part sheet should not fail");
+        let expected = vec![
+            (NodeId::new(1, 561), true.into()),
+            (NodeId::new(2, "someval"), 42u16.into()),
+        ];
+        assert_eq!(part_sheet, Some(expected));
+
+        // Saving again with the same part identifier overwrites cached general part sheet.
+        let general: &[SavedPartSheetItem] = &[(NodeId::new(1, 561), "first".into(), false.into())];
+        save(&cache, "123456789XX422611100001", general, operation);
+
+        let part_sheet = cache
+            .get_general_part_sheet("123456789XX422611100001", &ctx.context())
+            .expect("getting a general part sheet should not fail");
+        assert_eq!(part_sheet, Some(vec![(NodeId::new(1, 561), false.into())]));
+    }
+
+    #[test]
+    fn get_queue_batch_without_queue_tables() {
+        let cache = in_memory_cache(0);
+
+        for queue_table in QueueTable::VARIANTS {
+            let (keys, body) = cache
+                .get_queue_batch(*queue_table)
+                .expect("getting a batch should not fail");
+            assert!(keys.is_empty(), "{queue_table} keys should be empty");
+            assert!(body.is_empty(), "{queue_table} body should be empty");
+        }
+    }
+
+    #[test]
+    fn save_part_sheets_enqueue_rows() {
+        let cache = in_memory_cache(0);
+
+        let general: &[SavedPartSheetItem] = &[(NodeId::new(1, 1), "first".into(), true.into())];
+        let operation: &[SavedPartSheetItem] =
+            &[(NodeId::new(1, 2), "second".into(), 42u16.into())];
+        save(&cache, "00000000000000000000000", general, operation);
+        save(&cache, "11111111111111111111111", general, operation);
+
+        let (general_keys, general_body) = cache
+            .get_queue_batch(QueueTable::General)
+            .expect("getting a batch should not fail");
+        let (operation_keys, operation_body) = cache
+            .get_queue_batch(QueueTable::Operation)
+            .expect("getting a batch should not fail");
+
+        // Each save uses two consecutive sequence numbers, shared by both queues.
+        assert_eq!(general_keys, [0, 2]);
+        assert_eq!(operation_keys, [1, 3]);
+
+        // Bodies are in `JSON Lines` format, in enqueuing order.
+        let check_body = |body: &str, name: &str, value: serde_json::Value| {
+            assert!(body.ends_with('\n'), "body should end with a newline");
+            let rows: Vec<serde_json::Value> = body
+                .lines()
+                .map(|line| serde_json::from_str(line).expect("row should be valid JSON"))
+                .collect();
+            assert_eq!(rows.len(), 2);
+            for (row, part_id) in rows
+                .iter()
+                .zip(["00000000000000000000000", "11111111111111111111111"])
+            {
+                assert_eq!(row["machine_id"], "MAC1");
+                assert_eq!(row["part_id"], part_id);
+                assert!(row["saved_at"].is_string());
+                assert_eq!(row["data"], serde_json::json!({ name: value }));
+            }
+        };
+        check_body(&general_body, "first", serde_json::json!(true));
+        check_body(&operation_body, "second", serde_json::json!(42));
+    }
+
+    #[test]
+    fn remove_entries() {
+        let cache = in_memory_cache(0);
+        let part_sheet_item = (NodeId::new(0, 42), "SomeNode".into(), "somevalue".into());
+        let items = std::slice::from_ref(&part_sheet_item);
+
+        for _ in 0..3 {
+            save(&cache, "00000000000000000000000", items, items);
+        }
+
+        // Remove only part of the batch, including an unknown key.
+        cache
+            .remove_entries(QueueTable::General, &[0, 4, 99])
+            .expect("removing entries should not fail");
+
+        let (general_keys, general_body) = cache
+            .get_queue_batch(QueueTable::General)
+            .expect("getting a batch should not fail");
+        assert_eq!(general_keys, [2]);
+        assert_eq!(general_body.lines().count(), 1);
+
+        // Other queue is left untouched.
+        let (operation_keys, _) = cache
+            .get_queue_batch(QueueTable::Operation)
+            .expect("getting a batch should not fail");
+        assert_eq!(operation_keys, [1, 3, 5]);
+    }
+
+    #[test]
+    fn queue_sequence_not_reset_after_draining() {
+        let cache = in_memory_cache(0);
+        let part_sheet_item = (NodeId::new(0, 42), "SomeNode".into(), "somevalue".into());
+        let items = std::slice::from_ref(&part_sheet_item);
+
+        save(&cache, "00000000000000000000000", items, items);
+
+        for queue_table in QueueTable::VARIANTS {
+            let (keys, _) = cache
+                .get_queue_batch(*queue_table)
+                .expect("getting a batch should not fail");
+            cache
+                .remove_entries(*queue_table, &keys)
+                .expect("removing entries should not fail");
+        }
+
+        save(&cache, "00000000000000000000000", items, items);
+
+        let (general_keys, _) = cache
+            .get_queue_batch(QueueTable::General)
+            .expect("getting a batch should not fail");
+        let (operation_keys, _) = cache
+            .get_queue_batch(QueueTable::Operation)
+            .expect("getting a batch should not fail");
+        assert_eq!(general_keys, [2]);
+        assert_eq!(operation_keys, [3]);
     }
 }
