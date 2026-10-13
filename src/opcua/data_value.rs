@@ -25,7 +25,7 @@ impl TryFromOpcUaValueError {
 
 /// Fallible conversion of [`Variant`] to useful types.
 pub(crate) trait TryFromVariant: Sized {
-    /// Try to convert the provided [`Variant`] reference to this type.
+    /// Try to convert the provided [`Variant`] to this type.
     ///
     /// # Errors
     ///
