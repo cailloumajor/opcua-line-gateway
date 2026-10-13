@@ -18,6 +18,8 @@ pub(super) enum CreatePartIdError {
     NotConfigured,
     #[error("error reading required variables")]
     ReadVariables(#[source] opcua::types::Error),
+    #[error("invalid read length: expected {0}, got {1}")]
+    ReadLength(usize, usize),
     #[error("invalid raw part reference value, cause: {0}")]
     PartRefValue(TryFromOpcUaValueError),
     #[error("invalid raw batch value, cause: {0}")]
@@ -53,7 +55,7 @@ impl TraceabilityHandler<TraceabilityContext> {
             .map_err(CreatePartIdError::ReadVariables)?;
         let [part_ref_value, batch_value] = values
             .try_into()
-            .expect("read values vector should have the expected size");
+            .map_err(|err: Vec<_>| CreatePartIdError::ReadLength(2, err.len()))?;
         let part_ref: String = part_ref_value
             .try_ua_value_as()
             .map_err(CreatePartIdError::PartRefValue)?;

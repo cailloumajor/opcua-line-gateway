@@ -54,7 +54,9 @@ impl HandleRequestError {
             Self::UnknownValue(_) => 92,
 
             Self::CreatePartId(CreatePartIdError::NotConfigured) => 11,
+            // Group the two following errors in the same error code.
             Self::CreatePartId(CreatePartIdError::ReadVariables(_)) => 12,
+            Self::CreatePartId(CreatePartIdError::ReadLength(_, _)) => 12,
             Self::CreatePartId(CreatePartIdError::PartRefValue(_)) => 13,
             Self::CreatePartId(CreatePartIdError::BatchValue(_)) => 14,
             Self::CreatePartId(CreatePartIdError::NextSerial(_)) => 15,
