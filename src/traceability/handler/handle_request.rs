@@ -1,7 +1,7 @@
-use opcua::types::DataValue;
+use opcua::types::{DataValue, ReadValueId, TimestampsToReturn};
 use strum::FromRepr;
 use thiserror::Error;
-use tracing::{info, instrument};
+use tracing::{info, instrument, warn};
 
 use crate::opcua::{DataValueExt, TryFromOpcUaValueError};
 
@@ -110,5 +110,54 @@ impl TraceabilityHandler<TraceabilityContext> {
         }
 
         Ok(RESPONSE_SUCCESS)
+    }
+
+    /// Check if the request code value received at subscription time has already been
+    /// answered before, by checking that the response code is not reset. This prevents
+    /// handling twice a request answered before a reconnection, as requests are not
+    /// idempotent. Reset request is idempotent, and thus is never considered answered.
+    ///
+    /// In case of error, the request is considered answered to stay on the safe side.
+    #[instrument(skip_all)]
+    pub(super) async fn is_initial_request_answered(&self, value: &DataValue) -> bool {
+        if let Some(TraceabilityRequest::Reset) = value
+            .clone()
+            .try_ua_value_as()
+            .ok()
+            .and_then(TraceabilityRequest::from_repr)
+        {
+            return false;
+        }
+
+        let read_value_ids = &[ReadValueId::new_value(self.state.protocol.response.clone())];
+        let values = match self
+            .session
+            .read(read_value_ids, TimestampsToReturn::Neither, 0.0)
+            .await
+        {
+            Ok(values) => values,
+            Err(err) => {
+                warn!(msg = "error reading response code, ignoring initial request", %err);
+                return true;
+            }
+        };
+        let [response_value]: [DataValue; _] = match values.try_into() {
+            Ok(v) => v,
+            Err(err) => {
+                warn!(
+                    msg = "invalid read response length, ignoring initial request",
+                    expected = 1,
+                    got = err.len()
+                );
+                return true;
+            }
+        };
+        match response_value.try_ua_value_as::<u8>() {
+            Ok(code) => code != RESPONSE_RESET,
+            Err(err) => {
+                warn!(msg = "invalid response code value, ignoring initial request", %err);
+                true
+            }
+        }
     }
 }
