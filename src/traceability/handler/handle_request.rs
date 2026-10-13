@@ -1,14 +1,33 @@
 use opcua::types::DataValue;
+use strum::FromRepr;
 use thiserror::Error;
 use tracing::{info, instrument};
 
 use crate::opcua::{DataValueExt, TryFromOpcUaValueError};
-use crate::traceability::protocol::{RESPONSE_RESET, RESPONSE_SUCCESS, TraceabilityRequest};
 
 use super::create_part_id::CreatePartIdError;
 use super::read_part_sheet::HandleReadError;
 use super::save_part_sheets::HandleSaveError;
 use super::{TraceabilityContext, TraceabilityHandler};
+
+/// The response code for reset state.
+const RESPONSE_RESET: u8 = 0;
+/// The response code for success state.
+const RESPONSE_SUCCESS: u8 = 1;
+
+/// Traceability request code.
+#[derive(Clone, Copy, FromRepr)]
+#[repr(u8)]
+enum TraceabilityRequest {
+    /// Reset state of the request.
+    Reset = 0,
+    /// Request for creating a part ID.
+    CreatePartId = 1,
+    /// Request from the machine to read part data sheet.
+    ReadPartSheet = 2,
+    /// Request from the machine to save part data sheets.
+    SavePartSheets = 3,
+}
 
 /// Errors that can be encountered during request handling.
 #[derive(Debug, Error)]
