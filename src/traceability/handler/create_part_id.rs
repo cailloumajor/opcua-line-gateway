@@ -1,8 +1,11 @@
+use std::sync::Arc;
+
 use futures_util::TryFutureExt;
 use jiff::Timestamp;
 use opcua::types::{ReadValueId, TimestampsToReturn, WriteValue};
 use opcua_line_gateway_config::AsciiDigitsOrUpper;
 use thiserror::Error;
+use tokio::task::JoinError;
 use tracing::{info, instrument};
 
 use crate::opcua::{DataValueExt, SessionExt, TryFromOpcUaValueError, WriteError};
@@ -26,6 +29,8 @@ pub(super) enum CreatePartIdError {
     BatchValue(TryFromOpcUaValueError),
     #[error("error getting next serial number from cache")]
     NextSerial(#[source] redb::Error),
+    #[error("blocking task to get next serial failed: {0}")]
+    NextSerialTask(JoinError),
     #[error("error generating the part identifier")]
     PartIdentifier(#[source] PartIdentifierError),
     #[error("error writing the part ID")]
@@ -66,11 +71,12 @@ impl TraceabilityHandler<TraceabilityContext> {
         let today = Timestamp::now().to_zoned(system_timezone().clone()).date();
 
         // Get the next serial number using a blocking task.
-        let serial = tokio::task::block_in_place(move || {
-            self.cache
-                .next_serial(today)
-                .map_err(CreatePartIdError::NextSerial)
-        })?;
+        let sent_cache = Arc::clone(&self.cache);
+        let task = tokio::task::spawn_blocking(move || sent_cache.next_serial(today));
+        let serial = task
+            .await
+            .map_err(CreatePartIdError::NextSerialTask)?
+            .map_err(CreatePartIdError::NextSerial)?;
 
         // Create the part identifier.
         let part_id = create_part_identifier(&part_ref, batch, line_id, today, serial)
