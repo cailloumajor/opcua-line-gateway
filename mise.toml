@@ -1,5 +1,6 @@
 [tools]  # tombi: format.rules.table-keys-order = "ascending"
 actionlint = "latest"
+"aqua:quarylabs/sqruff" = "latest"
 betterleaks = "latest"
 editorconfig-checker = "latest"
 ghalint = "latest"
@@ -21,12 +22,6 @@ tombi = "latest"
 typos = "latest"
 usage = "latest"
 zizmor = "latest"
-
-[tools."cargo:https://github.com/ClickHouse/clickhouse-analyzer"]
-version = "latest"
-crate = "clickhouse-analyzer"
-bin = "clickhouse-lsp"
-features = "lsp"
 
 [shell_alias]
 chctl = "clickhousectl"

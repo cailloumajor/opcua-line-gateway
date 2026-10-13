@@ -14,10 +14,7 @@ auto-format = true
 
 [[language]]
 name = "sql"
-language-servers = ["clickhouse-lsp"]
-
-[language-server.clickhouse-lsp]
-command = "clickhouse-lsp"
+language-servers = ["sqruff"]
 
 [language-server.mpls]
 command = "mpls"
@@ -32,3 +29,7 @@ check.command = "clippy"
 imports.granularity.enforce = true
 imports.granularity.group = "module"
 imports.prefix = "self"
+
+[language-server.sqruff]
+command = "sqruff"
+args = ["lsp"]
