@@ -59,7 +59,9 @@ impl HandleRequestError {
             Self::CreatePartId(CreatePartIdError::ReadLength(_, _)) => 12,
             Self::CreatePartId(CreatePartIdError::PartRefValue(_)) => 13,
             Self::CreatePartId(CreatePartIdError::BatchValue(_)) => 14,
+            // Group the two following errors in the same error code.
             Self::CreatePartId(CreatePartIdError::NextSerial(_)) => 15,
+            Self::CreatePartId(CreatePartIdError::NextSerialTask(_)) => 15,
             Self::CreatePartId(CreatePartIdError::PartIdentifier(_)) => 16,
             Self::CreatePartId(CreatePartIdError::WritePartId(_)) => 17,
 
