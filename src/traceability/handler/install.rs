@@ -144,13 +144,18 @@ impl TraceabilityHandler<TraceabilityContext> {
                 info!(msg = "traceability handler started");
 
                 // Make a stream out of requests receiver, with graceful shutdown.
-                // The first value produced is discarded, to prevent handling
-                // a request code that would have been set before we started.
-                let stream = UnboundedReceiverStream::new(rx)
-                    .take_until(shutdown.cancelled())
-                    .skip(1);
+                let stream = UnboundedReceiverStream::new(rx).take_until(shutdown.cancelled());
                 let mut pinned_stream = pin!(stream);
+                // The first value produced is the request code at subscription time,
+                // which must not be handled if it has already been answered.
+                let mut is_initial = true;
                 while let Some(request_value) = pinned_stream.next().await {
+                    if std::mem::take(&mut is_initial)
+                        && self.is_initial_request_answered(&request_value).await
+                    {
+                        info!(msg = "initial request code already answered, ignoring it");
+                        continue;
+                    }
                     let response_value = self
                         .handle_request(request_value)
                         .await
