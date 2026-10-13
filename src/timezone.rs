@@ -3,18 +3,18 @@ use std::sync::OnceLock;
 use jiff::tz::TimeZone;
 
 /// Hold the system timezone to prevent querying it each time it is needed.
-pub(crate) static SYSTEM_TZ: OnceLock<TimeZone> = OnceLock::new();
+static SYSTEM_TZ: OnceLock<TimeZone> = OnceLock::new();
 
-/// Initializes the system time zone. Must be called only once.
+/// Initializes the system time zone.
 ///
 /// # Errors
 ///
 /// Returns an error is something goes wrong querying the system time zone.
-///
-/// # Panics
-///
-/// Panics if called more than once.
 pub(crate) fn init_system_timezone() -> Result<(), jiff::Error> {
+    if SYSTEM_TZ.get().is_some() {
+        return Ok(());
+    }
+
     let tz = TimeZone::try_system()?;
 
     SYSTEM_TZ
