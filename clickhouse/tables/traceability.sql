@@ -24,14 +24,16 @@
 -- gaining a variable never loses data and never fails an insert.
 -- ============================================================================
 
-CREATE DATABASE IF NOT EXISTS traceability;
+CREATE DATABASE IF NOT EXISTS {database: Identifier};
+
+USE {database: Identifier};
 
 -- ----------------------------------------------------------------------------
 -- General part sheet: data common to every machine on the line.
 -- One row per Save request, i.e. one row per part per operation. History is
 -- kept: the sheet is enriched as the part travels, and each version is a row.
 -- ----------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS traceability.part_sheet_general
+CREATE TABLE IF NOT EXISTS part_sheet_general
 (
     -- Produced by the gateway, never read from a machine. Stamped when the row
     -- is queued in redb, never at insertion time: a retried insert must be
@@ -166,7 +168,7 @@ COMMENT 'General part sheet — one row per Save request, full history kept';
 -- ----------------------------------------------------------------------------
 -- Operation part sheet: data specific to each operation on the line.
 -- ----------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS traceability.part_sheet_operation
+CREATE TABLE IF NOT EXISTS part_sheet_operation
 (
     -- Same gateway-owned columns as above, same rationale.
     saved_at   DateTime64(3, 'UTC') CODEC(DoubleDelta, ZSTD(1)),
@@ -205,3 +207,9 @@ PARTITION BY toISOYear(saved_at)
 -- part-centric case.
 ORDER BY (machine_id, saved_at, part_id)
 COMMENT 'Operation part sheet — one row per Save request, payload heterogeneous by machine';
+
+-- ----------------------------------------------------------------------------
+-- Traceability role for line gateway.
+-- ----------------------------------------------------------------------------
+CREATE ROLE IF NOT EXISTS traceability_gateway;
+GRANT INSERT ON part_sheet_* TO traceability_gateway;
