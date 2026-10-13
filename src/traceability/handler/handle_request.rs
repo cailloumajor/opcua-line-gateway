@@ -52,7 +52,7 @@ impl HandleRequestError {
 
             // Group the two following errors in the same error code.
             Self::HandleSave(HandleSaveError::ReadPartSheets(_)) => 31,
-            Self::HandleSave(HandleSaveError::PartSheetsLength(_, _)) => 31,
+            Self::HandleSave(HandleSaveError::ReadLength(_, _)) => 31,
             Self::HandleSave(HandleSaveError::PartSheetValue(_, _)) => 32,
             // Group the two following errors in the same error code.
             Self::HandleSave(HandleSaveError::PartIdValue(_)) => 33,

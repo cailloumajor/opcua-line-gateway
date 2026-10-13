@@ -17,8 +17,8 @@ use super::{TraceabilityContext, TraceabilityHandler};
 pub(super) enum HandleSaveError {
     #[error("error reading part sheets nodes")]
     ReadPartSheets(#[source] opcua::types::Error),
-    #[error("invalid number of variables in part sheets (discovered {0}, read {1})")]
-    PartSheetsLength(usize, usize),
+    #[error("invalid number of read variables (expected {0}, got {1})")]
+    ReadLength(usize, usize),
     #[error("invalid part sheet value for node {1}, cause: {0}")]
     PartSheetValue(TryFromOpcUaValueError, String),
     #[error("invalid part identifier value, cause: {0}")]
@@ -71,7 +71,7 @@ impl TraceabilityHandler<TraceabilityContext> {
         let expected_len = read_value_ids.len();
         let got_len = read_values.len();
         if got_len != expected_len {
-            return Err(HandleSaveError::PartSheetsLength(expected_len, got_len));
+            return Err(HandleSaveError::ReadLength(expected_len, got_len));
         }
 
         // Build the general part sheet and the operation part sheet, contiguous
