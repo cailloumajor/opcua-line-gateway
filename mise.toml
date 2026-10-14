@@ -1,6 +1,8 @@
 [tools]  # tombi: format.rules.table-keys-order = "ascending"
 actionlint = "latest"
+"aqua:nextest-rs/nextest/cargo-nextest" = "latest"
 "aqua:quarylabs/sqruff" = "latest"
+"aqua:taiki-e/cargo-llvm-cov" = "latest"
 betterleaks = "latest"
 editorconfig-checker = "latest"
 ghalint = "latest"
@@ -34,9 +36,6 @@ run = "cargo build --workspace"
 description = "Run unit tests and generate code coverage"
 depends = ["build"]
 run = "cargo llvm-cov --workspace --lcov --output-path lcov.info"
-
-[tasks."test:unit".tools]
-"aqua:taiki-e/cargo-llvm-cov" = "latest"
 
 # llvm-cov doesn't run doc tests, so run them separately
 [tasks."test:doc"]
