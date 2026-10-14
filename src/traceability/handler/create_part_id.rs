@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use futures_util::TryFutureExt;
-use jiff::Timestamp;
 use opcua::types::{ReadValueId, TimestampsToReturn, WriteValue};
 use opcua_line_gateway_config::AsciiDigitsOrUpper;
 use thiserror::Error;
@@ -9,7 +8,6 @@ use tokio::task::JoinError;
 use tracing::{info, instrument};
 
 use crate::opcua::{DataValueExt, SessionExt, TryFromOpcUaValueError, WriteError};
-use crate::timezone::system_timezone;
 use crate::traceability::part_id::{PartIdentifierError, create_part_identifier};
 
 use super::{TraceabilityContext, TraceabilityHandler};
@@ -68,7 +66,7 @@ impl TraceabilityHandler<TraceabilityContext> {
             .try_ua_value_as()
             .map_err(CreatePartIdError::BatchValue)?;
 
-        let today = Timestamp::now().to_zoned(system_timezone().clone()).date();
+        let today = self.time_provider.now_zoned().date();
 
         // Get the next serial number using a blocking task.
         let sent_cache = Arc::clone(&self.cache);

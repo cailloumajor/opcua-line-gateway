@@ -7,17 +7,18 @@ use tokio_util::sync::CancellationToken;
 use tracing::info;
 
 use self::opcua::{create_client, sessions_manager};
-use self::timezone::{init_system_timezone, system_timezone};
+pub use self::time::TimeProvider;
 use self::traceability::{TraceabilityCache, TraceabilityDatabase};
 
 mod opcua;
-mod timezone;
+mod time;
 mod traceability;
 
 /// OPC-UA line gateway main function.
 pub async fn run_main(
     config: LineGatewayConfig,
     credentials: Credentials,
+    time_provider: TimeProvider,
     shutdown: CancellationToken,
 ) -> anyhow::Result<()> {
     // Create or open the traceability cache database (redb).
@@ -27,13 +28,6 @@ pub async fn run_main(
         traceability_cache_db,
         config.traceability.queues_not_draining_threshold,
     ));
-
-    // Initialize the cached system timezone.
-    init_system_timezone().context("Failed to get the system timezone")?;
-
-    // Ensure cached timezone.
-    let tz = system_timezone();
-    info!(msg = "got system timezone", ?tz);
 
     // Create traceability database client and fetch the general part sheet columns.
     let db_config = &config.traceability.database;
@@ -69,6 +63,7 @@ pub async fn run_main(
         config.traceability.opc_ua,
         shutdown,
         traceability_cache,
+        time_provider,
     )
     .await;
 

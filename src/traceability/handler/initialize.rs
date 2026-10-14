@@ -147,6 +147,7 @@ impl TraceabilityHandler<InitialState> {
             machine_config: self.machine_config,
             session: self.session,
             cache: self.cache,
+            time_provider: self.time_provider,
             state,
         })
     }

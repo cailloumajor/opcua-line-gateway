@@ -14,6 +14,7 @@ use thiserror::Error;
 use tracing::{instrument, warn};
 
 use crate::opcua::{DataValueExt, SerializeVariant, TryFromOpcUaValueError};
+use crate::time::TimeProvider;
 
 use super::cache::TraceabilityCache;
 
@@ -62,6 +63,8 @@ pub(crate) struct TraceabilityHandler<S> {
     session: Arc<Session>,
     /// The traceability cache.
     cache: Arc<TraceabilityCache>,
+    /// Time provider.
+    time_provider: TimeProvider,
     /// The state of this handler.
     state: S,
 }
@@ -74,6 +77,7 @@ impl TraceabilityHandler<InitialState> {
         machine_config: TraceabilityMachineConfig,
         session: Arc<Session>,
         cache: Arc<TraceabilityCache>,
+        time_provider: TimeProvider,
     ) -> Self {
         Self {
             server_id,
@@ -81,6 +85,7 @@ impl TraceabilityHandler<InitialState> {
             machine_config,
             session,
             cache,
+            time_provider,
             state: InitialState,
         }
     }
