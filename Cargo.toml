@@ -60,8 +60,14 @@ tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 
 [dev-dependencies]
+async-opcua = { workspace = true, features = ["server"] }
+duct = "1.1.2"
+indoc = "2.0.8"
+rand = "0.10.3"
 serde_test = "1.0.177"
+tempfile = "3.27.0"
 tick = { version = "0.7.1", features = ["test-util"] }
+tokio = { version = "1.52.3", features = ["net"] }
 
 [profile.deb]
 inherits = "release"
