@@ -3,11 +3,13 @@ use std::path::PathBuf;
 
 use anyhow::{Context as _, anyhow};
 use futures_util::StreamExt;
-use opcua_line_gateway::run_main;
+use jiff::tz::TimeZone;
+use opcua_line_gateway::{TimeProvider, run_main};
 use opcua_line_gateway_config::{Credentials, LineGatewayConfig};
 use signal_hook::consts::TERM_SIGNALS;
 use signal_hook::low_level::signal_name;
 use signal_hook_tokio::Signals;
+use tick::SimpleClock;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, instrument};
 use tracing_subscriber::EnvFilter;
@@ -46,8 +48,6 @@ async fn main() -> anyhow::Result<()> {
 
     let credentials = Credentials::from_credentials_file().context("Failed to get credentials")?;
 
-    let shutdown_token = CancellationToken::new();
-
     // Initialize tracing.
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
@@ -55,11 +55,18 @@ async fn main() -> anyhow::Result<()> {
         .with(EnvFilter::from_default_env())
         .init();
 
+    let tz = TimeZone::try_system().context("Failed to get system timezone")?;
+    info!(msg = "got system timezone", ?tz);
+
+    let time_provider = TimeProvider::new(SimpleClock::new_system(), tz);
+
+    let shutdown_token = CancellationToken::new();
+
     let signals = Signals::new(TERM_SIGNALS).context("Failed to register termination signals")?;
     let signals_handle = signals.handle();
     let signals_task = tokio::spawn(handle_signals(signals, shutdown_token.clone()));
 
-    run_main(config, credentials, shutdown_token).await?;
+    run_main(config, credentials, time_provider, shutdown_token).await?;
 
     signals_handle.close();
     signals_task.await.context("failed to join signals task")?;

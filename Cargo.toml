@@ -52,6 +52,7 @@ signal-hook = { version = "0.4.4", default-features = false }
 signal-hook-tokio = { version = "0.4.0", features = ["futures-v0_3"] }
 strum = { version = "0.28.0", features = ["derive"] }
 thiserror.workspace = true
+tick = "0.7.1"
 tokio = { version = "1.52.3", features = ["macros", "rt-multi-thread", "time"] }
 tokio-stream = "0.1.18"
 tokio-util = { version = "0.7.18", features = ["rt"] }
@@ -60,6 +61,7 @@ tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 
 [dev-dependencies]
 serde_test = "1.0.177"
+tick = { version = "0.7.1", features = ["test-util"] }
 
 [profile.deb]
 inherits = "release"

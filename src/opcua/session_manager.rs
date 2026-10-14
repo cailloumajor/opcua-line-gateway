@@ -14,7 +14,8 @@ use tokio_stream::wrappers::IntervalStream;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, instrument};
 
-use crate::opcua::session::{OpcUaSession, start_session};
+use crate::opcua::session::{OpcUaSession, SessionStartConfig, start_session};
+use crate::time::TimeProvider;
 use crate::traceability::TraceabilityCache;
 
 /// The interval for sessions management ticks.
@@ -34,6 +35,7 @@ pub(crate) async fn sessions_manager(
     traceability_opc_ua: TraceabilityCommonOpcUaConfig,
     shutdown: CancellationToken,
     traceability_cache: Arc<TraceabilityCache>,
+    time_provider: TimeProvider,
 ) {
     info!(msg = "sessions manager started");
 
@@ -65,23 +67,19 @@ pub(crate) async fn sessions_manager(
             .iter()
             .filter(|(id, _)| !running_sessions.contains(*id))
         {
-            let sent_client = Arc::clone(&client);
             let server_id = id.clone();
-            let srv_config = config.clone();
-            let credential = credentials.get(id).cloned();
-            let sent_traceability_opc_ua = traceability_opc_ua.clone();
-            let sent_traceability_cache = Arc::clone(&traceability_cache);
-            let registry = Arc::clone(&sessions);
+            let session_start_config = SessionStartConfig {
+                client: Arc::clone(&client),
+                time_provider: time_provider.clone(),
+                server_id: server_id.clone(),
+                machine_config: config.clone(),
+                credential: credentials.get(id).cloned(),
+                traceability_opc_ua: traceability_opc_ua.clone(),
+                traceability_cache: Arc::clone(&traceability_cache),
+                registry: Arc::clone(&sessions),
+            };
             tokio::spawn(async move {
-                let start_future = start_session(
-                    sent_client,
-                    server_id.clone(),
-                    srv_config,
-                    credential,
-                    sent_traceability_opc_ua,
-                    sent_traceability_cache,
-                    registry,
-                );
+                let start_future = start_session(session_start_config);
                 if timeout(CONNECT_TIMEOUT, start_future).await.is_err() {
                     error!(error = "timeout spawning session", server_id);
                 }

@@ -12,6 +12,7 @@ use tokio_util::sync::CancellationToken;
 use tokio_util::task::AbortOnDropHandle;
 use tracing::{Instrument, error, field, info, info_span, instrument};
 
+use crate::time::TimeProvider;
 use crate::traceability::{
     TraceabilityCache, TraceabilityHandler, TraceabilityInitializeError, TraceabilityInstallError,
 };
@@ -94,20 +95,35 @@ impl OpcUaSession {
     }
 }
 
+/// Represents the configuration required for starting a session.
+pub(super) struct SessionStartConfig {
+    pub(super) client: Arc<Client>,
+    pub(super) time_provider: TimeProvider,
+    pub(super) server_id: String,
+    pub(super) machine_config: MachineConfig,
+    pub(super) credential: Option<Credential>,
+    pub(super) traceability_opc_ua: TraceabilityCommonOpcUaConfig,
+    pub(super) traceability_cache: Arc<TraceabilityCache>,
+    pub(super) registry: Arc<Mutex<BTreeMap<String, OpcUaSession>>>,
+}
+
 /// Create and start an OPC-UA session, spawning its runtime event loop.
 ///
 /// Upon success, the [`OpcUaSession`] object will be stored in the provided registry.
-#[instrument(err, skip_all, fields(server_id = server_id))]
-pub(super) async fn start_session(
-    client: Arc<Client>,
-    server_id: String,
-    machine_config: MachineConfig,
-    credential: Option<Credential>,
-    traceability_opc_ua: TraceabilityCommonOpcUaConfig,
-    traceability_cache: Arc<TraceabilityCache>,
-    registry: Arc<Mutex<BTreeMap<String, OpcUaSession>>>,
-) -> Result<(), CreateSessionError> {
+#[instrument(err, skip_all, fields(server_id = config.server_id))]
+pub(super) async fn start_session(config: SessionStartConfig) -> Result<(), CreateSessionError> {
     info!(msg = "creating OPC-UA session");
+
+    let SessionStartConfig {
+        client,
+        time_provider,
+        server_id,
+        machine_config,
+        credential,
+        traceability_opc_ua,
+        traceability_cache,
+        registry,
+    } = config;
 
     let endpoint = EndpointDescription::from((
         machine_config.opc_ua_server.url.as_str(),
@@ -149,6 +165,7 @@ pub(super) async fn start_session(
         machine_config.traceability,
         Arc::clone(&session),
         traceability_cache,
+        time_provider,
     );
     let traceability_tasks = traceability_handler
         .initialize()
