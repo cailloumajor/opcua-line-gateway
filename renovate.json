@@ -4,6 +4,17 @@
     "config:recommended",
     "helpers:pinGitHubActionDigestsToSemver"
   ],
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/bower_components/**",
+    "**/vendor/**",
+    "**/examples/**",
+    "**/__tests__/**",
+    "**/test/**",
+    "**/tests/**",
+    "**/__fixtures__/**",
+    ".mise/locks/**"
+  ],
   "automergeType": "branch",
   "lockFileMaintenance": {
     "enabled": true,
