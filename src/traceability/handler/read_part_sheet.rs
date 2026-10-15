@@ -63,7 +63,14 @@ impl TraceabilityHandler<TraceabilityContext> {
         // Write the general part sheet to the server.
         let write_values = part_sheet
             .into_iter()
-            .map(|(id, val)| WriteValue::value_attr(id, val))
+            .filter_map(|(id, val)| {
+                // Exclude nodes whose identifier is configured to be excluded.
+                self.common_opcua_config
+                    .excluded_read_nids
+                    .iter()
+                    .all(|i| *i != id.identifier)
+                    .then_some(WriteValue::value_attr(id, val))
+            })
             .collect::<Vec<_>>();
         self.session
             .write_checked(&write_values)

@@ -123,6 +123,15 @@
       "description": "OPC-UA traceability information model, as implemented by all machines.",
       "type": "object",
       "properties": {
+        "excluded_read_nids": {
+          "description": "Identifiers of OPC-UA nodes to be excluded from general part sheet read request.",
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          }
+        },
         "general_part_sheet_nid": {
           "description": "OPC-UA node identifier of the general part sheet object.",
           "type": "integer",
@@ -179,7 +188,8 @@
         "general_part_sheet_nid",
         "part_id_nid",
         "raw_part_ref_nid",
-        "raw_batch_nid"
+        "raw_batch_nid",
+        "excluded_read_nids"
       ]
     },
     "TraceabilityDatabaseConfig": {
