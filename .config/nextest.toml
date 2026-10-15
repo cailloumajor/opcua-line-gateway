@@ -1,0 +1,10 @@
+#:schema https://nexte.st/schemas/repo-config.json
+
+[profile.ci]
+fail-fast = false
+slow-timeout = { period = "250ms", terminate-after = 4 }
+
+[[profile.ci.overrides]]
+filter = "kind(test)"
+retries = 2
+slow-timeout = { period = "10s", terminate-after = 4 }
