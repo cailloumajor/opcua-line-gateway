@@ -214,6 +214,7 @@ pub fn traceability_common_opcua_config() -> TraceabilityCommonOpcUaConfig {
         part_id_nid: common_nid::PART_ID,
         raw_part_ref_nid: common_nid::RAW_PART_REF,
         raw_batch_nid: common_nid::RAW_BATCH,
+        excluded_read_nids: vec![1009, 1010, 1011],
     }
 }
 

@@ -60,6 +60,7 @@ OPC-UA traceability information model, as implemented by all machines.
 
 | Property | Type | Required | Possible values | Description |
 | -------- | ---- | -------- | --------------- | ----------- |
+| excluded_read_nids | `array` | ✅ | `0 <= x ` | Identifiers of OPC-UA nodes to be excluded from general part sheet read request. |
 | general_part_sheet_nid | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the general part sheet object. |
 | heartbeat_nid | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the heartbeat variable. |
 | namespace_url | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | OPC-UA namespace URL used for common part of traceability. |

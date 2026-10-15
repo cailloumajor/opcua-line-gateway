@@ -251,9 +251,16 @@ async fn general_part_sheet_roundtrip() {
     let response = server_b.traceability_request(2).await;
     assert_eq!(response, 1);
 
-    for (nid, val) in general_part_sheet {
+    for (nid, val) in general_part_sheet
+        .into_iter()
+        // Do not test nodes configured to be excluded from general part sheet read.
+        .filter(|(nid, _)| ![1009, 1010, 1011].contains(nid))
+    {
         assert_eq!(server_b.read_common_node(nid), val, "node {nid} value");
     }
+    assert_eq!(server_b.read_common_node(1009), "".into());
+    assert_eq!(server_b.read_common_node(1010), "".into());
+    assert_eq!(server_b.read_common_node(1011), "".into());
 
     gateway.stop().await;
     server_a.stop().await;

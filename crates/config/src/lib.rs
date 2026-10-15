@@ -101,6 +101,8 @@ pub struct TraceabilityCommonOpcUaConfig {
     pub raw_part_ref_nid: u32,
     /// OPC-UA node identifier of the raw material batch variable.
     pub raw_batch_nid: u32,
+    /// Identifiers of OPC-UA nodes to be excluded from general part sheet read request.
+    pub excluded_read_nids: Vec<u32>,
 }
 
 /// ClickHouse database configuration for traceability.
