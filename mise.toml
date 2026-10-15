@@ -30,7 +30,7 @@ zizmor = "latest"
 
 [env]
 # renovate: datasource=github-releases depName=ClickHouse/ClickHouse
-CLICKHOUSE_VERSION = "26.8"
+CLICKHOUSE_VERSION = "26.9"
 
 [shell_alias]
 chctl = "clickhousectl"
