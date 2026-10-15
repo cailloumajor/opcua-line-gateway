@@ -25,22 +25,25 @@ typos = "latest"
 usage = "latest"
 zizmor = "latest"
 
+[env]
+# renovate: datasource=github-releases depName=ClickHouse/ClickHouse
+CLICKHOUSE_VERSION = "26.8"
+
 [shell_alias]
 chctl = "clickhousectl"
 
-[tasks.build]
-description = "Build the workspace"
-run = "cargo build --workspace"
+[tasks.start-test-db]
+description = "Start the database for integration tests"
+run = "clickhousectl local server start integration-tests --version \"$CLICKHOUSE_VERSION\""
 
-[tasks."test:unit"]
-description = "Run unit tests and generate code coverage"
-depends = ["build"]
-run = "cargo llvm-cov --workspace --lcov --output-path lcov.info"
+[tasks."test:nextest-ci"]
+description = "Run tests with cargo-nextest and generate code coverage"
+depends = ["start-test-db"]
+run = "cargo llvm-cov nextest --profile ci --run-ignored all --workspace --lcov --output-path lcov.info"
 
 # llvm-cov doesn't run doc tests, so run them separately
 [tasks."test:doc"]
 description = "Run documentation tests"
-depends = ["build"]
 run = "cargo test --workspace --doc"
 
 [tasks.lint]
