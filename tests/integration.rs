@@ -32,7 +32,7 @@ fn init() -> TempDir {
 
 /// A request set before the gateway subscribes, and not answered yet, must be handled.
 #[tokio::test]
-#[ignore = "requires the database"]
+#[ignore = "requires the database and to be ran by cargo-nextest"]
 async fn initial_request_pending() {
     let temp_dir = init();
     create_gateway_pki(temp_dir.path());
@@ -75,7 +75,7 @@ async fn initial_request_pending() {
 
 /// A request set before the gateway subscribes, and already answered, must be ignored.
 #[tokio::test]
-#[ignore = "requires the database"]
+#[ignore = "requires the database and to be ran by cargo-nextest"]
 async fn initial_request_answered() {
     let temp_dir = init();
     create_gateway_pki(temp_dir.path());
@@ -117,7 +117,7 @@ async fn initial_request_answered() {
 
 /// A reset request set before the gateway subscribes must reset the response code.
 #[tokio::test]
-#[ignore = "requires the database"]
+#[ignore = "requires the database and to be ran by cargo-nextest"]
 async fn initial_request_reset() {
     let temp_dir = init();
     create_gateway_pki(temp_dir.path());
@@ -151,7 +151,7 @@ async fn initial_request_reset() {
 }
 
 #[tokio::test]
-#[ignore = "requires the database"]
+#[ignore = "requires the database and to be ran by cargo-nextest"]
 async fn create_part_id() {
     let temp_dir = init();
     create_gateway_pki(temp_dir.path());
