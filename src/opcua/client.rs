@@ -35,7 +35,7 @@ pub(crate) fn create_client(config: &LineGatewayConfig) -> Result<Client, Client
     ClientBuilder::new()
         .application_uri(&config.application_uri)
         .product_uri(concat!("urn:", env!("CARGO_PKG_NAME")))
-        .application_name(env!("CARGO_PKG_DESCRIPTION"))
+        .application_name(env!("CARGO_PKG_NAME"))
         .pki_dir(&config.pki_dir)
         .certificate_path(concat!("own/", env!("CARGO_PKG_NAME"), "-cert.der"))
         .private_key_path(concat!("private/", env!("CARGO_PKG_NAME"), "-key.pem"))

@@ -4,7 +4,7 @@ use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
 
-use opcua::crypto::SecurityPolicy;
+use opcua::crypto::{SecurityPolicy, X509};
 use opcua::nodes::{
     ImportedItem, ImportedReference, NodeSetImport, ObjectBuilder, VariableBuilder,
 };
@@ -229,6 +229,7 @@ pub fn traceability_machine_opcua_config() -> TraceabilityMachineOpcUaConfig {
 pub struct OpcUaTestServer {
     name: String,
     url: String,
+    secured: bool,
     line_id: Option<AsciiDigitsOrUpper<2>>,
     node_manager: Arc<SimpleNodeManager>,
     common_ns_index: u16,
@@ -240,6 +241,7 @@ impl OpcUaTestServer {
     /// Start and return an [`OpcUaTestServer`] and a channel receiver to signal
     /// that gateway has started to beat.
     pub async fn start(
+        secured: bool,
         temp_dir: &Path,
         line_id: Option<AsciiDigitsOrUpper<2>>,
         operation_nodes: Vec<(&'static str, Variant)>,
@@ -256,7 +258,7 @@ impl OpcUaTestServer {
 
         let pki_dir = temp_dir.join(format!("server_pki_{}", local_addr.port()));
 
-        let (server, server_handle) = ServerBuilder::new()
+        let mut builder = ServerBuilder::new()
             .application_name("OPC-UA testing server")
             .application_uri(format!("urn:test-server:{}", local_addr.port()))
             .product_uri(format!("urn:{}:test-server", env!("CARGO_PKG_NAME")))
@@ -277,32 +279,34 @@ impl OpcUaTestServer {
                 },
                 ..Default::default()
             })
-            .add_user_token(
-                "test_password_user",
-                ServerUserToken {
-                    user: "testuser".to_owned(),
-                    pass: Some("testpassword".to_owned()),
-                    ..Default::default()
-                },
-            )
-            .add_endpoint(
-                "None",
-                ServerEndpoint::new_none(
-                    "/",
-                    &[ANONYMOUS_USER_TOKEN_ID.into(), "test_password_user".into()],
-                ),
-            )
-            .add_endpoint(
-                "Aes256Sha256RsaPss - Sign & Encrypt",
-                ServerEndpoint::new_aes256_sha256_rsapss_sign_encrypt(
-                    "/",
-                    &[ANONYMOUS_USER_TOKEN_ID.into(), "test_password_user".into()],
-                ),
-            )
             .with_node_manager(simple_node_manager_imports(
                 vec![TestingNodes::new_boxed(operation_nodes)],
                 "testing-nodes-manager",
-            ))
+            ));
+        if secured {
+            builder = builder
+                .add_user_token(
+                    "test_password_user",
+                    ServerUserToken {
+                        user: "testuser".to_owned(),
+                        pass: Some("testpassword".to_owned()),
+                        ..Default::default()
+                    },
+                )
+                .add_endpoint(
+                    "Aes256Sha256RsaPss - Sign & Encrypt",
+                    ServerEndpoint::new_aes256_sha256_rsapss_sign_encrypt(
+                        "/",
+                        &["test_password_user".into()],
+                    ),
+                )
+        } else {
+            builder = builder.add_endpoint(
+                "None",
+                ServerEndpoint::new_none("/", &[ANONYMOUS_USER_TOKEN_ID.into()]),
+            )
+        }
+        let (server, server_handle) = builder
             .build()
             .expect("building the server should not fail");
 
@@ -336,20 +340,14 @@ impl OpcUaTestServer {
 
         // Make certificates copies to make gateway and server mutually trust.
         let gateway_pki_dir = gateway_pki_dir(temp_dir);
-        std::fs::copy(
-            my_cert_file,
-            gateway_pki_dir.join(format!("trusted/server_{}.der", local_addr.port())),
-        )
-        .expect("writing the server cert in gateway PKI should not fail");
-        std::fs::copy(
-            gateway_pki_dir.join("own/opcua-line-gateway-cert.der"),
-            pki_dir.join("trusted/opcua-line-gateway-cert.der"),
-        )
-        .expect("copying gateway cert in server PKI should not fail");
+        copy_cert_to_trusted(&my_cert_file, &gateway_pki_dir);
+        let gateway_cert_path = gateway_pki_dir.join("own/opcua-line-gateway-cert.der");
+        copy_cert_to_trusted(&gateway_cert_path, &pki_dir);
 
         Self {
             name,
             url,
+            secured,
             line_id,
             node_manager,
             common_ns_index,
@@ -370,16 +368,28 @@ impl OpcUaTestServer {
 
     /// Return the OPC-UA configuration for this server.
     pub fn opcua_config(&self) -> OpcUaServerConfig {
+        let (security_policy, security_mode) = if self.secured {
+            (
+                SecurityPolicy::Aes256Sha256RsaPss,
+                MessageSecurityMode::SignAndEncrypt,
+            )
+        } else {
+            (SecurityPolicy::None, MessageSecurityMode::None)
+        };
+
         OpcUaServerConfig {
             url: self.url.clone(),
-            security_policy: SecurityPolicy::None,
-            security_mode: MessageSecurityMode::None,
+            security_policy,
+            security_mode,
         }
     }
 
     /// Return the credentials to use for authenticating with this server.
     pub fn opcua_credentials(&self) -> Option<Credential> {
-        None
+        self.secured.then_some(Credential {
+            user: "testuser".into(),
+            password: "testpassword".into(),
+        })
     }
 
     /// Wait for a client to have subscribed to the request code value.
@@ -487,4 +497,19 @@ impl OpcUaTestServer {
             .expect("joining the server task should not fail")
             .expect("server task should not have failed");
     }
+}
+
+fn copy_cert_to_trusted(cert_path: &Path, target_pki: &Path) {
+    let raw_cert = std::fs::read(cert_path).expect("reading the certificate should not fail");
+    let x509_cert = X509::from_der(&raw_cert).expect("loading certificate as X509 should not fail");
+    let common_name = x509_cert
+        .common_name()
+        .expect("getting certificate common name should not fail");
+    let digest = x509_cert.thumbprint().as_hex_string();
+    let trusted_cert_name = format!("{common_name} [{digest}].der");
+    std::fs::copy(
+        cert_path,
+        target_pki.join("trusted").join(trusted_cert_name),
+    )
+    .expect("copying the certificate to trusted directory should not fail");
 }

@@ -29,7 +29,7 @@ pub fn create_gateway_pki(temp_dir: &Path) {
     let app_description = ApplicationDescription {
         application_uri: APPLICATION_URI.into(),
         product_uri: concat!("urn:", env!("CARGO_PKG_NAME")).into(),
-        application_name: env!("CARGO_PKG_DESCRIPTION").into(),
+        application_name: env!("CARGO_PKG_NAME").into(),
         application_type: ApplicationType::Client,
         gateway_server_uri: Default::default(),
         discovery_profile_uri: Default::default(),

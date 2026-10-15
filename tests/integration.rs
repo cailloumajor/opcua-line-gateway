@@ -43,6 +43,7 @@ async fn initial_request_pending() {
 
     let operation_nodes = vec![("DummyVar", false.into())];
     let server = OpcUaTestServer::start(
+        false,
         temp_dir.path(),
         Some("AB".parse().unwrap()),
         operation_nodes,
@@ -84,7 +85,7 @@ async fn initial_request_answered() {
     let (db_config, db_creds) = init_database();
 
     let operation_nodes = vec![("DummyVar", false.into())];
-    let server = OpcUaTestServer::start(temp_dir.path(), None, operation_nodes).await;
+    let server = OpcUaTestServer::start(false, temp_dir.path(), None, operation_nodes).await;
 
     server.write_common_node(common_nid::RAW_PART_REF, "1-498GR13");
     server.write_common_node(common_nid::RAW_BATCH, "AA");
@@ -125,12 +126,7 @@ async fn initial_request_reset() {
     let (db_config, db_creds) = init_database();
 
     let operation_nodes = vec![("DummyVar", false.into())];
-    let server = OpcUaTestServer::start(
-        temp_dir.path(),
-        Some("AB".parse().unwrap()),
-        operation_nodes,
-    )
-    .await;
+    let server = OpcUaTestServer::start(false, temp_dir.path(), None, operation_nodes).await;
 
     server.write_common_node(common_nid::RESPONSE, 1u8);
 
@@ -159,6 +155,7 @@ async fn create_part_id() {
 
     let operation_nodes = vec![("DummyVar", false.into())];
     let server = OpcUaTestServer::start(
+        false,
         temp_dir.path(),
         Some("AB".parse().unwrap()),
         operation_nodes,
@@ -200,8 +197,9 @@ async fn general_part_sheet_roundtrip() {
     let (db_config, db_creds) = init_database();
 
     let operation_nodes = vec![("DummyVar", false.into())];
-    let server_a = OpcUaTestServer::start(temp_dir.path(), None, operation_nodes.clone()).await;
-    let server_b = OpcUaTestServer::start(temp_dir.path(), None, operation_nodes).await;
+    let server_a =
+        OpcUaTestServer::start(false, temp_dir.path(), None, operation_nodes.clone()).await;
+    let server_b = OpcUaTestServer::start(true, temp_dir.path(), None, operation_nodes).await;
 
     let time_provider = TimeProvider::new(SimpleClock::new_frozen(), TimeZone::UTC);
 
