@@ -7,7 +7,6 @@ set -eo pipefail
 : "${usage_diff:=}"
 
 #MISE description="Generate configuration documentation"
-#MISE tools={"pypi:jsonschema-markdown"="latest"}
 
 readonly gencmd="jsonschema-markdown --no-empty-columns schema/config.schema.json"
 readonly outfile=docs/configuration.md

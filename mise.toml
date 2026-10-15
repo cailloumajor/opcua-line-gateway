@@ -16,6 +16,8 @@ node = "lts"
 "npm:yaml-language-server" = "latest"
 pinact = "latest"
 pkl = "latest"
+"pypi:jsonschema-markdown" = "latest"
+python = "3.14"
 rumdl = "latest"
 rust = { version = "1.99.0", components = "rust-analyzer", profile = "default" }
 shellcheck = "latest"
@@ -23,6 +25,7 @@ shfmt = "latest"
 tombi = "latest"
 typos = "latest"
 usage = "latest"
+uv = "latest"
 zizmor = "latest"
 
 [env]
