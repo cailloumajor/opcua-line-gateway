@@ -27,5 +27,8 @@ lcov.info
 mise.local.toml
 mise.local.lock
 
+# clickhousectl project storage
+.clickhouse/
+
 # Development files
 /dev/
