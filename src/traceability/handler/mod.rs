@@ -32,12 +32,14 @@ mod save_part_sheets;
 /// Error that can occur during browsing a part sheet object.
 #[derive(Debug, Error)]
 pub(crate) enum BrowsePartSheetError {
-    #[error("error browsing general part sheet OPC-UA nodes")]
+    #[error("error browsing part sheet OPC-UA nodes")]
     BrowseGeneralPartSheet(#[source] opcua::types::Error),
     #[error("bad BrowseResult status code: {0}")]
     BrowseResultStatus(StatusCode),
     #[error("browse name for node identifier {0} is null")]
     NullBrowseName(NodeId),
+    #[error("no node found when browsing the part sheet")]
+    EmptyBrowse,
     #[error("error with OPC-UA read request")]
     ReadRequest(#[source] opcua::types::Error),
     #[error("invalid number of read variables (discovered {0}, read {1})")]
@@ -147,6 +149,12 @@ impl TraceabilityHandler<InitialState> {
 
                 nodes.push((node_id, browse_name.as_str().into()));
             }
+        }
+
+        // If browsing the part sheet did not find any node, do not continue with
+        // read request, which would fail with a less contextual error.
+        if nodes.is_empty() {
+            return Err(BrowsePartSheetError::EmptyBrowse);
         }
 
         // Read the nodes values and ensure we can serialize them.
