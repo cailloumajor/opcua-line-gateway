@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.4.4](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.4.3...v0.4.4) (2026-10-16)
+
+
+### Features
+
+* allow configuring nodes excluded from general part sheet read ([ba0d8a0](https://github.com/cailloumajor/opcua-line-gateway/commit/ba0d8a0860b0a85f5421dc83806c1bbebadf0870))
+* enable configuration object serialization ([8d36c49](https://github.com/cailloumajor/opcua-line-gateway/commit/8d36c491434be15b9aa59a1e57768ea12e646db9))
+
+
+### Bug Fixes
+
+* add a more explicit error if part sheet browsing is empty ([01de638](https://github.com/cailloumajor/opcua-line-gateway/commit/01de6383c15804a1428500321784629261bb1106))
+* **deps:** update dependency rust to v1.99.0 ([3b97692](https://github.com/cailloumajor/opcua-line-gateway/commit/3b97692df9dce38a221569dfe346ce98a739eb4c))
+* handle initial request code unless already answered ([f1e7f65](https://github.com/cailloumajor/opcua-line-gateway/commit/f1e7f653e353b0df65f74c5fbc8c325f306fe1bd))
+* implement a time provider to replace global timezone ([5a83df0](https://github.com/cailloumajor/opcua-line-gateway/commit/5a83df0a64b76c9c36560bcefe58de6e7031dcfd))
+* make `init_system_timezone` idempotent ([4b1c3bb](https://github.com/cailloumajor/opcua-line-gateway/commit/4b1c3bbed5e40cb5b4343685fee3894ed2987143))
+* remove remaining block_in_place usage in favor of spawn_blocking ([8e3f665](https://github.com/cailloumajor/opcua-line-gateway/commit/8e3f665f79d714c87ce607aa43bdd4a5cf58361a))
+* turn a panicking error handling to recoverable ([0e436d0](https://github.com/cailloumajor/opcua-line-gateway/commit/0e436d098dc65f98cab749884541c25ea0599b99))
+
 ## [0.4.3](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.4.2...v0.4.3) (2026-10-01)
 
 
