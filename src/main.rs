@@ -71,11 +71,11 @@ async fn main() -> anyhow::Result<()> {
 
 /// Initializes logging system.
 fn init_logging() -> anyhow::Result<()> {
-    let env_filter = EnvFilter::try_from_default_env().context("Failed to get env filter")?;
+    let env_filter = EnvFilter::from_default_env();
 
     // `JOURNAL_STREAM` is set by systemd when stdout/stderr are connected to the
     // journal, making it a good clue to know if we are ran by systemd.
-    let journald = std::env::var_os("JOURNAL")
+    let journald = std::env::var_os("JOURNAL_STREAM")
         .map(|_| tracing_journald::layer())
         .transpose()
         .context("Failed to build journald layer")?;
