@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.6](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.4.5...v0.4.6) (2026-10-16)
+
+
+### Bug Fixes
+
+* typo in environment variable used to detect journald ([6de188e](https://github.com/cailloumajor/opcua-line-gateway/commit/6de188e13e47c4e619436df34ef97d225a6a3311))
+
 ## [0.4.5](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.4.4...v0.4.5) (2026-10-16)
 
 
