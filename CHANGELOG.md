@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.5](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.4.4...v0.4.5) (2026-10-16)
+
+
+### Features
+
+* allow logging to systemd-journald if applicable ([6b20c4b](https://github.com/cailloumajor/opcua-line-gateway/commit/6b20c4b65687d8f217de928e73911d97f735d532))
+
 ## [0.4.4](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.4.3...v0.4.4) (2026-10-16)
 
 
