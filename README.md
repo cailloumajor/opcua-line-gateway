@@ -99,6 +99,11 @@ Log verbosity is set by `RUST_LOG` in the unit (`info` by default); override it
 with `sudo systemctl edit opcua-line-gateway` rather than by editing the
 installed unit.
 
+### Visualization
+
+A Grafana dashboard displays the archived part sheets, see the
+[setup documentation](docs/grafana.md).
+
 ## Traceability
 
 This service handles traceability management, which involves moving data between,

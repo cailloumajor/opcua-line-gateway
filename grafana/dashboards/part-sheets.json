@@ -1,0 +1,547 @@
+{
+  "uid": "opcua-line-gateway-part-sheets",
+  "title": "Part sheets",
+  "description": "Traceability part sheets archived by opcua-line-gateway",
+  "tags": [
+    "opcua-line-gateway",
+    "traceability"
+  ],
+  "editable": true,
+  "graphTooltip": 0,
+  "timezone": "browser",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "refresh": "5s",
+  "schemaVersion": 41,
+  "templating": {
+    "list": [
+      {
+        "type": "query",
+        "name": "machine",
+        "label": "Machine",
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "opcua-line-gateway-clickhouse"
+        },
+        "definition": "SELECT machine_id FROM part_sheet_general\nUNION DISTINCT\nSELECT machine_id FROM part_sheet_operation",
+        "query": "SELECT machine_id FROM part_sheet_general\nUNION DISTINCT\nSELECT machine_id FROM part_sheet_operation",
+        "refresh": 2,
+        "sort": 1,
+        "multi": true,
+        "includeAll": true,
+        "allowCustomValue": true,
+        "current": {},
+        "options": [],
+        "regex": ""
+      },
+      {
+        "type": "query",
+        "name": "part_id",
+        "label": "Part ID",
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "opcua-line-gateway-clickhouse"
+        },
+        "definition": "SELECT part_id\nFROM part_sheet_general\nWHERE $__timeFilter(saved_at) AND machine_id IN (${machine:singlequote})\nGROUP BY part_id\nORDER BY max(saved_at) DESC\nLIMIT 500",
+        "query": "SELECT part_id\nFROM part_sheet_general\nWHERE $__timeFilter(saved_at) AND machine_id IN (${machine:singlequote})\nGROUP BY part_id\nORDER BY max(saved_at) DESC\nLIMIT 500",
+        "refresh": 2,
+        "sort": 0,
+        "multi": false,
+        "includeAll": false,
+        "allowCustomValue": true,
+        "current": {},
+        "options": [],
+        "regex": ""
+      }
+    ]
+  },
+  "annotations": {
+    "list": []
+  },
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "Latest saves",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 2,
+      "type": "table",
+      "title": "General part sheets",
+      "description": "General part sheets saved in the selected time range, newest first. Click a part ID to show its history. Station arrays read as one character per station, first station on the left: 1 = true, 0 = false.",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "opcua-line-gateway-clickhouse"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 24,
+        "h": 11
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "opcua-line-gateway-clickhouse"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT\n    saved_at AS `Saved at`,\n    machine_id AS Machine,\n    part_id AS `Part ID`,\n    data.RefePiecForg AS RefePiecForg,\n    data.LotMati AS LotMati,\n    data.RefePiecFini AS RefePiecFini,\n    data.PiecAnnoChgtRefPiecFini AS PiecAnnoChgtRefPiecFini,\n    data.PiecAnnoChgtLotMati AS PiecAnnoChgtLotMati,\n    arrayStringConcat(arrayMap(x -> if(x, '1', '0'), data.SuivTravPiecParPost)) AS SuivTravPiecParPost,\n    arrayStringConcat(arrayMap(x -> if(x, '1', '0'), data.SuivConfPiecParPost)) AS SuivConfPiecParPost,\n    data.QuiDeclNonConf AS QuiDeclNonConf,\n    data.QuiDeclConf AS QuiDeclConf,\n    data.ProgReceMach AS ProgReceMach,\n    arrayStringConcat(arrayMap(x -> if(x, '1', '0'), data.SuivPostAvecPassTrav)) AS SuivPostAvecPassTrav,\n    arrayStringConcat(arrayMap(x -> if(x, '1', '0'), data.SuivPrelPiecParPost)) AS SuivPrelPiecParPost,\n    arrayStringConcat(arrayMap(x -> if(x, '1', '0'), data.SuivRejePiecParPost)) AS SuivRejePiecParPost,\n    data.RefePiecFiniInco AS RefePiecFiniInco,\n    data.PiecTravInco AS PiecTravInco,\n    data.PiecNonConfAmon AS PiecNonConfAmon,\n    data.LotMatiInco AS LotMatiInco,\n    data.PiecRebu AS PiecRebu,\n    data.DeclRebuMoti AS DeclRebuMoti,\n    data.DeclRebuQui AS DeclRebuQui\nFROM part_sheet_general\nWHERE $__timeFilter(saved_at) AND machine_id IN (${machine:singlequote})\nORDER BY saved_at DESC\nLIMIT 1000",
+          "refId": "A"
+        }
+      ],
+      "transformations": [],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "filterable": true,
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Saved at"
+            },
+            "properties": [
+              {
+                "id": "custom.minWidth",
+                "value": 190
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Part ID"
+            },
+            "properties": [
+              {
+                "id": "custom.minWidth",
+                "value": 210
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Part ID"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Show part history",
+                    "url": "/d/opcua-line-gateway-part-sheets?${__url_time_range}&${machine:queryparam}&var-part_id=${__value.raw}"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": true,
+          "reducer": [
+            "count"
+          ],
+          "countRows": true
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "table",
+      "title": "Operation part sheets",
+      "description": "Operation part sheets saved in the selected time range, newest first. Variables differ between machines: filter on one machine for a readable table.",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "opcua-line-gateway-clickhouse"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 24,
+        "h": 11
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "opcua-line-gateway-clickhouse"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT\n    saved_at AS `Saved at`,\n    machine_id AS Machine,\n    part_id AS `Part ID`,\n    toJSONString(data) AS data\nFROM part_sheet_operation\nWHERE $__timeFilter(saved_at) AND machine_id IN (${machine:singlequote})\nORDER BY saved_at DESC\nLIMIT 1000",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "source": "data",
+            "format": "json",
+            "replace": false,
+            "keepTime": false
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "data": true
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "filterable": true,
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Saved at"
+            },
+            "properties": [
+              {
+                "id": "custom.minWidth",
+                "value": 190
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Part ID"
+            },
+            "properties": [
+              {
+                "id": "custom.minWidth",
+                "value": 210
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Part ID"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Show part history",
+                    "url": "/d/opcua-line-gateway-part-sheets?${__url_time_range}&${machine:queryparam}&var-part_id=${__value.raw}"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": true,
+          "reducer": [
+            "count"
+          ],
+          "countRows": true
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "row",
+      "title": "Part history: ${part_id}",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 23,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 5,
+      "type": "table",
+      "title": "General part sheet changes",
+      "description": "Fields whose value changed from one save to the next, regardless of the time range. Station arrays read as one character per station, first station on the left: 1 = true, 0 = false.",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "opcua-line-gateway-clickhouse"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 24,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "opcua-line-gateway-clickhouse"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "WITH\n    -- Station arrays as \"1\"/\"0\" strings, JSON strings unquoted.\n    raw -> multiIf(\n        match(raw, '^\\\\[(true|false)(,(true|false))*\\\\]$'),\n        arrayStringConcat(arrayMap(x -> if(x, '1', '0'), JSONExtract(raw, 'Array(Bool)'))),\n        startsWith(raw, '\"'), JSONExtractString(raw),\n        raw\n    ) AS display,\n    fields AS (\n        SELECT saved_at, machine_id, kv.1 AS field, kv.2 AS value\n        FROM part_sheet_general\n        ARRAY JOIN JSONExtractKeysAndValuesRaw(toJSONString(data)) AS kv\n        WHERE part_id = ${part_id:singlequote}\n    )\nSELECT\n    saved_at AS `Saved at`,\n    machine_id AS Machine,\n    field AS Field,\n    display(previous) AS Before,\n    display(value) AS After\nFROM (\n    SELECT\n        *,\n        lagInFrame(value) OVER w AS previous,\n        row_number() OVER w AS version\n    FROM fields\n    WINDOW w AS (PARTITION BY field ORDER BY saved_at ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)\n)\nWHERE version > 1 AND value != previous\nORDER BY `Saved at` DESC, Field",
+          "refId": "A"
+        }
+      ],
+      "transformations": [],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "filterable": true,
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Saved at"
+            },
+            "properties": [
+              {
+                "id": "custom.minWidth",
+                "value": 190
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Part ID"
+            },
+            "properties": [
+              {
+                "id": "custom.minWidth",
+                "value": 210
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": true,
+          "reducer": [
+            "count"
+          ],
+          "countRows": true
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "table",
+      "title": "General part sheet versions",
+      "description": "Every saved version of the general part sheet, regardless of the time range. Station arrays read as one character per station, first station on the left: 1 = true, 0 = false.",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "opcua-line-gateway-clickhouse"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 33,
+        "w": 24,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "opcua-line-gateway-clickhouse"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT\n    saved_at AS `Saved at`,\n    machine_id AS Machine,\n    part_id AS `Part ID`,\n    data.RefePiecForg AS RefePiecForg,\n    data.LotMati AS LotMati,\n    data.RefePiecFini AS RefePiecFini,\n    data.PiecAnnoChgtRefPiecFini AS PiecAnnoChgtRefPiecFini,\n    data.PiecAnnoChgtLotMati AS PiecAnnoChgtLotMati,\n    arrayStringConcat(arrayMap(x -> if(x, '1', '0'), data.SuivTravPiecParPost)) AS SuivTravPiecParPost,\n    arrayStringConcat(arrayMap(x -> if(x, '1', '0'), data.SuivConfPiecParPost)) AS SuivConfPiecParPost,\n    data.QuiDeclNonConf AS QuiDeclNonConf,\n    data.QuiDeclConf AS QuiDeclConf,\n    data.ProgReceMach AS ProgReceMach,\n    arrayStringConcat(arrayMap(x -> if(x, '1', '0'), data.SuivPostAvecPassTrav)) AS SuivPostAvecPassTrav,\n    arrayStringConcat(arrayMap(x -> if(x, '1', '0'), data.SuivPrelPiecParPost)) AS SuivPrelPiecParPost,\n    arrayStringConcat(arrayMap(x -> if(x, '1', '0'), data.SuivRejePiecParPost)) AS SuivRejePiecParPost,\n    data.RefePiecFiniInco AS RefePiecFiniInco,\n    data.PiecTravInco AS PiecTravInco,\n    data.PiecNonConfAmon AS PiecNonConfAmon,\n    data.LotMatiInco AS LotMatiInco,\n    data.PiecRebu AS PiecRebu,\n    data.DeclRebuMoti AS DeclRebuMoti,\n    data.DeclRebuQui AS DeclRebuQui\nFROM part_sheet_general\nWHERE part_id = ${part_id:singlequote}\nORDER BY saved_at DESC",
+          "refId": "A"
+        }
+      ],
+      "transformations": [],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "filterable": true,
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Saved at"
+            },
+            "properties": [
+              {
+                "id": "custom.minWidth",
+                "value": 190
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Part ID"
+            },
+            "properties": [
+              {
+                "id": "custom.minWidth",
+                "value": 210
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": true,
+          "reducer": [
+            "count"
+          ],
+          "countRows": true
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "table",
+      "title": "Operation part sheets",
+      "description": "Operation part sheets saved for this part, regardless of the time range.",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "opcua-line-gateway-clickhouse"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 42,
+        "w": 24,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "opcua-line-gateway-clickhouse"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT\n    saved_at AS `Saved at`,\n    machine_id AS Machine,\n    toJSONString(data) AS data\nFROM part_sheet_operation\nWHERE part_id = ${part_id:singlequote}\nORDER BY saved_at DESC",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "source": "data",
+            "format": "json",
+            "replace": false,
+            "keepTime": false
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "data": true
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "filterable": true,
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Saved at"
+            },
+            "properties": [
+              {
+                "id": "custom.minWidth",
+                "value": 190
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Part ID"
+            },
+            "properties": [
+              {
+                "id": "custom.minWidth",
+                "value": 210
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": true,
+          "reducer": [
+            "count"
+          ],
+          "countRows": true
+        }
+      }
+    }
+  ]
+}

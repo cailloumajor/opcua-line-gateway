@@ -1,0 +1,12 @@
+# Grafana dashboards provider for the traceability dashboards, see docs/grafana.md.
+apiVersion: 1
+
+providers:
+  - name: opcua-line-gateway
+    folder: Traceability
+    type: file
+    # Dashboards are versioned in the repository: changes made in the UI are
+    # lost, export them back to grafana/dashboards instead.
+    allowUiUpdates: false
+    options:
+      path: /var/lib/grafana/dashboards/opcua-line-gateway

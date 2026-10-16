@@ -213,3 +213,9 @@ COMMENT 'Operation part sheet — one row per Save request, payload heterogeneou
 -- ----------------------------------------------------------------------------
 CREATE ROLE IF NOT EXISTS traceability_gateway;
 GRANT INSERT ON part_sheet_* TO traceability_gateway;
+
+-- ----------------------------------------------------------------------------
+-- Read-only traceability role, for visualization (Grafana, see docs/grafana.md).
+-- ----------------------------------------------------------------------------
+CREATE ROLE IF NOT EXISTS traceability_viewer;
+GRANT SELECT ON part_sheet_* TO traceability_viewer;

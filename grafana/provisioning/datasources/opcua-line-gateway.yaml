@@ -1,0 +1,19 @@
+# Grafana datasource for the traceability database, see docs/grafana.md.
+apiVersion: 1
+
+datasources:
+  - name: Traceability (ClickHouse)
+    # Referenced by the dashboards: do not change.
+    uid: opcua-line-gateway-clickhouse
+    type: grafana-clickhouse-datasource
+    isDefault: true
+    editable: false
+    jsonData:
+      host: 127.0.0.1
+      port: 8123
+      protocol: http
+      defaultDatabase: traceability
+      username: grafana
+    secureJsonData:
+      # Kept out of this file, readable by the grafana user only.
+      password: $__file{/etc/grafana/clickhouse-password} # betterleaks:allow
