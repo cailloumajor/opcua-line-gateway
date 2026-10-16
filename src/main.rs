@@ -12,9 +12,9 @@ use signal_hook_tokio::Signals;
 use tick::SimpleClock;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, instrument};
-use tracing_subscriber::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
+use tracing_subscriber::{EnvFilter, fmt};
 
 /// Handle signals as they are caught.
 #[instrument(skip_all)]
@@ -48,12 +48,7 @@ async fn main() -> anyhow::Result<()> {
 
     let credentials = Credentials::from_credentials_file().context("Failed to get credentials")?;
 
-    // Initialize tracing.
-    tracing_subscriber::registry()
-        .with(tracing_subscriber::fmt::layer())
-        // Configure log levels using RUST_LOG environment variable.
-        .with(EnvFilter::from_default_env())
-        .init();
+    init_logging().context("Failed to initialize logging")?;
 
     let tz = TimeZone::try_system().context("Failed to get system timezone")?;
     info!(msg = "got system timezone", ?tz);
@@ -72,4 +67,26 @@ async fn main() -> anyhow::Result<()> {
     signals_task.await.context("failed to join signals task")?;
 
     Ok(())
+}
+
+/// Initializes logging system.
+fn init_logging() -> anyhow::Result<()> {
+    let env_filter = EnvFilter::try_from_default_env().context("Failed to get env filter")?;
+
+    // `JOURNAL_STREAM` is set by systemd when stdout/stderr are connected to the
+    // journal, making it a good clue to know if we are ran by systemd.
+    let journald = std::env::var_os("JOURNAL")
+        .map(|_| tracing_journald::layer())
+        .transpose()
+        .context("Failed to build journald layer")?;
+
+    // Console output fallback.
+    let console = journald.is_none().then(fmt::layer);
+
+    tracing_subscriber::registry()
+        .with(env_filter)
+        .with(journald)
+        .with(console)
+        .try_init()
+        .context("Failed to initialize subscriber")
 }
