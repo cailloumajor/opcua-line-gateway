@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use futures_util::TryFutureExt;
-use opcua::types::{ReadValueId, TimestampsToReturn, WriteValue};
+use opcua::types::{NodeId, ReadValueId, TimestampsToReturn, WriteValue};
 use opcua_line_gateway_config::AsciiDigitsOrUpper;
 use thiserror::Error;
 use tokio::task::JoinError;
@@ -48,8 +48,14 @@ impl TraceabilityHandler<TraceabilityContext> {
 
         // Read and convert needed OPC-UA variables.
         let read_value_ids = &[
-            ReadValueId::new_value(self.state.general_part_sheet.raw_part_ref.clone()),
-            ReadValueId::new_value(self.state.general_part_sheet.raw_batch.clone()),
+            ReadValueId::new_value(NodeId::new(
+                self.state.general_part_sheet.ns_index,
+                self.common_opcua_config.raw_part_ref_nid,
+            )),
+            ReadValueId::new_value(NodeId::new(
+                self.state.general_part_sheet.ns_index,
+                self.common_opcua_config.raw_batch_nid,
+            )),
         ];
         let values = self
             .session
@@ -81,7 +87,10 @@ impl TraceabilityHandler<TraceabilityContext> {
             .map_err(CreatePartIdError::PartIdentifier)?;
 
         let write_values = &[WriteValue::value_attr(
-            self.state.general_part_sheet.part_id.clone(),
+            NodeId::new(
+                self.state.general_part_sheet.ns_index,
+                self.common_opcua_config.part_id_nid,
+            ),
             part_id.clone().into(),
         )];
         self.session

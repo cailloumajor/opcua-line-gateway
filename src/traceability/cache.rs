@@ -4,7 +4,7 @@ use std::{fmt, io};
 
 use jiff::Timestamp;
 use jiff::civil::Date;
-use opcua::types::{Context, NodeId, Variant};
+use opcua::types::{Context, Variant};
 use opcua_line_gateway_config::AsciiDigitsOrUpper;
 use redb::{
     Database, ReadableDatabase, ReadableTable, ReadableTableMetadata, TableDefinition, TableHandle,
@@ -151,7 +151,7 @@ impl TraceabilityCache {
         &self,
         part_id: &str,
         ctx: &Context,
-    ) -> Result<Option<Vec<(NodeId, Variant)>>, GetGeneralPartSheetError> {
+    ) -> Result<Option<Vec<(u32, Variant)>>, GetGeneralPartSheetError> {
         let read_txn = self.redb.begin_read()?;
         let table = read_txn.open_table(GENERAL_PART_SHEET_CACHE)?;
         let value_guard = table.get(part_id)?;
@@ -352,7 +352,7 @@ mod tests {
     fn check_enqueuing_allowed() {
         let cache = in_memory_cache(3);
 
-        let part_sheet_item = (NodeId::new(0, 42), "SomeNode".into(), "somevalue".into());
+        let part_sheet_item = (42, "SomeNode".into(), "somevalue".into());
 
         let ctx = ContextOwned::default();
 
@@ -407,7 +407,7 @@ mod tests {
     #[test]
     fn check_enqueuing_allowed_after_draining() {
         let cache = in_memory_cache(2);
-        let part_sheet_item = (NodeId::new(0, 42), "SomeNode".into(), "somevalue".into());
+        let part_sheet_item = (42, "SomeNode".into(), "somevalue".into());
         let items = std::slice::from_ref(&part_sheet_item);
 
         save(&cache, "00000000000000000000000", items, items);
@@ -443,7 +443,7 @@ mod tests {
         ));
 
         // Cache table exists, but not the entry.
-        let item = (NodeId::new(1, 1), "first".into(), 1u32.into());
+        let item = (1, "first".into(), 1u32.into());
         save(
             &cache,
             "00000000000000000000000",
@@ -462,30 +462,26 @@ mod tests {
         let ctx = ContextOwned::default();
 
         let general: &[SavedPartSheetItem] = &[
-            (NodeId::new(1, 561), "first".into(), true.into()),
-            (NodeId::new(2, "someval"), "second".into(), 42u16.into()),
+            (561, "first".into(), true.into()),
+            (458, "second".into(), 42u16.into()),
         ];
-        let operation: &[SavedPartSheetItem] =
-            &[(NodeId::new(3, 43), "third".into(), "blabla".into())];
+        let operation: &[SavedPartSheetItem] = &[(43, "third".into(), "blabla".into())];
         save(&cache, "123456789XX422611100001", general, operation);
 
         let part_sheet = cache
             .get_general_part_sheet("123456789XX422611100001", &ctx.context())
             .expect("getting a general part sheet should not fail");
-        let expected = vec![
-            (NodeId::new(1, 561), true.into()),
-            (NodeId::new(2, "someval"), 42u16.into()),
-        ];
+        let expected = vec![(561, true.into()), (458, 42u16.into())];
         assert_eq!(part_sheet, Some(expected));
 
         // Saving again with the same part identifier overwrites cached general part sheet.
-        let general: &[SavedPartSheetItem] = &[(NodeId::new(1, 561), "first".into(), false.into())];
+        let general: &[SavedPartSheetItem] = &[(561, "first".into(), false.into())];
         save(&cache, "123456789XX422611100001", general, operation);
 
         let part_sheet = cache
             .get_general_part_sheet("123456789XX422611100001", &ctx.context())
             .expect("getting a general part sheet should not fail");
-        assert_eq!(part_sheet, Some(vec![(NodeId::new(1, 561), false.into())]));
+        assert_eq!(part_sheet, Some(vec![(561, false.into())]));
     }
 
     #[test]
@@ -505,9 +501,8 @@ mod tests {
     fn save_part_sheets_enqueue_rows() {
         let cache = in_memory_cache(0);
 
-        let general: &[SavedPartSheetItem] = &[(NodeId::new(1, 1), "first".into(), true.into())];
-        let operation: &[SavedPartSheetItem] =
-            &[(NodeId::new(1, 2), "second".into(), 42u16.into())];
+        let general: &[SavedPartSheetItem] = &[(1, "first".into(), true.into())];
+        let operation: &[SavedPartSheetItem] = &[(2, "second".into(), 42u16.into())];
         save(&cache, "00000000000000000000000", general, operation);
         save(&cache, "11111111111111111111111", general, operation);
 
@@ -547,7 +542,7 @@ mod tests {
     #[test]
     fn remove_entries() {
         let cache = in_memory_cache(0);
-        let part_sheet_item = (NodeId::new(0, 42), "SomeNode".into(), "somevalue".into());
+        let part_sheet_item = (42, "SomeNode".into(), "somevalue".into());
         let items = std::slice::from_ref(&part_sheet_item);
 
         for _ in 0..3 {
@@ -575,7 +570,7 @@ mod tests {
     #[test]
     fn queue_sequence_not_reset_after_draining() {
         let cache = in_memory_cache(0);
-        let part_sheet_item = (NodeId::new(0, 42), "SomeNode".into(), "somevalue".into());
+        let part_sheet_item = (42, "SomeNode".into(), "somevalue".into());
         let items = std::slice::from_ref(&part_sheet_item);
 
         save(&cache, "00000000000000000000000", items, items);
