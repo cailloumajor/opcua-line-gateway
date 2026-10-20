@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.4.7](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.4.6...v0.4.7) (2026-10-20)
+
+
+### Bug Fixes
+
+* **deps:** update dependency rust to v1.99.1 ([15c4286](https://github.com/cailloumajor/opcua-line-gateway/commit/15c4286f80deac2f67310d9d4a6e224f18546d77))
+* **deps:** update indirect dependency rustls-webpki ([c77846f](https://github.com/cailloumajor/opcua-line-gateway/commit/c77846fb0e43b918a636ccfd02a37032aa694f90))
+* do not store namespace index in the cache ([bad4a2e](https://github.com/cailloumajor/opcua-line-gateway/commit/bad4a2e2c44aa69165226f082d9bbe8bf12a7169))
+
 ## [0.4.6](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.4.5...v0.4.6) (2026-10-16)
 
 
