@@ -1,5 +1,5 @@
 use opcua::client::Session;
-use opcua::types::{StatusCode, WriteValue};
+use opcua::types::{NodeId, StatusCode, WriteValue};
 use thiserror::Error;
 use tracing::instrument;
 
@@ -8,8 +8,8 @@ use tracing::instrument;
 pub(crate) enum WriteError {
     #[error("write request error")]
     WriteRequest(#[source] opcua::types::Error),
-    #[error("write operation error: {0}")]
-    WriteStatus(StatusCode),
+    #[error("write operation error: {0}, node_id: {1}")]
+    WriteStatus(StatusCode, NodeId),
 }
 
 /// Extension trait for OPC-UA session.
@@ -25,8 +25,9 @@ impl SessionExt for Session {
             .write(nodes_to_write)
             .await
             .map_err(WriteError::WriteRequest)?;
-        if let Some(status) = results.into_iter().find(|s| !s.is_good()) {
-            return Err(WriteError::WriteStatus(status));
+        if let Some((index, status)) = results.into_iter().enumerate().find(|(_, s)| !s.is_good()) {
+            let node_id = nodes_to_write[index].node_id.clone();
+            return Err(WriteError::WriteStatus(status, node_id));
         }
 
         Ok(())
