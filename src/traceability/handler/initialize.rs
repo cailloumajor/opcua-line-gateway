@@ -43,23 +43,21 @@ pub(super) struct ProtocolContext {
 
 /// Traceability context related to general part sheet.
 pub(super) struct GeneralPartSheetContext {
+    /// Namespace index.
+    pub(super) ns_index: u16,
     /// Discovered nodes, couples of NodeIds and browse name.
-    pub(super) nodes: Vec<(NodeId, Arc<str>)>,
+    pub(super) nodes: Vec<(u32, Arc<str>)>,
     /// Index of the part identifier in the nodes collection.
     pub(super) part_id_index: usize,
-    /// [`NodeId`] of the part identifier.
-    pub(super) part_id: NodeId,
-    /// [`NodeId`] of the raw part reference.
-    pub(super) raw_part_ref: NodeId,
-    /// [`NodeId`] of the raw part material batch.
-    pub(super) raw_batch: NodeId,
 }
 
 /// Traceability context related to operation part sheet.
 #[derive(Clone)]
 pub(super) struct OperationPartSheetContext {
+    /// Namespace index.
+    pub(super) ns_index: u16,
     /// Discovered nodes, couples of numeric identifier and browse name.
-    pub(super) nodes: Vec<(NodeId, Arc<str>)>,
+    pub(super) nodes: Vec<(u32, Arc<str>)>,
 }
 
 impl TraceabilityHandler<InitialState> {
@@ -85,12 +83,10 @@ impl TraceabilityHandler<InitialState> {
             .await
             .map_err(TraceabilityInitializeError::BrowseGeneralPartSheet)?;
 
-        let part_id_node = NodeId::new(common_ns_index, self.common_opcua_config.part_id_nid);
-
         // Get the index of the part identifier in general part sheet nodes.
         let part_id_index = general_part_sheet_nodes
             .iter()
-            .position(|(id, _)| *id == part_id_node)
+            .position(|(id, _)| *id == self.common_opcua_config.part_id_nid)
             .ok_or(TraceabilityInitializeError::NoPartIdNode)?;
 
         info!(
@@ -127,16 +123,12 @@ impl TraceabilityHandler<InitialState> {
                 heartbeat: NodeId::new(common_ns_index, self.common_opcua_config.heartbeat_nid),
             },
             general_part_sheet: GeneralPartSheetContext {
+                ns_index: common_ns_index,
                 nodes: general_part_sheet_nodes,
                 part_id_index,
-                part_id: part_id_node,
-                raw_part_ref: NodeId::new(
-                    common_ns_index,
-                    self.common_opcua_config.raw_part_ref_nid,
-                ),
-                raw_batch: NodeId::new(common_ns_index, self.common_opcua_config.raw_batch_nid),
             },
             operation_part_sheet: OperationPartSheetContext {
+                ns_index: operation_ns_index,
                 nodes: operation_part_sheet_nodes,
             },
         };

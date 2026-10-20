@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use opcua::types::{ReadValueId, TimestampsToReturn, WriteValue};
+use opcua::types::{NodeId, ReadValueId, TimestampsToReturn, WriteValue};
 use opcua_line_gateway_config::AsciiDigitsOrUpper;
 use thiserror::Error;
 use tokio::task::JoinError;
@@ -34,7 +34,10 @@ impl TraceabilityHandler<TraceabilityContext> {
     #[instrument(err, skip_all)]
     pub(super) async fn handle_read(&self) -> Result<(), HandleReadError> {
         // Get the part ID from the OPC-UA server.
-        let read_value_id = ReadValueId::new_value(self.state.general_part_sheet.part_id.clone());
+        let read_value_id = ReadValueId::new_value(NodeId::new(
+            self.state.general_part_sheet.ns_index,
+            self.common_opcua_config.part_id_nid,
+        ));
         let values = self
             .session
             .read(&[read_value_id], TimestampsToReturn::Neither, 0.0)
@@ -68,8 +71,11 @@ impl TraceabilityHandler<TraceabilityContext> {
                 self.common_opcua_config
                     .excluded_read_nids
                     .iter()
-                    .all(|i| *i != id.identifier)
-                    .then_some(WriteValue::value_attr(id, val))
+                    .all(|i| *i != id)
+                    .then(|| {
+                        let node_id = NodeId::new(self.state.general_part_sheet.ns_index, id);
+                        WriteValue::value_attr(node_id, val)
+                    })
             })
             .collect::<Vec<_>>();
         self.session

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use opcua::types::{ReadValueId, TimestampsToReturn};
+use opcua::types::{NodeId, ReadValueId, TimestampsToReturn};
 use opcua_line_gateway_config::AsciiDigitsOrUpper;
 use thiserror::Error;
 use tokio::task::JoinError;
@@ -56,8 +56,15 @@ impl TraceabilityHandler<TraceabilityContext> {
             .general_part_sheet
             .nodes
             .iter()
-            .chain(&self.state.operation_part_sheet.nodes)
-            .map(|(id, _)| ReadValueId::new_value(id.clone()))
+            .map(|(id, _)| (self.state.general_part_sheet.ns_index, *id))
+            .chain(
+                self.state
+                    .operation_part_sheet
+                    .nodes
+                    .iter()
+                    .map(|(id, _)| (self.state.operation_part_sheet.ns_index, *id)),
+            )
+            .map(|(ns_idx, id)| ReadValueId::new_value(NodeId::new(ns_idx, id)))
             .collect::<Vec<_>>();
 
         // Read nodes values from the server.
@@ -85,7 +92,7 @@ impl TraceabilityHandler<TraceabilityContext> {
             .zip(read_values)
             .map(|((id, name), val)| {
                 val.try_into_variant()
-                    .map(|variant| (id.clone(), Arc::clone(name), variant))
+                    .map(|variant| (*id, Arc::clone(name), variant))
                     .map_err(|err| HandleSaveError::PartSheetValue(err, name.to_string()))
             })
             .collect::<Result<Vec<_>, _>>()?;

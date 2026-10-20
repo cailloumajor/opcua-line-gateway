@@ -6,8 +6,8 @@ use futures_util::TryStreamExt;
 use opcua::client::browser::{Browser, NoneBrowserPolicy};
 use opcua::client::{DefaultRetryPolicy, ExponentialBackoff, Session};
 use opcua::types::{
-    BrowseDescription, BrowseDirection, BrowseResultMaskFlags, NodeClassMask, NodeId, ReadValueId,
-    ReferenceTypeId, StatusCode, TimestampsToReturn,
+    BrowseDescription, BrowseDirection, BrowseResultMaskFlags, Identifier, NodeClassMask, NodeId,
+    ReadValueId, ReferenceTypeId, StatusCode, TimestampsToReturn,
 };
 use opcua_line_gateway_config::{TraceabilityCommonOpcUaConfig, TraceabilityMachineConfig};
 use thiserror::Error;
@@ -48,6 +48,8 @@ pub(crate) enum BrowsePartSheetError {
     InvalidDataValue(TryFromOpcUaValueError, String),
     #[error("unsupported Variant for serialization for node {1}, cause: {0}")]
     NotSerializable(serde_json::Error, String),
+    #[error("unexpected node identifier {0}, expected numeric")]
+    NodeIdentifier(Identifier),
 }
 
 /// The initial state of the traceability handler.
@@ -101,7 +103,7 @@ impl TraceabilityHandler<InitialState> {
     async fn browse_part_sheet(
         &self,
         root_node_id: NodeId,
-    ) -> Result<Vec<(NodeId, Arc<str>)>, BrowsePartSheetError> {
+    ) -> Result<Vec<(u32, Arc<str>)>, BrowsePartSheetError> {
         // Prepare the browser configuration.
         let retry_policy = DefaultRetryPolicy::new(ExponentialBackoff::new(
             Duration::from_secs(5),     // max sleep
@@ -125,7 +127,7 @@ impl TraceabilityHandler<InitialState> {
             result_mask: BrowseResultMaskFlags::BrowseName.bits(),
         };
 
-        let mut nodes: Vec<(NodeId, Arc<str>)> = Vec::new();
+        let mut browsed_nodes: Vec<(NodeId, Arc<str>)> = Vec::new();
 
         // Browse the part sheet object to build the node identifiers list.
         let mut pinned_stream = pin!(browser.run(vec![initial]));
@@ -147,18 +149,18 @@ impl TraceabilityHandler<InitialState> {
                     return Err(BrowsePartSheetError::NullBrowseName(node_id));
                 };
 
-                nodes.push((node_id, browse_name.as_str().into()));
+                browsed_nodes.push((node_id, browse_name.as_str().into()));
             }
         }
 
         // If browsing the part sheet did not find any node, do not continue with
         // read request, which would fail with a less contextual error.
-        if nodes.is_empty() {
+        if browsed_nodes.is_empty() {
             return Err(BrowsePartSheetError::EmptyBrowse);
         }
 
         // Read the nodes values and ensure we can serialize them.
-        let read_value_ids = nodes
+        let read_value_ids = browsed_nodes
             .iter()
             .map(|(id, _)| ReadValueId::new_value(id.clone()))
             .collect::<Vec<_>>();
@@ -167,18 +169,26 @@ impl TraceabilityHandler<InitialState> {
             .read(&read_value_ids, TimestampsToReturn::Neither, 0.0)
             .await
             .map_err(BrowsePartSheetError::ReadRequest)?;
-        let expected_len = nodes.len();
+        let expected_len = browsed_nodes.len();
         let got_len = values.len();
         if got_len != expected_len {
             return Err(BrowsePartSheetError::ValuesCount(expected_len, got_len));
         }
-        for (value, (_, name)) in values.into_iter().zip(&nodes) {
+        for (value, (_, name)) in values.into_iter().zip(&browsed_nodes) {
             let variant = value
                 .try_into_variant()
                 .map_err(|err| BrowsePartSheetError::InvalidDataValue(err, name.to_string()))?;
             serde_json::to_value(SerializeVariant(&variant))
                 .map_err(|err| BrowsePartSheetError::NotSerializable(err, name.to_string()))?;
         }
+
+        let nodes = browsed_nodes
+            .into_iter()
+            .map(|(nid, name)| match nid.identifier {
+                Identifier::Numeric(id) => Ok((id, name)),
+                unexpected_id => Err(BrowsePartSheetError::NodeIdentifier(unexpected_id)),
+            })
+            .collect::<Result<_, _>>()?;
 
         Ok(nodes)
     }
