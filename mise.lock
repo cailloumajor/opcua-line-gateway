@@ -423,38 +423,38 @@ url = "https://github.com/mhersson/mpls/releases/download/v0.23.0/mpls_0.23.0_wi
 url_api = "https://api.github.com/repos/mhersson/mpls/releases/assets/574698529"
 
 [[tools.hk]]
-version = "2.7.0"
+version = "2.7.1"
 backend = "packslip:github.com/jdx/hk"
 specifiers = ["latest"]
 
 [tools.hk."platforms.linux-arm64"]
-checksum = "sha256:a64c8cead6f9a47e6bf4d639122ca3eeba60480763076330ba230a8cb7821520"
-url = "https://github.com/jdx/hk/releases/download/v2.7.0/hk-aarch64-unknown-linux-gnu.tar.gz"
+checksum = "sha256:e37810d8e8bd461ef92c1f0103cb8b415f58d18e689d59d8f5239dd8893676b9"
+url = "https://github.com/jdx/hk/releases/download/v2.7.1/hk-aarch64-unknown-linux-gnu.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 
 [tools.hk."platforms.linux-arm64-musl"]
-checksum = "sha256:c8fc86be772051e8d80635ef2f755312f3194e2b6758c5b56346ac30cf525f70"
-url = "https://github.com/jdx/hk/releases/download/v2.7.0/hk-aarch64-unknown-linux-musl.tar.gz"
+checksum = "sha256:1217340e610e126baa69bc5f0543f0eb2c0c3ff08e98b9c3bc173e2a3d29aef2"
+url = "https://github.com/jdx/hk/releases/download/v2.7.1/hk-aarch64-unknown-linux-musl.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 
 [tools.hk."platforms.linux-x64"]
-checksum = "sha256:2d5819ee2bc3e5b424d90fb05928c05297bfa4d36490628b075b8f8afe14b7b1"
-url = "https://github.com/jdx/hk/releases/download/v2.7.0/hk-x86_64-unknown-linux-gnu.tar.gz"
+checksum = "sha256:f6efe9b7febc22cb0ec071ab727ead597752dedb6a36c4d1a7fef94f6d2d8fbf"
+url = "https://github.com/jdx/hk/releases/download/v2.7.1/hk-x86_64-unknown-linux-gnu.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 
 [tools.hk."platforms.linux-x64-musl"]
-checksum = "sha256:84e3b841f03fb82e6d3c59447bf91044d3352928b69125a5de8ba49febc2f5f1"
-url = "https://github.com/jdx/hk/releases/download/v2.7.0/hk-x86_64-unknown-linux-musl.tar.gz"
+checksum = "sha256:7a92cc1b7ecc2dd59f15bb90a0ab564def47cc63923fd64e6d04c0ae35ce98d0"
+url = "https://github.com/jdx/hk/releases/download/v2.7.1/hk-x86_64-unknown-linux-musl.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 
 [tools.hk."platforms.macos-arm64"]
-checksum = "sha256:3b98dd45e493a421de5b327c87b3e0fdfac39383e11b6a2b48b43bbc5a9ce0d6"
-url = "https://github.com/jdx/hk/releases/download/v2.7.0/hk-aarch64-apple-darwin.tar.gz"
+checksum = "sha256:18914b99e1fdcc0415ba77c8d01b1f4df73b109ed90b3f418053e2f3eaf84cbd"
+url = "https://github.com/jdx/hk/releases/download/v2.7.1/hk-aarch64-apple-darwin.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 
 [tools.hk."platforms.windows-x64"]
-checksum = "sha256:69fa61c4ef0ea7d25ccb2804b52c31e91be8f7c9cc1176aabe8ea780f3c5b0bb"
-url = "https://github.com/jdx/hk/releases/download/v2.7.0/hk-x86_64-pc-windows-msvc.zip"
+checksum = "sha256:d0b6e0d1aa253f1ceb4170f5fe14a78526f1ecd9d09b8c0b6d51dda2c90c4981"
+url = "https://github.com/jdx/hk/releases/download/v2.7.1/hk-x86_64-pc-windows-msvc.zip"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 
 [[tools.marksman]]
@@ -538,7 +538,7 @@ specifiers = ["latest"]
 
 [[tools."npm:yaml-language-server"]]
 version = "2.0.0"
-aube = { path = ".mise/locks/npm-yaml-language-server/2.0.0", digest = "sha256:a15a1d02c92f98942cc3011bde688bb01114db3895daf15e356ac2060888e7fb" }
+aube = { path = ".mise/locks/npm-yaml-language-server/2.0.0", digest = "sha256:98ebe3f3afdf5e7305d34921f4284a5c1fba5f3d7e890ced9ca46333d721a305" }
 backend = "npm:yaml-language-server"
 specifiers = ["latest"]
 
@@ -641,38 +641,38 @@ backend = "core:python"
 specifiers = ["3.14"]
 
 [tools.python."platforms.linux-arm64"]
-checksum = "sha256:d8ae14f303d3971431184cf423ae5467202de2bc19bf6491a490250b87647d4b"
-url = "https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.14.8+20261013-aarch64-unknown-linux-gnu-install_only_stripped.tar.gz"
+checksum = "sha256:6519109a1bed8cff79aad3a6df880c95dde153e2c4c9713846476fa344d94049"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20261020/cpython-3.14.8+20261020-aarch64-unknown-linux-gnu-install_only_stripped.tar.gz"
 provenance = "github-attestations"
 
 [tools.python."platforms.linux-arm64-musl"]
-checksum = "sha256:7b6714675192dc381e14de4f2615c73d8ce5c15775562f4843282c34c3df8b6c"
-url = "https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.14.8+20261013-aarch64-unknown-linux-musl-install_only_stripped.tar.gz"
+checksum = "sha256:66310ff42677589e2016cdb7ee941c924590aeba0550325193e2a413ef04bd3c"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20261020/cpython-3.14.8+20261020-aarch64-unknown-linux-musl-install_only_stripped.tar.gz"
 provenance = "github-attestations"
 
 [tools.python."platforms.linux-x64"]
-checksum = "sha256:d8faa1b588506b9e3e5a3f57807bb056d534a1641a6b10d15b6ea3f0b413b960"
-url = "https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.14.8+20261013-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz"
+checksum = "sha256:b88a4ac994ac55c35a03a3672103618d5c5d5bf342db7b2093b8d328b6516b42"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20261020/cpython-3.14.8+20261020-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz"
 provenance = "github-attestations"
 
 [tools.python."platforms.linux-x64-musl"]
-checksum = "sha256:6ee5218694c3ddf1098aa306bb01b621d14c0bca4134b317614d9daa99f16ba2"
-url = "https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.14.8+20261013-x86_64-unknown-linux-musl-install_only_stripped.tar.gz"
+checksum = "sha256:c2e4a90795a626d787a6990c29db3277c692de55d2ab049d43a658cb81816b30"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20261020/cpython-3.14.8+20261020-x86_64-unknown-linux-musl-install_only_stripped.tar.gz"
 provenance = "github-attestations"
 
 [tools.python."platforms.macos-arm64"]
-checksum = "sha256:994adadc202c5df0b4570192cc9a70e3f2c131e512f4a125c56efa8562f44b28"
-url = "https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.14.8+20261013-aarch64-apple-darwin-install_only_stripped.tar.gz"
+checksum = "sha256:f0f1402b45a8a655fc78c8ee62462fddcb9dc8717a022e79700d07e44fd18d4a"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20261020/cpython-3.14.8+20261020-aarch64-apple-darwin-install_only_stripped.tar.gz"
 provenance = "github-attestations"
 
 [tools.python."platforms.macos-x64"]
-checksum = "sha256:f0137337ecf6234b30c9c955219dae2d71e1a00387c4d204d6c6929e24bf9a90"
-url = "https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.14.8+20261013-x86_64-apple-darwin-install_only_stripped.tar.gz"
+checksum = "sha256:e862bbef6f5109f464323c6827d14717b4d8e3ff2e0050f4452ba770fcd0d0b2"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20261020/cpython-3.14.8+20261020-x86_64-apple-darwin-install_only_stripped.tar.gz"
 provenance = "github-attestations"
 
 [tools.python."platforms.windows-x64"]
-checksum = "sha256:dce851f280b986764037bd952d40819e94ccceb08ac914004123f43ce17f4095"
-url = "https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.14.8+20261013-x86_64-pc-windows-msvc-install_only_stripped.tar.gz"
+checksum = "sha256:6761cf0dd740591df7643cf55fd03913c8ec7ddd88b419fe2f170abe3479e198"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20261020/cpython-3.14.8+20261020-x86_64-pc-windows-msvc-install_only_stripped.tar.gz"
 provenance = "github-attestations"
 
 [[tools.rumdl]]
@@ -812,50 +812,50 @@ url = "https://github.com/mvdan/sh/releases/download/v3.14.1/shfmt_v3.14.1_windo
 url_api = "https://api.github.com/repos/mvdan/sh/releases/assets/547320827"
 
 [[tools.tombi]]
-version = "1.8.6"
+version = "1.8.9"
 backend = "aqua:tombi-toml/tombi"
 specifiers = ["latest"]
 
 [tools.tombi."platforms.linux-arm64"]
-checksum = "sha256:8baea8853d87f076b87b9395feda5132257d1e47aae0430d2e3f94829059b171"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.8.6/tombi-cli-1.8.6-aarch64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/650736129"
+checksum = "sha256:4862f4fea963536bfb07678bed3d005735408e700701e979e6b68b9571084de6"
+url = "https://github.com/tombi-toml/tombi/releases/download/v1.8.9/tombi-cli-1.8.9-aarch64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/656427372"
 provenance = "github-attestations"
 
 [tools.tombi."platforms.linux-arm64-musl"]
-checksum = "sha256:8baea8853d87f076b87b9395feda5132257d1e47aae0430d2e3f94829059b171"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.8.6/tombi-cli-1.8.6-aarch64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/650736129"
+checksum = "sha256:4862f4fea963536bfb07678bed3d005735408e700701e979e6b68b9571084de6"
+url = "https://github.com/tombi-toml/tombi/releases/download/v1.8.9/tombi-cli-1.8.9-aarch64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/656427372"
 provenance = "github-attestations"
 
 [tools.tombi."platforms.linux-x64"]
-checksum = "sha256:5d576f506233ca83bcaf1c288835f9bd48e5df938192833ed33bb3fcf8304b1d"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.8.6/tombi-cli-1.8.6-x86_64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/650736157"
+checksum = "sha256:26d7207a4de89e5d846d5a9e5d3bc9c407f8b035f06adfdb774564bd7e440c15"
+url = "https://github.com/tombi-toml/tombi/releases/download/v1.8.9/tombi-cli-1.8.9-x86_64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/656427416"
 provenance = "github-attestations"
 
 [tools.tombi."platforms.linux-x64-musl"]
-checksum = "sha256:5d576f506233ca83bcaf1c288835f9bd48e5df938192833ed33bb3fcf8304b1d"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.8.6/tombi-cli-1.8.6-x86_64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/650736157"
+checksum = "sha256:26d7207a4de89e5d846d5a9e5d3bc9c407f8b035f06adfdb774564bd7e440c15"
+url = "https://github.com/tombi-toml/tombi/releases/download/v1.8.9/tombi-cli-1.8.9-x86_64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/656427416"
 provenance = "github-attestations"
 
 [tools.tombi."platforms.macos-arm64"]
-checksum = "sha256:36e1284631d0fff32440243ee4b1cc609a28f9c2301d84f59c8ed5d70483ffd5"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.8.6/tombi-cli-1.8.6-aarch64-apple-darwin.tar.gz"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/650736127"
+checksum = "sha256:287d02319d42d997237cab16a9876c0c116ea654be82f31e19c10c0a24159a60"
+url = "https://github.com/tombi-toml/tombi/releases/download/v1.8.9/tombi-cli-1.8.9-aarch64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/656427377"
 provenance = "github-attestations"
 
 [tools.tombi."platforms.macos-x64"]
-checksum = "sha256:58c20e31e91107dc6bb90a99d7c548280e09e1a738acaafdbf888450ea976fde"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.8.6/tombi-cli-1.8.6-x86_64-apple-darwin.tar.gz"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/650736126"
+checksum = "sha256:c566db7e0d1b98b75ebdbd080d75407140039eb52a7af503e3028e318f01f8f2"
+url = "https://github.com/tombi-toml/tombi/releases/download/v1.8.9/tombi-cli-1.8.9-x86_64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/656427371"
 provenance = "github-attestations"
 
 [tools.tombi."platforms.windows-x64"]
-checksum = "sha256:09fc62d751b84c00eea426da6cb54e881c6db412e1e5e7c7c0092a4d2ee8dd1b"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.8.6/tombi-cli-1.8.6-x86_64-pc-windows-msvc.zip"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/650736155"
+checksum = "sha256:c6b6efff4e1d480087a0c672969d21e66ea60e6844efe94492be10b8fd99a326"
+url = "https://github.com/tombi-toml/tombi/releases/download/v1.8.9/tombi-cli-1.8.9-x86_64-pc-windows-msvc.zip"
+url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/656427411"
 provenance = "github-attestations"
 
 [[tools.typos]]
@@ -899,90 +899,90 @@ url = "https://github.com/crate-ci/typos/releases/download/v1.51.1/typos-v1.51.1
 url_api = "https://api.github.com/repos/crate-ci/typos/releases/assets/616657506"
 
 [[tools.usage]]
-version = "7.0.2"
+version = "7.1.0"
 backend = "packslip:github.com/jdx/usage"
 specifiers = ["latest"]
 
 [tools.usage."platforms.linux-arm64"]
-checksum = "sha256:2950ac2fffc9be15b24991a785b5474745e14df8e7fffa8aa8715c4bd9c8cb58"
-url = "https://github.com/jdx/usage/releases/download/v7.0.2/usage-aarch64-unknown-linux-gnu.tar.gz"
+checksum = "sha256:00335000c3eece62d29d92f81ab549082b9fe16e9857dcfbaea53f67bdc3fea5"
+url = "https://github.com/jdx/usage/releases/download/v7.1.0/usage-aarch64-unknown-linux-gnu.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/usage/.github/workflows/publish-cli.yml"
 
 [tools.usage."platforms.linux-arm64-musl"]
-checksum = "sha256:49f414e6c41ba37ba9ad2fd31e2ad50263ff7332e3ffe9fa1bc2ef5673f553d3"
-url = "https://github.com/jdx/usage/releases/download/v7.0.2/usage-aarch64-unknown-linux-musl.tar.gz"
+checksum = "sha256:3d3e3d738262b834f694684b2c9f3b8eb76225a4dd9ee9aa0431f02e3760ad1c"
+url = "https://github.com/jdx/usage/releases/download/v7.1.0/usage-aarch64-unknown-linux-musl.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/usage/.github/workflows/publish-cli.yml"
 
 [tools.usage."platforms.linux-x64"]
-checksum = "sha256:1006d9659fb0c9620525a8e750b3853177a3bf772454d5984c4d78c4aa130aaa"
-url = "https://github.com/jdx/usage/releases/download/v7.0.2/usage-x86_64-unknown-linux-gnu.tar.gz"
+checksum = "sha256:27dc4019d9a2954c4e6423f9fa39d1fed2b5273c3036ed52bad4d6e52af2ca89"
+url = "https://github.com/jdx/usage/releases/download/v7.1.0/usage-x86_64-unknown-linux-gnu.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/usage/.github/workflows/publish-cli.yml"
 
 [tools.usage."platforms.linux-x64-musl"]
-checksum = "sha256:a79a88c35175d4697188c43dac6e0bbea5943f4f1631a750c0f9d5b2149ef381"
-url = "https://github.com/jdx/usage/releases/download/v7.0.2/usage-x86_64-unknown-linux-musl.tar.gz"
+checksum = "sha256:ecad55208b76b33d092b98b8c47879cfda77b9212c9a5902092d7d39437b9104"
+url = "https://github.com/jdx/usage/releases/download/v7.1.0/usage-x86_64-unknown-linux-musl.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/usage/.github/workflows/publish-cli.yml"
 
 [tools.usage."platforms.macos-arm64"]
-checksum = "sha256:13fad4f828a7cb2ddc298f1dea38a3389d2144f63584134b9c3c7489944c3de3"
-url = "https://github.com/jdx/usage/releases/download/v7.0.2/usage-universal-apple-darwin.tar.gz"
+checksum = "sha256:3e221dde416fd4909c8963c1ed9973b63633e89ce8b016d0f63af187cbaa875a"
+url = "https://github.com/jdx/usage/releases/download/v7.1.0/usage-universal-apple-darwin.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/usage/.github/workflows/publish-cli.yml"
 
 [tools.usage."platforms.macos-x64"]
-checksum = "sha256:13fad4f828a7cb2ddc298f1dea38a3389d2144f63584134b9c3c7489944c3de3"
-url = "https://github.com/jdx/usage/releases/download/v7.0.2/usage-universal-apple-darwin.tar.gz"
+checksum = "sha256:3e221dde416fd4909c8963c1ed9973b63633e89ce8b016d0f63af187cbaa875a"
+url = "https://github.com/jdx/usage/releases/download/v7.1.0/usage-universal-apple-darwin.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/usage/.github/workflows/publish-cli.yml"
 
 [tools.usage."platforms.windows-x64"]
-checksum = "sha256:91586495a99681b405c62a5c7c8f60dffca0d006834d3526520ced8527818cb5"
-url = "https://github.com/jdx/usage/releases/download/v7.0.2/usage-x86_64-pc-windows-msvc.zip"
+checksum = "sha256:012b38d1771ec2df24f3aac44c24db58f56158ad339c7032415aeafe03b7245d"
+url = "https://github.com/jdx/usage/releases/download/v7.1.0/usage-x86_64-pc-windows-msvc.zip"
 signer = "sigstore-oidc:https://github.com/jdx/usage/.github/workflows/publish-cli.yml"
 
 [[tools.uv]]
-version = "0.13.1"
+version = "0.13.3"
 backend = "aqua:astral-sh/uv"
 specifiers = ["latest"]
 
 [tools.uv."platforms.linux-arm64"]
-checksum = "sha256:9041c73c99fdc5892cf128140beb354eca9231d502068cc36e6cb53a8e59ad14"
-url = "https://github.com/astral-sh/uv/releases/download/0.13.1/uv-aarch64-unknown-linux-gnu.tar.gz"
-url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/639312990"
+checksum = "sha256:611ff684f193a84d2fdad29c5f12505d02ece94984c7c982cdde950eba5c95b9"
+url = "https://github.com/astral-sh/uv/releases/download/0.13.3/uv-aarch64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/657907667"
 provenance = "github-attestations"
 
 [tools.uv."platforms.linux-arm64-musl"]
-checksum = "sha256:345a8308e4d1835cdfaadf692836fd3137a6d45864773f05ad7bf59442b1ba16"
-url = "https://github.com/astral-sh/uv/releases/download/0.13.1/uv-aarch64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/639313013"
+checksum = "sha256:4a58785768ab0577497ca7940be2f9fd5a34e48c3fd37923692fc0a81d71ac9f"
+url = "https://github.com/astral-sh/uv/releases/download/0.13.3/uv-aarch64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/657907682"
 provenance = "github-attestations"
 
 [tools.uv."platforms.linux-x64"]
-checksum = "sha256:eadd9d27c134ab5ac1ffd4473b97a741407f3ea238288f03121fc4deddf90220"
-url = "https://github.com/astral-sh/uv/releases/download/0.13.1/uv-x86_64-unknown-linux-gnu.tar.gz"
-url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/639313223"
+checksum = "sha256:e4f169ec380f1793b898a6f1fcbacd22db25cf7ca0349a6e96ffb85b69998d04"
+url = "https://github.com/astral-sh/uv/releases/download/0.13.3/uv-x86_64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/657907872"
 provenance = "github-attestations"
 
 [tools.uv."platforms.linux-x64-musl"]
-checksum = "sha256:6c86040a8f045ab9adc9e3ec4cdafa03fd00e9a988ed2bf28971c7fc2d0debd0"
-url = "https://github.com/astral-sh/uv/releases/download/0.13.1/uv-x86_64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/639313248"
+checksum = "sha256:a36fca4c151d1ac13707984a88a4e2742edec0f2bc1b3e1c18c1c751e4679fd3"
+url = "https://github.com/astral-sh/uv/releases/download/0.13.3/uv-x86_64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/657907885"
 provenance = "github-attestations"
 
 [tools.uv."platforms.macos-arm64"]
-checksum = "sha256:cfe454573412ff7380d15fc7dae5997ab53ffce72fce0a78e91ddbc84001acd2"
-url = "https://github.com/astral-sh/uv/releases/download/0.13.1/uv-aarch64-apple-darwin.tar.gz"
-url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/639312976"
+checksum = "sha256:bf1e4fb6f5f5079a2902ad3f3a9e2d337575b226a1378f2449d8404353650608"
+url = "https://github.com/astral-sh/uv/releases/download/0.13.3/uv-aarch64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/657907636"
 provenance = "github-attestations"
 
 [tools.uv."platforms.macos-x64"]
-checksum = "sha256:bb7b805bdcf3d0bc8c74ceb94569e6b3e8aa35bd492acdbb9d46bf46d9d4ff6b"
-url = "https://github.com/astral-sh/uv/releases/download/0.13.1/uv-x86_64-apple-darwin.tar.gz"
-url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/639313196"
+checksum = "sha256:5c35634957db7ebd9c2e4cc6c66b8979fb2c26a6b0dbd1d214d6acbac4033a89"
+url = "https://github.com/astral-sh/uv/releases/download/0.13.3/uv-x86_64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/657907827"
 provenance = "github-attestations"
 
 [tools.uv."platforms.windows-x64"]
-checksum = "sha256:3b2661a463a5baea7f5076ea2b25ab71d77f36a6c0d809e5350651792f80a672"
-url = "https://github.com/astral-sh/uv/releases/download/0.13.1/uv-x86_64-pc-windows-msvc.zip"
-url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/639313211"
+checksum = "sha256:bb701bd35b586c45966654ea2703c9bd116a6a4fc0a8ca755bd644c2c41c5ebe"
+url = "https://github.com/astral-sh/uv/releases/download/0.13.3/uv-x86_64-pc-windows-msvc.zip"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/657907852"
 provenance = "github-attestations"
 
 [[tools.zizmor]]
