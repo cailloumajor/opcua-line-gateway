@@ -2329,18 +2329,18 @@ dependencies = [
 
 [[package]]
 name = "thread_aware"
-version = "0.12.0"
+version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "82f2d8f0aa7bc71a23d3d7a29f3fa900ba9c8eaa77f4dd26555d5971876965f1"
+checksum = "68a059eeef4b5cf26a277ee5f85f0901ecd349748b71a0e5a4a9b78e487152d4"
 dependencies = [
  "thread_aware_core",
 ]
 
 [[package]]
 name = "thread_aware_core"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "666b23e2beda781541846ca49f41f3913681de55052d97d85443cddaeebb6d79"
+checksum = "e584ba0bc4ecb6a865aaab9d46704368542dc83a2391d5bfbd731bb6d98e22ef"
 
 [[package]]
 name = "thread_local"
@@ -2396,9 +2396,9 @@ dependencies = [
 
 [[package]]
 name = "tokio"
-version = "1.54.0"
+version = "1.54.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a0c168a474b95bfecfe908a65d4bdffc523144b649a74c09c286afb35d53e0bc"
+checksum = "b52fd3255258d26fac7264ab5a76b53c13367136dc011d3d6ad4f8ed070396a3"
 dependencies = [
  "bytes",
  "libc",
