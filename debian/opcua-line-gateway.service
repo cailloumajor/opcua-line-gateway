@@ -27,11 +27,10 @@ StateDirectory=opcua-line-gateway
 StateDirectoryMode=0750
 # Relative paths in the configuration file resolve against the state directory.
 WorkingDirectory=%S/opcua-line-gateway
+LogsDirectory=opcua-line-gateway
 
-# Logs are emitted on stdout by `tracing`; keep the journal free of ANSI
-# escape sequences.
+# Logs are emitted to daily rotated files in the logs directory by `tracing`.
 Environment=RUST_LOG=info
-Environment=NO_COLOR=1
 
 # Termination signals trigger a graceful shutdown of the OPC-UA sessions and of
 # the part sheets draining task.

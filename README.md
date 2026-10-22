@@ -91,9 +91,8 @@ into `pki_dir/trusted`.
 
 ### Operation
 
-```sh
-journalctl -u opcua-line-gateway -f
-```
+Logs are written in files in `/var/log/opcua-line-gateway/` directory, rotated and
+compressed daily.
 
 Log verbosity is set by `RUST_LOG` in the unit (`info` by default); override it
 with `sudo systemctl edit opcua-line-gateway` rather than by editing the

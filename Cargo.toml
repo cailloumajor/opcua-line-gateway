@@ -42,6 +42,7 @@ async-opcua = { workspace = true, features = ["client"] }
 clickhouse = { version = "0.15.2", features = ["opentelemetry", "rustls-tls-native-roots"] }
 futures-util = "0.3.32"
 jiff.workspace = true
+logroller = "0.1.12"
 opcua-line-gateway-config = { path = "crates/config" }
 parking_lot = { version = "0.12.5", features = ["arc_lock"] }
 redb = { version = "4.2.0", features = ["logging"] }
@@ -57,8 +58,8 @@ tokio = { version = "1.52.3", features = ["macros", "rt-multi-thread", "time"] }
 tokio-stream = "0.1.18"
 tokio-util = { version = "0.7.18", features = ["rt"] }
 tracing = "0.1.44"
-tracing-journald = "0.3.2"
-tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+tracing-appender = { version = "0.2.5", features = ["parking_lot"] }
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "parking_lot"] }
 
 [dev-dependencies]
 async-opcua = { workspace = true, features = ["server"] }

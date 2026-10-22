@@ -1,9 +1,11 @@
-use std::env;
+use std::ffi::OsStr;
 use std::path::PathBuf;
+use std::{env, io};
 
 use anyhow::{Context as _, anyhow};
 use futures_util::StreamExt;
 use jiff::tz::TimeZone;
+use logroller::{Compression, LogRollerBuilder, Rotation, RotationAge};
 use opcua_line_gateway::{TimeProvider, run_main};
 use opcua_line_gateway_config::{Credentials, LineGatewayConfig};
 use signal_hook::consts::TERM_SIGNALS;
@@ -12,9 +14,8 @@ use signal_hook_tokio::Signals;
 use tick::SimpleClock;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, instrument};
-use tracing_subscriber::layer::SubscriberExt;
-use tracing_subscriber::util::SubscriberInitExt;
-use tracing_subscriber::{EnvFilter, fmt};
+use tracing_appender::non_blocking::{NonBlockingBuilder, WorkerGuard};
+use tracing_subscriber::EnvFilter;
 
 /// Handle signals as they are caught.
 #[instrument(skip_all)]
@@ -48,7 +49,7 @@ async fn main() -> anyhow::Result<()> {
 
     let credentials = Credentials::from_credentials_file().context("Failed to get credentials")?;
 
-    init_logging().context("Failed to initialize logging")?;
+    let _log_worker_guard = init_logging().context("Failed to initialize logging")?;
 
     let tz = TimeZone::try_system().context("Failed to get system timezone")?;
     info!(msg = "got system timezone", ?tz);
@@ -70,23 +71,42 @@ async fn main() -> anyhow::Result<()> {
 }
 
 /// Initializes logging system.
-fn init_logging() -> anyhow::Result<()> {
-    let env_filter = EnvFilter::from_default_env();
+fn init_logging() -> anyhow::Result<WorkerGuard> {
+    let logs_dir = env::var_os("LOGS_DIRECTORY");
 
-    // `JOURNAL_STREAM` is set by systemd when stdout/stderr are connected to the
-    // journal, making it a good clue to know if we are ran by systemd.
-    let journald = std::env::var_os("JOURNAL_STREAM")
-        .map(|_| tracing_journald::layer())
-        .transpose()
-        .context("Failed to build journald layer")?;
+    // Build the nonblocking tracing appender.
+    let (non_blocking, guard) = match logs_dir.as_ref() {
+        Some(dir) => {
+            eprintln!(
+                "LOGS_DIRECTORY env var is set, will log to {}",
+                dir.display()
+            );
 
-    // Console output fallback.
-    let console = journald.is_none().then(fmt::layer);
+            let appender = LogRollerBuilder::new(dir.as_os_str(), OsStr::new("%Y-%m-%d.log"))
+                .time_zone(logroller::TimeZone::UTC)
+                .rotation(Rotation::AgeBased(RotationAge::Daily))
+                .compression(Compression::Gzip)
+                .max_keep_files(365)
+                .build()
+                .context("Failed to build rolling logs manager")?;
+            NonBlockingBuilder::default().lossy(false).finish(appender)
+        }
+        None => {
+            eprintln!("LOGS_DIRECTORY env var not set, will log to stderr");
 
-    tracing_subscriber::registry()
-        .with(env_filter)
-        .with(journald)
-        .with(console)
+            NonBlockingBuilder::default()
+                .lossy(false)
+                .finish(io::stderr())
+        }
+    };
+
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::from_default_env())
+        .with_writer(non_blocking)
+        .with_ansi(logs_dir.is_none())
         .try_init()
-        .context("Failed to initialize subscriber")
+        .map_err(anyhow::Error::from_boxed)
+        .context("Failed to initialize subscriber")?;
+
+    Ok(guard)
 }
