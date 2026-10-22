@@ -1,5 +1,4 @@
 [tools]  # tombi: format.rules.table-keys-order = "ascending"
-actionlint = "latest"
 "aqua:nextest-rs/nextest/cargo-nextest" = "latest"
 "aqua:quarylabs/sqruff" = "latest"
 "aqua:taiki-e/cargo-llvm-cov" = "latest"
@@ -10,6 +9,7 @@ ghalint = "latest"
 "github:JFRyy/systemd-lsp" = "latest"
 "github:mhersson/mpls" = "latest"
 hk = "latest"
+jactionlint = "latest"
 marksman = "latest"
 node = "lts"
 "npm:bash-language-server" = "latest"
@@ -26,7 +26,6 @@ tombi = "latest"
 typos = "latest"
 usage = "latest"
 uv = "latest"
-zizmor = "latest"
 
 [env]
 # renovate: datasource=github-releases depName=ClickHouse/ClickHouse
