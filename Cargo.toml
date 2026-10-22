@@ -23,7 +23,7 @@ profile = "deb"
 members = ["crates/*"]
 
 [workspace.package]
-version = "0.4.7"
+version = "0.4.8"
 edition = "2024"
 publish = false
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.8](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.4.7...v0.4.8) (2026-10-22)
+
+
+### Features
+
+* implement logging in rotated files in a directory ([589e568](https://github.com/cailloumajor/opcua-line-gateway/commit/589e568a375cf44ed30c53f9f7afe19bc90daf45))
+
 ## [0.4.7](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.4.6...v0.4.7) (2026-10-20)
 
 
