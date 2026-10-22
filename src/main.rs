@@ -87,6 +87,7 @@ fn init_logging() -> anyhow::Result<WorkerGuard> {
                 .rotation(Rotation::AgeBased(RotationAge::Daily))
                 .compression(Compression::Gzip)
                 .max_keep_files(365)
+                .file_mode(0o644)
                 .build()
                 .context("Failed to build rolling logs manager")?;
             NonBlockingBuilder::default().lossy(false).finish(appender)
