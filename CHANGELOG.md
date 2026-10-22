@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.9](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.4.8...v0.4.9) (2026-10-22)
+
+
+### Features
+
+* allow reading of log files by group and other ([b636508](https://github.com/cailloumajor/opcua-line-gateway/commit/b636508d1ec29b77af67877df0176ee3750b2377))
+
 ## [0.4.8](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.4.7...v0.4.8) (2026-10-22)
 
 
