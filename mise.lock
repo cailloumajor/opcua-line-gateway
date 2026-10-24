@@ -43,50 +43,50 @@ url = "https://github.com/nextest-rs/nextest/releases/download/cargo-nextest-0.9
 url_api = "https://api.github.com/repos/nextest-rs/nextest/releases/assets/660828891"
 
 [[tools."aqua:quarylabs/sqruff"]]
-version = "0.42.0"
+version = "0.43.0"
 backend = "aqua:quarylabs/sqruff"
 specifiers = ["latest"]
 
 [tools."aqua:quarylabs/sqruff"."platforms.linux-arm64"]
-checksum = "sha256:2eafdc2b29c35df745a21d95b321405cad9a2bdd1f24d1b968c619f28394f1f2"
-url = "https://github.com/quarylabs/sqruff/releases/download/v0.42.0/sqruff-linux-aarch64-musl.tar.gz"
-url_api = "https://api.github.com/repos/quarylabs/sqruff/releases/assets/659362565"
+checksum = "sha256:6697cda8f6f8d90ba6556b5c8043b33c23e86834460d9bab3c0e61b9caa14bfe"
+url = "https://github.com/quarylabs/sqruff/releases/download/v0.43.0/sqruff-linux-aarch64-musl.tar.gz"
+url_api = "https://api.github.com/repos/quarylabs/sqruff/releases/assets/665576252"
 provenance = "github-attestations"
 
 [tools."aqua:quarylabs/sqruff"."platforms.linux-arm64-musl"]
-checksum = "sha256:2eafdc2b29c35df745a21d95b321405cad9a2bdd1f24d1b968c619f28394f1f2"
-url = "https://github.com/quarylabs/sqruff/releases/download/v0.42.0/sqruff-linux-aarch64-musl.tar.gz"
-url_api = "https://api.github.com/repos/quarylabs/sqruff/releases/assets/659362565"
+checksum = "sha256:6697cda8f6f8d90ba6556b5c8043b33c23e86834460d9bab3c0e61b9caa14bfe"
+url = "https://github.com/quarylabs/sqruff/releases/download/v0.43.0/sqruff-linux-aarch64-musl.tar.gz"
+url_api = "https://api.github.com/repos/quarylabs/sqruff/releases/assets/665576252"
 provenance = "github-attestations"
 
 [tools."aqua:quarylabs/sqruff"."platforms.linux-x64"]
-checksum = "sha256:0f3bef6aea7938e9c26777fb1ee4649755170f602fa3b89f84edbbf861589426"
-url = "https://github.com/quarylabs/sqruff/releases/download/v0.42.0/sqruff-linux-x86_64-musl.tar.gz"
-url_api = "https://api.github.com/repos/quarylabs/sqruff/releases/assets/659367278"
+checksum = "sha256:2a73f94dac935898d039c56bd414774f6deaf199827d650945eb7ea7940b7f11"
+url = "https://github.com/quarylabs/sqruff/releases/download/v0.43.0/sqruff-linux-x86_64-musl.tar.gz"
+url_api = "https://api.github.com/repos/quarylabs/sqruff/releases/assets/665578428"
 provenance = "github-attestations"
 
 [tools."aqua:quarylabs/sqruff"."platforms.linux-x64-musl"]
-checksum = "sha256:0f3bef6aea7938e9c26777fb1ee4649755170f602fa3b89f84edbbf861589426"
-url = "https://github.com/quarylabs/sqruff/releases/download/v0.42.0/sqruff-linux-x86_64-musl.tar.gz"
-url_api = "https://api.github.com/repos/quarylabs/sqruff/releases/assets/659367278"
+checksum = "sha256:2a73f94dac935898d039c56bd414774f6deaf199827d650945eb7ea7940b7f11"
+url = "https://github.com/quarylabs/sqruff/releases/download/v0.43.0/sqruff-linux-x86_64-musl.tar.gz"
+url_api = "https://api.github.com/repos/quarylabs/sqruff/releases/assets/665578428"
 provenance = "github-attestations"
 
 [tools."aqua:quarylabs/sqruff"."platforms.macos-arm64"]
-checksum = "sha256:632175647f05fb6a3b48cd10262a4baf5180aa0479848bea2b0a8556ff2cc300"
-url = "https://github.com/quarylabs/sqruff/releases/download/v0.42.0/sqruff-darwin-aarch64.tar.gz"
-url_api = "https://api.github.com/repos/quarylabs/sqruff/releases/assets/659363539"
+checksum = "sha256:7852030f4d5868700cb88c035c5374f7078c11b61f76bc4dca062dd3f7c9f628"
+url = "https://github.com/quarylabs/sqruff/releases/download/v0.43.0/sqruff-darwin-aarch64.tar.gz"
+url_api = "https://api.github.com/repos/quarylabs/sqruff/releases/assets/665574348"
 provenance = "github-attestations"
 
 [tools."aqua:quarylabs/sqruff"."platforms.macos-x64"]
-checksum = "sha256:14be6664a910a045a1191db6052db302394cea60fe83b23575539d9af237eba6"
-url = "https://github.com/quarylabs/sqruff/releases/download/v0.42.0/sqruff-darwin-x86_64.tar.gz"
-url_api = "https://api.github.com/repos/quarylabs/sqruff/releases/assets/659395393"
+checksum = "sha256:39c9b72f50c2902a76d0ea0321b27e104da9584da315ee3f141261b6b2b66488"
+url = "https://github.com/quarylabs/sqruff/releases/download/v0.43.0/sqruff-darwin-x86_64.tar.gz"
+url_api = "https://api.github.com/repos/quarylabs/sqruff/releases/assets/665596896"
 provenance = "github-attestations"
 
 [tools."aqua:quarylabs/sqruff"."platforms.windows-x64"]
-checksum = "sha256:5d66a3c65221fa32a790865cb9e6b16a4a3ab82049851c3610cbbc4e14f75ae8"
-url = "https://github.com/quarylabs/sqruff/releases/download/v0.42.0/sqruff-windows-x86_64.zip"
-url_api = "https://api.github.com/repos/quarylabs/sqruff/releases/assets/659369401"
+checksum = "sha256:448e94cdd9aeb5dd6905f72741318f9d3f45e1c9284973f093b3f957ad593c7d"
+url = "https://github.com/quarylabs/sqruff/releases/download/v0.43.0/sqruff-windows-x86_64.zip"
+url_api = "https://api.github.com/repos/quarylabs/sqruff/releases/assets/665566072"
 provenance = "github-attestations"
 
 [[tools."aqua:taiki-e/cargo-llvm-cov"]]
@@ -311,39 +311,39 @@ url = "https://github.com/suzuki-shunsuke/ghalint/releases/download/v1.5.6/ghali
 url_api = "https://api.github.com/repos/suzuki-shunsuke/ghalint/releases/assets/409631234"
 
 [[tools."github:ClickHouse/clickhousectl"]]
-version = "0.4.2"
+version = "0.5.0"
 backend = "github:ClickHouse/clickhousectl"
 specifiers = ["latest"]
 
 [tools."github:ClickHouse/clickhousectl"."platforms.linux-arm64"]
-checksum = "sha256:b8b8771c5e6a9a3d9f4649200c7c74a7c30daf7027e0628cfc14a6f2bf083e06"
-url = "https://github.com/ClickHouse/clickhousectl/releases/download/v0.4.2/clickhousectl-aarch64-unknown-linux-musl-v0.4.2.tar.gz"
-url_api = "https://api.github.com/repos/ClickHouse/clickhousectl/releases/assets/543017748"
+checksum = "sha256:fe566ca2908218344621c9961ac5ad2f91ce20e4677ff709435f439916319aaf"
+url = "https://github.com/ClickHouse/clickhousectl/releases/download/v0.5.0/clickhousectl-aarch64-unknown-linux-musl-v0.5.0.tar.gz"
+url_api = "https://api.github.com/repos/ClickHouse/clickhousectl/releases/assets/666573890"
 
 [tools."github:ClickHouse/clickhousectl"."platforms.linux-arm64-musl"]
-checksum = "sha256:b8b8771c5e6a9a3d9f4649200c7c74a7c30daf7027e0628cfc14a6f2bf083e06"
-url = "https://github.com/ClickHouse/clickhousectl/releases/download/v0.4.2/clickhousectl-aarch64-unknown-linux-musl-v0.4.2.tar.gz"
-url_api = "https://api.github.com/repos/ClickHouse/clickhousectl/releases/assets/543017748"
+checksum = "sha256:fe566ca2908218344621c9961ac5ad2f91ce20e4677ff709435f439916319aaf"
+url = "https://github.com/ClickHouse/clickhousectl/releases/download/v0.5.0/clickhousectl-aarch64-unknown-linux-musl-v0.5.0.tar.gz"
+url_api = "https://api.github.com/repos/ClickHouse/clickhousectl/releases/assets/666573890"
 
 [tools."github:ClickHouse/clickhousectl"."platforms.linux-x64"]
-checksum = "sha256:1d42e3834cd5781ee04efd3a926daed89b19318bf550044e7930ebd8c5c48658"
-url = "https://github.com/ClickHouse/clickhousectl/releases/download/v0.4.2/clickhousectl-x86_64-unknown-linux-musl-v0.4.2.tar.gz"
-url_api = "https://api.github.com/repos/ClickHouse/clickhousectl/releases/assets/543017749"
+checksum = "sha256:4c182a9056930113c6d5c642af1eed4393e42f81e8cd977ae82ca53a29ca1b94"
+url = "https://github.com/ClickHouse/clickhousectl/releases/download/v0.5.0/clickhousectl-x86_64-unknown-linux-musl-v0.5.0.tar.gz"
+url_api = "https://api.github.com/repos/ClickHouse/clickhousectl/releases/assets/666573885"
 
 [tools."github:ClickHouse/clickhousectl"."platforms.linux-x64-musl"]
-checksum = "sha256:1d42e3834cd5781ee04efd3a926daed89b19318bf550044e7930ebd8c5c48658"
-url = "https://github.com/ClickHouse/clickhousectl/releases/download/v0.4.2/clickhousectl-x86_64-unknown-linux-musl-v0.4.2.tar.gz"
-url_api = "https://api.github.com/repos/ClickHouse/clickhousectl/releases/assets/543017749"
+checksum = "sha256:4c182a9056930113c6d5c642af1eed4393e42f81e8cd977ae82ca53a29ca1b94"
+url = "https://github.com/ClickHouse/clickhousectl/releases/download/v0.5.0/clickhousectl-x86_64-unknown-linux-musl-v0.5.0.tar.gz"
+url_api = "https://api.github.com/repos/ClickHouse/clickhousectl/releases/assets/666573885"
 
 [tools."github:ClickHouse/clickhousectl"."platforms.macos-arm64"]
-checksum = "sha256:7d157ea20c3c13c9bacc47fd447b85e44482a27dc44512beaa4eee7acf956e90"
-url = "https://github.com/ClickHouse/clickhousectl/releases/download/v0.4.2/clickhousectl-aarch64-apple-darwin-v0.4.2.tar.gz"
-url_api = "https://api.github.com/repos/ClickHouse/clickhousectl/releases/assets/543017751"
+checksum = "sha256:2d23565b4b779c92f6a42f495a3e2a245792fe0d5a4391fb76ac5a585ed29ba0"
+url = "https://github.com/ClickHouse/clickhousectl/releases/download/v0.5.0/clickhousectl-aarch64-apple-darwin-v0.5.0.tar.gz"
+url_api = "https://api.github.com/repos/ClickHouse/clickhousectl/releases/assets/666573891"
 
 [tools."github:ClickHouse/clickhousectl"."platforms.macos-x64"]
-checksum = "sha256:f997638a37b63400fb50664a4455b5105a5112cd20cf1ce7abc064aa9bbf99e6"
-url = "https://github.com/ClickHouse/clickhousectl/releases/download/v0.4.2/clickhousectl-x86_64-apple-darwin-v0.4.2.tar.gz"
-url_api = "https://api.github.com/repos/ClickHouse/clickhousectl/releases/assets/543017750"
+checksum = "sha256:95ed2fbed9926454eff79bd12bdc71575f83be312e06f640c035a22cd7f99cd0"
+url = "https://github.com/ClickHouse/clickhousectl/releases/download/v0.5.0/clickhousectl-x86_64-apple-darwin-v0.5.0.tar.gz"
+url_api = "https://api.github.com/repos/ClickHouse/clickhousectl/releases/assets/666573892"
 
 [[tools."github:JFRyy/systemd-lsp"]]
 version = "2026.09.28"
@@ -416,38 +416,38 @@ url = "https://github.com/mhersson/mpls/releases/download/v0.23.0/mpls_0.23.0_wi
 url_api = "https://api.github.com/repos/mhersson/mpls/releases/assets/574698529"
 
 [[tools.hk]]
-version = "2.8.0"
+version = "2.8.1"
 backend = "packslip:github.com/jdx/hk"
 specifiers = ["latest"]
 
 [tools.hk."platforms.linux-arm64"]
-checksum = "sha256:d6802a66213972561f9e4aa4d3274decf3725b1fe513da762c0922274c18955b"
-url = "https://github.com/jdx/hk/releases/download/v2.8.0/hk-aarch64-unknown-linux-gnu.tar.gz"
+checksum = "sha256:50d7b26988ce8aff77697188a2e1e9d01162de203e7b9ace7ec0d42365c4ea61"
+url = "https://github.com/jdx/hk/releases/download/v2.8.1/hk-aarch64-unknown-linux-gnu.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 
 [tools.hk."platforms.linux-arm64-musl"]
-checksum = "sha256:75c88574984380f3a76ab79ab89cf7d8c35d161e3b2d858ac9f13b4e936150a3"
-url = "https://github.com/jdx/hk/releases/download/v2.8.0/hk-aarch64-unknown-linux-musl.tar.gz"
+checksum = "sha256:5ca76be1457f3d96705c4dbb17c6b929311d3f6d790c6d1facb9682bd9930727"
+url = "https://github.com/jdx/hk/releases/download/v2.8.1/hk-aarch64-unknown-linux-musl.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 
 [tools.hk."platforms.linux-x64"]
-checksum = "sha256:5b5d7021625d12825b3d44496b466ad65697e02651c8b9fe00117f5c25c73d0a"
-url = "https://github.com/jdx/hk/releases/download/v2.8.0/hk-x86_64-unknown-linux-gnu.tar.gz"
+checksum = "sha256:8033ca42aaf88412e789c281f7e2766526e60e12f95a16c03574aeb0a2c7a657"
+url = "https://github.com/jdx/hk/releases/download/v2.8.1/hk-x86_64-unknown-linux-gnu.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 
 [tools.hk."platforms.linux-x64-musl"]
-checksum = "sha256:5a9f2e4f8ff945d19da5f4c914ec7feb3f636aa3b2eac02de2b1c6cfe76fe385"
-url = "https://github.com/jdx/hk/releases/download/v2.8.0/hk-x86_64-unknown-linux-musl.tar.gz"
+checksum = "sha256:ac8669939ba502cc8d5ba178c22bc0f84ff7b7283fdd05ea4de1296cac262d85"
+url = "https://github.com/jdx/hk/releases/download/v2.8.1/hk-x86_64-unknown-linux-musl.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 
 [tools.hk."platforms.macos-arm64"]
-checksum = "sha256:9f0290ff3cbfa9f6baff640c846bf07f78dd29e2023b0c230d3d5226c23385ca"
-url = "https://github.com/jdx/hk/releases/download/v2.8.0/hk-aarch64-apple-darwin.tar.gz"
+checksum = "sha256:87d5288c1d19acd45885e35722f655a1e1498a1cb92f42c1490e7f1623aedddd"
+url = "https://github.com/jdx/hk/releases/download/v2.8.1/hk-aarch64-apple-darwin.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 
 [tools.hk."platforms.windows-x64"]
-checksum = "sha256:391d61bb4a3bb612464142277f4d934d3b1aee6068cf18175d1c2406aeda29e3"
-url = "https://github.com/jdx/hk/releases/download/v2.8.0/hk-x86_64-pc-windows-msvc.zip"
+checksum = "sha256:411cbe34d53764162dd36d69fe5bf7ec39ccd2a8166890c92c3531284355487d"
+url = "https://github.com/jdx/hk/releases/download/v2.8.1/hk-x86_64-pc-windows-msvc.zip"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 
 [[tools.jactionlint]]
@@ -578,7 +578,7 @@ specifiers = ["latest"]
 
 [[tools."npm:yaml-language-server"]]
 version = "2.0.0"
-aube = { path = ".mise/locks/npm-yaml-language-server/2.0.0", digest = "sha256:98ebe3f3afdf5e7305d34921f4284a5c1fba5f3d7e890ced9ca46333d721a305" }
+aube = { path = ".mise/locks/npm-yaml-language-server/2.0.0", digest = "sha256:f14f9558f1769c0512641de8d5616c039d5428aa64c46fdf60f0082e960a60b8" }
 backend = "npm:yaml-language-server"
 specifiers = ["latest"]
 
@@ -939,43 +939,43 @@ url = "https://github.com/crate-ci/typos/releases/download/v1.51.1/typos-v1.51.1
 url_api = "https://api.github.com/repos/crate-ci/typos/releases/assets/616657506"
 
 [[tools.usage]]
-version = "7.1.0"
+version = "7.1.1"
 backend = "packslip:github.com/jdx/usage"
 specifiers = ["latest"]
 
 [tools.usage."platforms.linux-arm64"]
-checksum = "sha256:00335000c3eece62d29d92f81ab549082b9fe16e9857dcfbaea53f67bdc3fea5"
-url = "https://github.com/jdx/usage/releases/download/v7.1.0/usage-aarch64-unknown-linux-gnu.tar.gz"
+checksum = "sha256:596a2a7a2d460d6a80ef4328ffb7c56e4577fe2e4dba942d036f90d14354534d"
+url = "https://github.com/jdx/usage/releases/download/v7.1.1/usage-aarch64-unknown-linux-gnu.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/usage/.github/workflows/publish-cli.yml"
 
 [tools.usage."platforms.linux-arm64-musl"]
-checksum = "sha256:3d3e3d738262b834f694684b2c9f3b8eb76225a4dd9ee9aa0431f02e3760ad1c"
-url = "https://github.com/jdx/usage/releases/download/v7.1.0/usage-aarch64-unknown-linux-musl.tar.gz"
+checksum = "sha256:5f5d8ed6295130fb82df9a5ee0fabb226c80a7085eda849c18edb561b76f4d97"
+url = "https://github.com/jdx/usage/releases/download/v7.1.1/usage-aarch64-unknown-linux-musl.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/usage/.github/workflows/publish-cli.yml"
 
 [tools.usage."platforms.linux-x64"]
-checksum = "sha256:27dc4019d9a2954c4e6423f9fa39d1fed2b5273c3036ed52bad4d6e52af2ca89"
-url = "https://github.com/jdx/usage/releases/download/v7.1.0/usage-x86_64-unknown-linux-gnu.tar.gz"
+checksum = "sha256:dcc37cb5fb59088bab82e6f5f752c002a526dd9b35909be76d8459f46b4c30ca"
+url = "https://github.com/jdx/usage/releases/download/v7.1.1/usage-x86_64-unknown-linux-gnu.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/usage/.github/workflows/publish-cli.yml"
 
 [tools.usage."platforms.linux-x64-musl"]
-checksum = "sha256:ecad55208b76b33d092b98b8c47879cfda77b9212c9a5902092d7d39437b9104"
-url = "https://github.com/jdx/usage/releases/download/v7.1.0/usage-x86_64-unknown-linux-musl.tar.gz"
+checksum = "sha256:afea9fb0636305e011860ce2f3de26b5702c7bc8ffce8eb32aa9c95ff7f5804f"
+url = "https://github.com/jdx/usage/releases/download/v7.1.1/usage-x86_64-unknown-linux-musl.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/usage/.github/workflows/publish-cli.yml"
 
 [tools.usage."platforms.macos-arm64"]
-checksum = "sha256:3e221dde416fd4909c8963c1ed9973b63633e89ce8b016d0f63af187cbaa875a"
-url = "https://github.com/jdx/usage/releases/download/v7.1.0/usage-universal-apple-darwin.tar.gz"
+checksum = "sha256:50234db60947885bf87cda5ce28ee9c13924b6694528737bf6a7327e980f3bcd"
+url = "https://github.com/jdx/usage/releases/download/v7.1.1/usage-universal-apple-darwin.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/usage/.github/workflows/publish-cli.yml"
 
 [tools.usage."platforms.macos-x64"]
-checksum = "sha256:3e221dde416fd4909c8963c1ed9973b63633e89ce8b016d0f63af187cbaa875a"
-url = "https://github.com/jdx/usage/releases/download/v7.1.0/usage-universal-apple-darwin.tar.gz"
+checksum = "sha256:50234db60947885bf87cda5ce28ee9c13924b6694528737bf6a7327e980f3bcd"
+url = "https://github.com/jdx/usage/releases/download/v7.1.1/usage-universal-apple-darwin.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/usage/.github/workflows/publish-cli.yml"
 
 [tools.usage."platforms.windows-x64"]
-checksum = "sha256:012b38d1771ec2df24f3aac44c24db58f56158ad339c7032415aeafe03b7245d"
-url = "https://github.com/jdx/usage/releases/download/v7.1.0/usage-x86_64-pc-windows-msvc.zip"
+checksum = "sha256:75659545f16f84474c32cebb6ee3e304aedf63286c31ec73c3cab695fb56a6aa"
+url = "https://github.com/jdx/usage/releases/download/v7.1.1/usage-x86_64-pc-windows-msvc.zip"
 signer = "sigstore-oidc:https://github.com/jdx/usage/.github/workflows/publish-cli.yml"
 
 [[tools.uv]]
