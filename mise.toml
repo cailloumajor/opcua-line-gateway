@@ -3,6 +3,7 @@
 "aqua:quarylabs/sqruff" = "latest"
 "aqua:taiki-e/cargo-llvm-cov" = "latest"
 betterleaks = "latest"
+cocogitto = "latest"
 editorconfig-checker = "latest"
 ghalint = "latest"
 "github:ClickHouse/clickhousectl" = "latest"

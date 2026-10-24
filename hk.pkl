@@ -37,7 +37,7 @@ exclude = "CHANGELOG.md"
 hooks {
   ["commit-msg"] {
     steps {
-      ["check-conventional-commit"] = Builtins.check_conventional_commit
+      ["cocogitto-commit-msg"] = Builtins.cocogitto_commit_msg
     }
   }
 }
