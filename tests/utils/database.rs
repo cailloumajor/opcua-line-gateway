@@ -56,6 +56,7 @@ pub fn init_database() -> (TraceabilityDatabaseConfig, Credential) {
         "client",
         "--name",
         CH_SERVER_NAME,
+        "--",
         "--query",
         format!("DROP DATABASE IF EXISTS {database}")
     );
@@ -71,8 +72,8 @@ pub fn init_database() -> (TraceabilityDatabaseConfig, Credential) {
         "client",
         "--name",
         CH_SERVER_NAME,
-        "--param_database",
-        &database,
+        "--",
+        format!("--param_database={database}"),
         "--queries-file",
         sql_path
     );
@@ -93,10 +94,9 @@ pub fn init_database() -> (TraceabilityDatabaseConfig, Credential) {
         "client",
         "--name",
         CH_SERVER_NAME,
-        "--param_user",
-        &user,
-        "--param_password",
-        &password,
+        "--",
+        format!("--param_user={user}"),
+        format!("--param_password={password}"),
         "--query",
         query
     );
