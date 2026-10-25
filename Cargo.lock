@@ -1589,9 +1589,9 @@ checksum = "3637c05577168127568a64e9dc5a6887da720efef07b3d9472d45f63ab191166"
 
 [[package]]
 name = "performables"
-version = "0.2.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c33ccc114be5c94bf9d1068e14c830790cd24c25a5cf654fb9be0d1b758557f2"
+checksum = "a55224f3117dc71bf5c2c96c235e33e98231742cd927c6ff40d845c0050798c6"
 dependencies = [
  "thread_aware_core",
 ]
@@ -2467,9 +2467,9 @@ dependencies = [
 
 [[package]]
 name = "tick"
-version = "0.7.1"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "191bbf2c450bf3bd3e93578bee072575fa7211378d159dd16a234c210c58b92c"
+checksum = "6d78ddf145aada8350702c88dc94d6da7e4b08e4e18723484b2d244f8da5f20c"
 dependencies = [
  "futures-core",
  "performables",
