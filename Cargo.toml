@@ -53,7 +53,7 @@ signal-hook = { version = "0.4.4", default-features = false }
 signal-hook-tokio = { version = "0.4.0", features = ["futures-v0_3"] }
 strum = { version = "0.28.0", features = ["derive"] }
 thiserror.workspace = true
-tick = "0.7.1"
+tick = "0.8.0"
 tokio = { version = "1.52.3", features = ["macros", "rt-multi-thread", "time"] }
 tokio-stream = "0.1.18"
 tokio-util = { version = "0.7.18", features = ["rt"] }
@@ -68,7 +68,7 @@ indoc = "2.0.8"
 rand = "0.10.3"
 serde_test = "1.0.177"
 tempfile = "3.27.0"
-tick = { version = "0.7.1", features = ["test-util"] }
+tick = { version = "0.8.0", features = ["test-util"] }
 tokio = { version = "1.52.3", features = ["net"] }
 
 [profile.deb]
