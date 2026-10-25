@@ -440,7 +440,7 @@ impl OpcUaTestServer {
     /// Read the value of a variable in the common namespace.
     pub fn read_common_node(&self, nid: u32) -> Variant {
         let node_id = NodeId::new(self.common_ns_index, nid);
-        let address_space = self.node_manager.address_space().read_arc();
+        let address_space = self.node_manager.address_space().read();
         let node = address_space
             .find_node(&node_id)
             .expect("node should exist in address space");

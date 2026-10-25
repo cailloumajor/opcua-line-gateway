@@ -123,7 +123,7 @@ impl TraceabilityHandler<TraceabilityContext> {
                 part_id,
                 &general_part_sheet,
                 &operation_part_sheet,
-                &sent_context.read_arc().context(),
+                &sent_context.read().context(),
             )
         });
 
