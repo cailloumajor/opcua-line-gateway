@@ -184,7 +184,7 @@ pub(super) async fn start_session(config: SessionStartConfig) -> Result<(), Crea
         traceability_tasks,
     };
 
-    registry.lock_arc().insert(server_id, opcua_session);
+    registry.lock().insert(server_id, opcua_session);
 
     Ok(())
 }

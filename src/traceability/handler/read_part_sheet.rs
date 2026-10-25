@@ -54,7 +54,7 @@ impl TraceabilityHandler<TraceabilityContext> {
         let sent_cache = Arc::clone(&self.cache);
         let sent_context = self.session.context();
         let task = tokio::task::spawn_blocking(move || {
-            sent_cache.get_general_part_sheet(part_id.as_str(), &sent_context.read_arc().context())
+            sent_cache.get_general_part_sheet(part_id.as_str(), &sent_context.read().context())
         });
         let part_sheet_from_cache = task
             .await

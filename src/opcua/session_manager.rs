@@ -49,7 +49,7 @@ pub(crate) async fn sessions_manager(
 
     while pinned_stream.next().await.is_some() {
         // Drop dead sessions.
-        let mut sessions_lock = sessions.lock_arc();
+        let mut sessions_lock = sessions.lock();
         sessions_lock.retain(|server_id, session| {
             let finished = session.is_finished();
             if finished {
@@ -88,7 +88,7 @@ pub(crate) async fn sessions_manager(
     }
 
     // Take the sessions registry out of the Mutex.
-    let sessions = mem::take(sessions.lock_arc().deref_mut());
+    let sessions = mem::take(sessions.lock().deref_mut());
     // Stop the sessions.
     for session in sessions.into_values() {
         session.stop().await;
