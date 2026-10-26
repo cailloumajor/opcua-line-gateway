@@ -41,6 +41,12 @@
       "extractVersion": "^v(?<version>\\d+\\.\\d+)\\.\\d+\\.\\d+-(?:lts|stable)$"
     },
     {
+      "description": "Do not require Minimum Release Age for ClickHouse: the timestamp of a YY.MM line is the one of its latest patch, which is released almost daily",
+      "matchDatasources": ["github-releases"],
+      "matchDepNames": ["ClickHouse/ClickHouse"],
+      "minimumReleaseAge": null
+    },
+    {
       "matchDepNames": ["rust"],
       "matchManagers": ["mise"],
       "semanticCommitType": "fix"
