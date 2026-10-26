@@ -30,7 +30,7 @@ uv = "latest"
 
 [env]
 # renovate: datasource=github-releases depName=ClickHouse/ClickHouse
-CLICKHOUSE_VERSION = "26.9"
+CLICKHOUSE_VERSION = "26.10"
 
 [shell_alias]
 chctl = "clickhousectl"
