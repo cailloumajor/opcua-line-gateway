@@ -27,11 +27,12 @@ jobs:
       - name: Ensure Rust toolchain and components are installed
         run: mise install --force rust
       - name: Build Debian package
-        run: mise exec cargo:cargo-deb@latest -- cargo deb --verbose
+        id: build_deb_pkg
+        run: mise run build-release-deb
       - name: Upload Debian package to release and publish it
         env:
           GH_TOKEN: ${{ github.token }}
           tag: ${{ github.ref_name }}
         run: |
-          gh release upload "$tag" target/debian/*.deb schema/*
+          gh release upload "$tag" "${{ steps.build_deb_pkg.outputs.path }}" schema/*
           gh release edit "$tag" --draft=false

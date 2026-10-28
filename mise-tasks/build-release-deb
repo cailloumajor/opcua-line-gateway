@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -e
+
+#MISE description="Build the Debian package for release"
+#MISE tools."cargo:cargo-deb"="latest"
+
+out=$(cargo deb --verbose)
+
+if [ -f "$GITHUB_OUTPUT" ]; then
+    echo "path=${out}" >>"$GITHUB_OUTPUT"
+    echo "Written built package path to $GITHUB_OUTPUT" >&2
+fi
