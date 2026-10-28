@@ -20,6 +20,8 @@ Group=opcua-line-gateway
 # The configuration file path is the first positional argument.
 ExecStart=/usr/bin/opcua-line-gateway /etc/opcua-line-gateway/config.toml
 
+ExecReload=/usr/bin/kill -HUP $MAINPID
+
 # Credentials are read by systemd as root from its credential store, only
 # accessible by root, i.e. /etc/credstore/opcua-line-gateway.toml. They are
 # exposed to the service in $CREDENTIALS_DIRECTORY, as credentials.toml.
