@@ -1,0 +1,47 @@
+#:schema ../../../schema/config.schema.json
+
+# Minimal configuration for package tests: the gateway writes to the ClickHouse
+# service, while its only machine is unreachable.
+
+application_uri = "urn:opcua-line-gateway:package-tests"
+
+# Relative paths resolve against the state directory.
+pki_dir = "pki"
+
+[traceability]
+redb_file = "cache.redb"
+queues_not_draining_threshold = 10
+
+# Node identifiers are irrelevant, as no machine is reachable.
+[traceability.opc_ua]
+namespace_url = "urn:opcua-line-gateway:package-tests:common"
+request_nid = 1
+response_nid = 2
+heartbeat_nid = 3
+general_part_sheet_nid = 4
+part_id_nid = 5
+raw_part_ref_nid = 6
+raw_batch_nid = 7
+excluded_read_nids = []
+
+[traceability.database]
+url = "http://clickhouse:8123"
+default_database = "traceability"
+# Short, as tests wait for the first successful run.
+part_sheets_drain_period = "1s"
+general_part_sheet_table = "part_sheet_general"
+operation_part_sheet_table = "part_sheet_operation"
+
+# At least one machine is required. Its server is unreachable, the gateway
+# trying to reconnect forever.
+[machines.unreachable.opc_ua_server]
+url = "opc.tcp://unreachable.invalid:4840"
+security_policy = "None"
+security_mode = "None"
+
+[machines.unreachable.traceability]
+publish_interval = "1s"
+
+[machines.unreachable.traceability.opc_ua]
+namespace_url = "urn:opcua-line-gateway:package-tests:machine"
+operation_part_sheet_nid = 8

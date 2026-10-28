@@ -1,0 +1,43 @@
+name: opcua-line-gateway-pkg-tests
+
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:26.10
+    environment:
+      CLICKHOUSE_PASSWORD: pkgtest # betterleaks:allow
+      # Allow the default user to create the roles defined in the schema.
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
+      CH_DATABASE: traceability
+    healthcheck:
+      test: >-
+        clickhouse client
+        --password "$$CLICKHOUSE_PASSWORD"
+        --query "SELECT 1 FROM $${CH_DATABASE}.part_sheet_operation LIMIT 0"
+      interval: 2s
+      retries: 30
+    volumes:
+      - ../../clickhouse/tables:/tables:ro
+      - ./clickhouse-init.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+
+  debian:
+    build: .
+    # Needed by systemd to set up the namespaces of the service sandboxing.
+    # Podman being rootless, it is only effective in the container user
+    # namespace.
+    cap_add:
+      - SYS_ADMIN
+    healthcheck:
+      test: systemctl is-system-running | grep -qE 'running|degraded'
+      interval: 2s
+      retries: 30
+    # Systemd marks mounts as shared for propagation when booted by the kernel,
+    # but not in a container. Without it, mounts made by systemd in a child
+    # namespace, like the credentials directory of a service, are not visible
+    # to the service. Podman also makes the container root shared as soon as a
+    # mount is.
+    tmpfs:
+      - /run:rw,rshared
+    volumes:
+      - ./bats:/tests:ro
+      - ./fixtures:/fixtures:ro
+      - ../../target/debian-tests:/pkg:ro
