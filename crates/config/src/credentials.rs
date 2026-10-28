@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::{env, fs, io};
 
 use serde::Deserialize;
@@ -13,8 +13,8 @@ const CRED_DIR_ENV_VAR: &str = "CREDENTIALS_DIRECTORY";
 pub enum CredentialsFromFileError {
     #[error("missing `{CRED_DIR_ENV_VAR}` environment variable")]
     EnvVar,
-    #[error("error reading file")]
-    FileRead(#[source] io::Error),
+    #[error("error reading file {1}")]
+    FileRead(#[source] io::Error, PathBuf),
     #[error(transparent)]
     Toml(toml::de::Error),
 }
@@ -32,6 +32,7 @@ pub struct Credentials {
     /// Database credential.
     pub database: Credential,
     /// OPC-UA servers credentials, mapping server identifier to credential.
+    #[serde(default)]
     pub opc_ua: BTreeMap<String, Credential>,
 }
 
@@ -48,8 +49,16 @@ impl Credentials {
         let creds_path = Path::new(&creds_dir)
             .join("credentials.toml")
             .with_extension("toml");
-        let file_contents =
-            fs::read_to_string(&creds_path).map_err(CredentialsFromFileError::FileRead)?;
+        Self::from_toml_file(creds_path)
+    }
+
+    /// Create the [`Credentials`] from the provided path to a TOML file.
+    pub fn from_toml_file<P>(path: P) -> Result<Self, CredentialsFromFileError>
+    where
+        P: AsRef<Path>,
+    {
+        let file_contents = fs::read_to_string(&path)
+            .map_err(|err| CredentialsFromFileError::FileRead(err, path.as_ref().to_owned()))?;
         toml::from_str(&file_contents).map_err(CredentialsFromFileError::Toml)
     }
 }

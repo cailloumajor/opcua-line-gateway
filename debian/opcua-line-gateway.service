@@ -7,6 +7,10 @@ After=network-online.target
 # Never give up restarting: this service is meant to run forever, and the PLCs
 # or the database may stay unreachable for a long time.
 StartLimitIntervalSec=0
+# Do not start until the administrator has installed both files, examples of
+# which are shipped in /usr/share/doc/opcua-line-gateway/examples.
+ConditionPathExists=/etc/opcua-line-gateway/config.toml
+ConditionPathExists=/etc/credstore/opcua-line-gateway.toml
 
 [Service]
 Type=exec
@@ -16,12 +20,10 @@ Group=opcua-line-gateway
 # The configuration file path is the first positional argument.
 ExecStart=/usr/bin/opcua-line-gateway /etc/opcua-line-gateway/config.toml
 
-# /etc/opcua-line-gateway, holding config.toml and the credentials file.
-ConfigurationDirectory=opcua-line-gateway
-ConfigurationDirectoryMode=0750
-# Credentials are read by systemd as root, so the source file may be unreadable
-# by the service user. They are exposed to the service in $CREDENTIALS_DIRECTORY.
-LoadCredential=credentials.toml:/etc/opcua-line-gateway/credentials.toml
+# Credentials are read by systemd as root from its credential store, only
+# accessible by root, i.e. /etc/credstore/opcua-line-gateway.toml. They are
+# exposed to the service in $CREDENTIALS_DIRECTORY, as credentials.toml.
+LoadCredential=credentials.toml:opcua-line-gateway.toml
 # /var/lib/opcua-line-gateway, holding the redb cache file and the OPC-UA PKI.
 StateDirectory=opcua-line-gateway
 StateDirectoryMode=0750

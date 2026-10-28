@@ -32,6 +32,8 @@ CLICKHOUSE_VERSION = "26.10"
 
 [shell_alias]
 chctl = "clickhousectl"
+# podman compose for package tests
+pcpt = 'podman compose --project-directory {{ [config_root, "tests/package"] | join_path | quote }}'
 
 [tasks.start-test-db]
 description = "Start the database for integration tests"

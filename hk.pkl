@@ -3,7 +3,10 @@ amends "package://github.com/jdx/hk/releases/download/v2.8.0/hk@2.8.0#/Config.pk
 import "package://github.com/jdx/hk/releases/download/v2.8.0/hk@2.8.0#/Builtins.pkl"
 
 steps {
-  ["betterleaks"] = Builtins.betterleaks
+  ["betterleaks"] = (Builtins.betterleaks) {
+    // Files are passed as targets, so the configuration is not found relative to them.
+    env { ["BETTERLEAKS_CONFIG"] = ".betterleaks.toml" }
+  }
   ["cargo-clippy"] = Builtins.cargo_clippy
   ["cargo-fmt"] = Builtins.cargo_fmt
   ["config-schema"] {

@@ -12,6 +12,12 @@ Gateway for machines of an industrial production line, using OPC-UA to connect \
 to PLCs, with data caching and archiving.
 """
 revision = ""
+assets = [
+  "$auto",
+  ["debian/config.toml", "usr/share/doc/opcua-line-gateway/examples/", "644"],
+  ["debian/credentials.toml", "usr/share/doc/opcua-line-gateway/examples/", "644"],
+  ["schema/config.schema.json", "usr/share/doc/opcua-line-gateway/config.schema.json", "644"],
+]
 maintainer-scripts = "debian/"
 separate-debug-symbols = true
 compress-debug-symbols = true

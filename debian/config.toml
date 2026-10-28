@@ -1,0 +1,75 @@
+#:schema /usr/share/doc/opcua-line-gateway/config.schema.json
+# Configuration of the OPC-UA line gateway.
+#
+# Every value below is an example, to be adapted to the production line. The
+# full reference is in the configuration documentation of the project. Install
+# this file readable by the service user:
+#
+#   sudo install -m 0644 config.toml /etc/opcua-line-gateway/
+#
+# Secrets are not stored here, but in `/etc/credstore/opcua-line-gateway.toml`,
+# see the `credentials.toml` example next to this one.
+#
+# Durations are written like "100ms", "10s" or "1m".
+#
+# Relative paths resolve against the state directory, /var/lib/opcua-line-gateway.
+
+# Globally unique identifier of this gateway instance, as of OPC-UA.
+application_uri = "urn:ORG:line-gateway:LINE"
+
+# Root directory of the OPC-UA PKI, holding the gateway certificate and the
+# trusted server certificates.
+pki_dir = "pki"
+
+[traceability]
+# Traceability cache, created if missing.
+redb_file = "cache.redb"
+# Above this count of part sheets waiting to be archived, the archiving is
+# considered not working.
+queues_not_draining_threshold = 50
+
+# OPC-UA traceability information model common to all machines: these node
+# identifiers must match the PLC programs.
+[traceability.opc_ua]
+namespace_url = "urn:ORG:traceability:LINE:common"
+request_nid = 1006
+response_nid = 1007
+heartbeat_nid = 1008
+general_part_sheet_nid = 1031
+part_id_nid = 1032
+raw_part_ref_nid = 1033
+raw_batch_nid = 1034
+# Nodes of the general part sheet object not to be read.
+excluded_read_nids = []
+
+# ClickHouse database archiving the part sheets.
+[traceability.database]
+url = "http://localhost:8123"
+default_database = "traceability"
+part_sheets_drain_period = "10s"
+general_part_sheet_table = "part_sheet_general"
+operation_part_sheet_table = "part_sheet_operation"
+
+# Connected machines, keyed by an identifier also used in the credentials file
+# and in the logs. At least one machine is required. Copy the three tables
+# below for each machine.
+
+[machines.PLC1.opc_ua_server]
+url = "opc.tcp://192.0.2.1:4840"
+# One of: None, Basic128Rsa15, Basic256, Basic256Sha256, Aes128Sha256RsaOaep,
+# Aes256Sha256RsaPss.
+security_policy = "None"
+# One of: None, Sign, SignAndEncrypt.
+security_mode = "None"
+
+[machines.PLC1.traceability]
+# Publish interval of the OPC-UA subscription to the request variable.
+publish_interval = "100ms"
+# Two characters production line identifier (digits or uppercase letters),
+# only for the machine making part identifier creation requests. Remove it for
+# other machines.
+line_id = "01"
+
+[machines.PLC1.traceability.opc_ua]
+namespace_url = "urn:ORG:traceability:LINE:PLC1"
+operation_part_sheet_nid = 1013

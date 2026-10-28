@@ -1,2 +1,6 @@
 [format.rules]
 line-width = 100
+
+[[schemas]]
+path = "schema/config.schema.json"
+include = ["debian/config.toml"]

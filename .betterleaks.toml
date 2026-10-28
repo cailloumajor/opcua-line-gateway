@@ -1,0 +1,14 @@
+# Betterleaks configuration, extending the default rules.
+
+[extend]
+useDefault = true
+
+# Placeholder passwords of the credentials example shipped in the Debian
+# package, where an inline `betterleaks:allow` comment would end up on the
+# target system. Real secrets put in this file are still detected.
+[[allowlists]]
+description = "Placeholder passwords of the Debian package credentials example"
+condition = "AND"
+paths = ['''^debian/credentials\.toml$''']
+regexTarget = "secret"
+regexes = ['''^change-me$''']

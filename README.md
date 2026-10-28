@@ -51,38 +51,28 @@ instance per host.
 
 ### Configuration
 
-Systemd creates `/etc/opcua-line-gateway` and `/var/lib/opcua-line-gateway`,
-owned by the service user, on the first start. Create the configuration
-directory beforehand to be able to install the configuration:
+The service only starts once both `/etc/opcua-line-gateway/config.toml` and
+`/etc/credstore/opcua-line-gateway.toml` exist. Commented examples of these
+files are shipped in `/usr/share/doc/opcua-line-gateway/examples`, to be copied
+and adapted:
+
+```sh
+examples=/usr/share/doc/opcua-line-gateway/examples
+sudo install -d /etc/opcua-line-gateway
+sudo install -m 0644 "$examples/config.toml" /etc/opcua-line-gateway/
+sudo install -m 0600 "$examples/credentials.toml" /etc/credstore/opcua-line-gateway.toml
+sudoedit /etc/opcua-line-gateway/config.toml /etc/credstore/opcua-line-gateway.toml
+sudo systemctl start opcua-line-gateway
+```
 
 The unit passes `/etc/opcua-line-gateway/config.toml` as the first positional
 argument. Paths inside it may be relative, in which case they resolve against
-`/var/lib/opcua-line-gateway` (the unit's working directory):
+`/var/lib/opcua-line-gateway` (the unit's working directory).
 
-```toml
-#:schema https://github.com/cailloumajor/opcua-line-gateway/releases/latest/download/config.schema.json
-
-application_uri = "urn:example:line-gateway:line1"
-
-pki_dir = "pki"
-
-[traceability]
-redb_file = "cache.redb"
-# …
-```
-
-The unit loads the credentials file as a systemd credential, from
-`/etc/opcua-line-gateway/credentials.toml`. Systemd reads it as root when the
-service starts, so it can belong to root and be unreadable by the service user:
-
-```sh
-sudo install -m 0600 -o root -g root \
-    /dev/null /etc/opcua-line-gateway/credentials.toml
-sudoedit /etc/opcua-line-gateway/credentials.toml
-```
-
-The credential is loaded when the service starts, so restart it after changing
-credentials.
+The unit loads the credentials file as a systemd credential, from the systemd
+credential store: `/etc/credstore` is only accessible by root, so the secrets
+are protected whatever the file mode. Systemd reads the file when the service
+starts, so restart it after changing credentials.
 
 The OPC-UA certificate and private key are expected at
 `pki_dir/own/opcua-line-gateway-cert.der` and
