@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.4.10](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.4.9...v0.4.10) (2026-10-28)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate parking_lot to 0.13.0 ([89193f9](https://github.com/cailloumajor/opcua-line-gateway/commit/89193f9744ef32e9d8cf238edc7986b2b83ea0d9))
+* **deps:** update rust crate tick to 0.8.0 ([9abc4ff](https://github.com/cailloumajor/opcua-line-gateway/commit/9abc4ff0af718af70392fdb9d6ff8fdd8bd3f47b))
+* stop using {lock,read}_arc methods ([6ba360f](https://github.com/cailloumajor/opcua-line-gateway/commit/6ba360fa599bdf4440e0af81111b32c07f92b77d))
+
 ## [0.4.9](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.4.8...v0.4.9) (2026-10-22)
 
 
