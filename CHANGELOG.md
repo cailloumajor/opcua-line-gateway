@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.11](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.4.10...v0.4.11) (2026-10-28)
+
+
+### Features
+
+* include example configuration files in Debian package ([e52859f](https://github.com/cailloumajor/opcua-line-gateway/commit/e52859f6f2c8f3fd05f679acd7422639ed75bf3e))
+* remove handling of log file rotation and compression ([f9cc32b](https://github.com/cailloumajor/opcua-line-gateway/commit/f9cc32b9e8aa170b2ca573ab64cb9e9cc877eb05))
+
+
+### Bug Fixes
+
+* **test:** add Debian package tests ([f1746a4](https://github.com/cailloumajor/opcua-line-gateway/commit/f1746a45c41eb42501f3543de6906139b8b24e52))
+
 ## [0.4.10](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.4.9...v0.4.10) (2026-10-28)
 
 
