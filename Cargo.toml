@@ -7,6 +7,8 @@ publish.workspace = true
 
 [package.metadata.deb]
 maintainer = "Not Relevant <mail@example.com>"
+depends = "$auto, procps"
+recommends = "logrotate"
 extended-description = """
 Gateway for machines of an industrial production line, using OPC-UA to connect \
 to PLCs, with data caching and archiving.
@@ -14,6 +16,7 @@ to PLCs, with data caching and archiving.
 revision = ""
 assets = [
   "$auto",
+  ["debian/opcua-line-gateway.logrotate", "etc/logrotate.d/opcua-line-gateway", "644"],
   ["debian/config.toml", "usr/share/doc/opcua-line-gateway/examples/", "644"],
   ["debian/credentials.toml", "usr/share/doc/opcua-line-gateway/examples/", "644"],
   ["schema/config.schema.json", "usr/share/doc/opcua-line-gateway/config.schema.json", "644"],
@@ -48,11 +51,11 @@ async-opcua = { workspace = true, features = ["client"] }
 clickhouse = { version = "0.15.2", features = ["opentelemetry", "rustls-tls-native-roots"] }
 futures-util = "0.3.32"
 jiff.workspace = true
-logroller = "0.1.12"
 opcua-line-gateway-config = { path = "crates/config" }
 parking_lot = "0.13.0"
 redb = { version = "4.2.0", features = ["logging"] }
 regex = "1.13.1"
+reopen = "1.0.3"
 serde.workspace = true
 serde_json.workspace = true
 signal-hook = { version = "0.4.4", default-features = false }

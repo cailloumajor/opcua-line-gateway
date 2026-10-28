@@ -1,0 +1,14 @@
+/var/log/opcua-line-gateway/*.log {
+    su opcua-line-gateway opcua-line-gateway
+    weekly
+    rotate 53
+    compress
+    delaycompress
+    missingok
+    notifempty
+    nocreate
+    sharedscripts
+    postrotate
+        systemctl reload opcua-line-gateway.service >/dev/null 2>&1
+    endscript
+}
