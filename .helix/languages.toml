@@ -1,6 +1,7 @@
 [[language]]
 name = "bash"
 auto-format = true
+file-types = ["sh", "bash", "bats"]
 
 [[language]]
 name = "markdown"

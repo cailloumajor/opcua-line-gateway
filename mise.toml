@@ -7,7 +7,9 @@ cocogitto = "latest"
 editorconfig-checker = "latest"
 "github:ClickHouse/clickhousectl" = "latest"
 "github:JFRyy/systemd-lsp" = "latest"
+"github:docker/docker-language-server" = "latest"
 "github:mhersson/mpls" = "latest"
+hadolint = "latest"
 hk = "latest"
 jactionlint = "latest"
 marksman = "latest"
@@ -34,6 +36,20 @@ CLICKHOUSE_VERSION = "26.10"
 chctl = "clickhousectl"
 # podman compose for package tests
 pcpt = 'podman compose --project-directory {{ [config_root, "tests/package"] | join_path | quote }}'
+
+[tasks.build-test-deb]
+description = "Build Debian package for tests"
+run = """
+cargo deb \
+  --profile deb-test \
+  --no-separate-debug-symbols \
+  --fast \
+  --verbose \
+  --output target/debian-tests/testpkg.deb
+"""
+
+[tasks.build-test-deb.tools]
+"cargo:cargo-deb" = "latest"
 
 [tasks.start-test-db]
 description = "Start the database for integration tests"

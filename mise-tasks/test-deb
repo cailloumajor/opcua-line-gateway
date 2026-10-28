@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+#MISE description="Run Debian package tests"
+#MISE depends=["build-test-deb"]
+
+pc="podman compose --project-directory tests/package"
+
+function teardown {
+    $pc stop
+    $pc logs --timestamps
+    $pc down --volumes
+}
+
+# Start test services.
+$pc up --build --wait --wait-timeout 10
+
+# Run the teardown function on exit.
+trap teardown EXIT
+
+# Run tests with bats.
+$pc exec debian /opt/bats/bin/bats --abort /tests

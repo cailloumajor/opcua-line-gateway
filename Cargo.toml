@@ -84,3 +84,10 @@ tokio = { version = "1.52.3", features = ["net"] }
 inherits = "release"
 debug = "line-tables-only"
 lto = true
+
+# Faster build of the package under test, its behavior is not affected.
+[profile.deb-test]
+inherits = "release"
+debug = false
+lto = false
+incremental = true

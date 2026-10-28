@@ -18,10 +18,12 @@ jobs:
     permissions:
       actions: write
       contents: read
+      pull-requests: read # for paths-filter, to list the files of the PR
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
       should_skip: ${{ steps.skip_check.outputs.should_skip }}
+      package: ${{ steps.changes.outputs.package }}
     steps:
       - id: skip_check
         uses: fkirc/skip-duplicate-actions@b974a9395958c231af965b70070979a577efa578 # v5.3.2
@@ -29,6 +31,20 @@ jobs:
           concurrent_skipping: same_content
           do_not_skip: '["pull_request", "release", "workflow_dispatch", "schedule"]'
           skip_after_successful_duplicate: true
+      # Package tests only run in PRs changing the packaging. Release PRs always
+      # change Cargo.toml to bump the version.
+      - id: changes
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        with:
+          filters: |
+            package:
+              - Cargo.toml
+              - debian/**
+              - mise.toml
+              - mise-tasks/test-deb
+              - tests/package/**
+              - .github/workflows/ci.yml
   ci:
     name: Tests and code quality
     permissions:
@@ -63,3 +79,27 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
+  package_tests:
+    name: Debian package tests
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: pre_job
+    if: needs.pre_job.outputs.should_skip != 'true' && needs.pre_job.outputs.package == 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - uses: jdx/mise-action@82a612c5ab8bcda7cc5db6b7e81a8e7584c3dc6e # v5.2.3
+        with:
+          install: false
+      - name: Ensure Rust toolchain and components are installed
+        run: mise install --force rust
+      # podman compose delegates to docker-compose, which talks to the Podman
+      # API socket.
+      - name: Start Podman API socket
+        run: systemctl --user start podman.socket
+      - name: Run Debian package tests
+        run: mise run test-deb
