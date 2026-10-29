@@ -34,5 +34,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           tag: ${{ github.ref_name }}
         run: |
-          gh release upload "$tag" "${{ steps.build_deb_pkg.outputs.path }}" schema/*
+          gh release upload "$tag" "${{ steps.build_deb_pkg.outputs.path }}"
           gh release edit "$tag" --draft=false
