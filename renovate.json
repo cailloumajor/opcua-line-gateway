@@ -11,7 +11,6 @@
     "**/examples/**",
     "**/__tests__/**",
     "**/test/**",
-    "**/tests/**",
     "**/__fixtures__/**",
     ".mise/locks/**"
   ],
@@ -42,9 +41,13 @@
     },
     {
       "description": "Do not require Minimum Release Age for ClickHouse: the timestamp of a YY.MM line is the one of its latest patch, which is released almost daily",
-      "matchDatasources": ["github-releases"],
-      "matchDepNames": ["ClickHouse/ClickHouse"],
+      "matchDepNames": ["ClickHouse/ClickHouse", "clickhouse/clickhouse-server"],
       "minimumReleaseAge": null
+    },
+    {
+      "description": "Update the ClickHouse version of the integration tests (mise) and of the package tests (Docker image) together",
+      "matchDepNames": ["ClickHouse/ClickHouse", "clickhouse/clickhouse-server"],
+      "groupName": "ClickHouse"
     },
     {
       "matchDepNames": ["rust"],
