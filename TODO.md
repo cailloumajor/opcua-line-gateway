@@ -4,9 +4,10 @@
 
 - [ ] Check that the browsed general part sheet has the expected nodes (by name),
 names reference is the ClickHouse `data` subcolumns
-- [ ] Support the new information model: machine object (`TraceabilityMachineType`)
-with a heartbeat and several mailboxes (`TraceabilityMailboxType` subtypes), each
-mailbox holding request, response, general part sheet and operation part sheet
+- [ ] Support the [new information model](docs/information-model.md): machine
+object (`TraceabilityMachineType`) with a heartbeat and several mailboxes
+(`TraceabilityMailboxType` subtypes), each mailbox holding request, response,
+general part sheet and operation part sheet
 - [ ] Handle traceability requests per mailbox (one subscription to the request
 variable per mailbox), with the heartbeat at machine level
 - [ ] Discover mailboxes by browsing the machine object (components whose type
