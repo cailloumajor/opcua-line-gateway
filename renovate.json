@@ -69,9 +69,9 @@
       "minimumReleaseAge": null
     },
     {
-      "description": "Disable update PRs (in favor of lock file maintenance) for mise tools with requested version being latest",
+      "description": "Disable update PRs (in favor of lock file maintenance) for mise tools with requested version being latest or lts",
       "matchDepTypes": ["tools"],
-      "matchCurrentValue": "latest",
+      "matchCurrentValue": "@(latest|lts)",
       "enabled": false
     }
   ]
