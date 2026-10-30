@@ -76,7 +76,9 @@ The model is split in companion specifications, imported in the machines
 controllers:
 
 * A common namespace, imported on all machines, which only defines types:
-  * `TraceabilityMachineType`, with the heartbeat and the mailboxes placeholder;
+  * `TraceabilityMachineType`, with the heartbeat and a `<Mailbox>` component of
+  `TraceabilityMailboxType`, with the `MandatoryPlaceholder` modelling rule (i.e.
+  one or more mailboxes, with any name);
   * `TraceabilityMailboxType`, with the request, the response and the general part
   sheet;
   * `TraceabilityPartSheetGeneralType`;
