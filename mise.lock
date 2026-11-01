@@ -50,50 +50,50 @@ url = "https://github.com/nextest-rs/nextest/releases/download/cargo-nextest-0.9
 url_api = "https://api.github.com/repos/nextest-rs/nextest/releases/assets/679074355"
 
 [[tools."aqua:quarylabs/sqruff"]]
-version = "0.43.0"
+version = "0.44.0"
 backend = "aqua:quarylabs/sqruff"
 specifiers = ["latest"]
 
 [tools."aqua:quarylabs/sqruff"."platforms.linux-arm64"]
-checksum = "sha256:6697cda8f6f8d90ba6556b5c8043b33c23e86834460d9bab3c0e61b9caa14bfe"
-url = "https://github.com/quarylabs/sqruff/releases/download/v0.43.0/sqruff-linux-aarch64-musl.tar.gz"
-url_api = "https://api.github.com/repos/quarylabs/sqruff/releases/assets/665576252"
+checksum = "sha256:51f7be35efb9585aafd9240323792bedef7e5bd3dd48bcc686c7b7b60be4cc32"
+url = "https://github.com/quarylabs/sqruff/releases/download/v0.44.0/sqruff-linux-aarch64-musl.tar.gz"
+url_api = "https://api.github.com/repos/quarylabs/sqruff/releases/assets/692210811"
 provenance = "github-attestations"
 
 [tools."aqua:quarylabs/sqruff"."platforms.linux-arm64-musl"]
-checksum = "sha256:6697cda8f6f8d90ba6556b5c8043b33c23e86834460d9bab3c0e61b9caa14bfe"
-url = "https://github.com/quarylabs/sqruff/releases/download/v0.43.0/sqruff-linux-aarch64-musl.tar.gz"
-url_api = "https://api.github.com/repos/quarylabs/sqruff/releases/assets/665576252"
+checksum = "sha256:51f7be35efb9585aafd9240323792bedef7e5bd3dd48bcc686c7b7b60be4cc32"
+url = "https://github.com/quarylabs/sqruff/releases/download/v0.44.0/sqruff-linux-aarch64-musl.tar.gz"
+url_api = "https://api.github.com/repos/quarylabs/sqruff/releases/assets/692210811"
 provenance = "github-attestations"
 
 [tools."aqua:quarylabs/sqruff"."platforms.linux-x64"]
-checksum = "sha256:2a73f94dac935898d039c56bd414774f6deaf199827d650945eb7ea7940b7f11"
-url = "https://github.com/quarylabs/sqruff/releases/download/v0.43.0/sqruff-linux-x86_64-musl.tar.gz"
-url_api = "https://api.github.com/repos/quarylabs/sqruff/releases/assets/665578428"
+checksum = "sha256:3d0dd223770e99fb17199c16327bdf15bf238261a001815aa172f140817d7e9a"
+url = "https://github.com/quarylabs/sqruff/releases/download/v0.44.0/sqruff-linux-x86_64-musl.tar.gz"
+url_api = "https://api.github.com/repos/quarylabs/sqruff/releases/assets/692210043"
 provenance = "github-attestations"
 
 [tools."aqua:quarylabs/sqruff"."platforms.linux-x64-musl"]
-checksum = "sha256:2a73f94dac935898d039c56bd414774f6deaf199827d650945eb7ea7940b7f11"
-url = "https://github.com/quarylabs/sqruff/releases/download/v0.43.0/sqruff-linux-x86_64-musl.tar.gz"
-url_api = "https://api.github.com/repos/quarylabs/sqruff/releases/assets/665578428"
+checksum = "sha256:3d0dd223770e99fb17199c16327bdf15bf238261a001815aa172f140817d7e9a"
+url = "https://github.com/quarylabs/sqruff/releases/download/v0.44.0/sqruff-linux-x86_64-musl.tar.gz"
+url_api = "https://api.github.com/repos/quarylabs/sqruff/releases/assets/692210043"
 provenance = "github-attestations"
 
 [tools."aqua:quarylabs/sqruff"."platforms.macos-arm64"]
-checksum = "sha256:7852030f4d5868700cb88c035c5374f7078c11b61f76bc4dca062dd3f7c9f628"
-url = "https://github.com/quarylabs/sqruff/releases/download/v0.43.0/sqruff-darwin-aarch64.tar.gz"
-url_api = "https://api.github.com/repos/quarylabs/sqruff/releases/assets/665574348"
+checksum = "sha256:a4246a192080b9d9d6ef3a747fce3cba4daed42da3c80a097670cd4ed4c4fa41"
+url = "https://github.com/quarylabs/sqruff/releases/download/v0.44.0/sqruff-darwin-aarch64.tar.gz"
+url_api = "https://api.github.com/repos/quarylabs/sqruff/releases/assets/692221515"
 provenance = "github-attestations"
 
 [tools."aqua:quarylabs/sqruff"."platforms.macos-x64"]
-checksum = "sha256:39c9b72f50c2902a76d0ea0321b27e104da9584da315ee3f141261b6b2b66488"
-url = "https://github.com/quarylabs/sqruff/releases/download/v0.43.0/sqruff-darwin-x86_64.tar.gz"
-url_api = "https://api.github.com/repos/quarylabs/sqruff/releases/assets/665596896"
+checksum = "sha256:ebc6c05781c2144cf581549ee9288138401a9df94162117d0d96554c23dbc7a7"
+url = "https://github.com/quarylabs/sqruff/releases/download/v0.44.0/sqruff-darwin-x86_64.tar.gz"
+url_api = "https://api.github.com/repos/quarylabs/sqruff/releases/assets/692233371"
 provenance = "github-attestations"
 
 [tools."aqua:quarylabs/sqruff"."platforms.windows-x64"]
-checksum = "sha256:448e94cdd9aeb5dd6905f72741318f9d3f45e1c9284973f093b3f957ad593c7d"
-url = "https://github.com/quarylabs/sqruff/releases/download/v0.43.0/sqruff-windows-x86_64.zip"
-url_api = "https://api.github.com/repos/quarylabs/sqruff/releases/assets/665566072"
+checksum = "sha256:cc560417978ef4f170a84449b68b92f9bdfc990041728c8d724bf98ecce8725d"
+url = "https://github.com/quarylabs/sqruff/releases/download/v0.44.0/sqruff-windows-x86_64.zip"
+url_api = "https://api.github.com/repos/quarylabs/sqruff/releases/assets/692225213"
 provenance = "github-attestations"
 
 [[tools."aqua:taiki-e/cargo-llvm-cov"]]
@@ -964,49 +964,49 @@ url = "https://github.com/crate-ci/typos/releases/download/v1.51.1/typos-v1.51.1
 url_api = "https://api.github.com/repos/crate-ci/typos/releases/assets/616657506"
 
 [[tools.usage]]
-version = "7.1.3"
+version = "7.1.4"
 backend = "packslip:github.com/jdx/usage"
 specifiers = ["latest"]
 
 [tools.usage."platforms.linux-arm64"]
-checksum = "sha256:f5e8cb2d9fea663e0b17472ce30ccc398c5dae4ddd7c6fb60f6b0f1d59386677"
-url = "https://github.com/jdx/usage/releases/download/v7.1.3/usage-aarch64-unknown-linux-gnu.tar.gz"
+checksum = "sha256:2f25a923192210891b19d2ea4b4dbf6fe6c851ba8067b5ffd646517026e1f656"
+url = "https://github.com/jdx/usage/releases/download/v7.1.4/usage-aarch64-unknown-linux-gnu.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/usage/.github/workflows/publish-cli.yml"
 repository_ids = { repository = "677629099" }
 
 [tools.usage."platforms.linux-arm64-musl"]
-checksum = "sha256:2e3cc3ae62b3ef008eb739c527101087864e210da9df23c8e2b456c90b8dc8b4"
-url = "https://github.com/jdx/usage/releases/download/v7.1.3/usage-aarch64-unknown-linux-musl.tar.gz"
+checksum = "sha256:c8256c38ec82a28288326d48d3c8fcfa56e1fb1c76e82f66c58ad5fa18965e1b"
+url = "https://github.com/jdx/usage/releases/download/v7.1.4/usage-aarch64-unknown-linux-musl.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/usage/.github/workflows/publish-cli.yml"
 repository_ids = { repository = "677629099" }
 
 [tools.usage."platforms.linux-x64"]
-checksum = "sha256:8862647112681941439df958ea8240a96e14319adc7f28497f09bd2ba10c0344"
-url = "https://github.com/jdx/usage/releases/download/v7.1.3/usage-x86_64-unknown-linux-gnu.tar.gz"
+checksum = "sha256:eb213eb6c1cbc6896d7f8b627af984a9c1734d67bdf703788038bc50c326c676"
+url = "https://github.com/jdx/usage/releases/download/v7.1.4/usage-x86_64-unknown-linux-gnu.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/usage/.github/workflows/publish-cli.yml"
 repository_ids = { repository = "677629099" }
 
 [tools.usage."platforms.linux-x64-musl"]
-checksum = "sha256:826cb318a95ac418e8c3f8237439ac39239dfe88e491adc3ecddd3fa4e58d057"
-url = "https://github.com/jdx/usage/releases/download/v7.1.3/usage-x86_64-unknown-linux-musl.tar.gz"
+checksum = "sha256:662fe04a2a1b7947e73b7ad4d608f50b96a500e5bc2c9d1961e28894a8c87f5d"
+url = "https://github.com/jdx/usage/releases/download/v7.1.4/usage-x86_64-unknown-linux-musl.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/usage/.github/workflows/publish-cli.yml"
 repository_ids = { repository = "677629099" }
 
 [tools.usage."platforms.macos-arm64"]
-checksum = "sha256:4878938599894c051baaf601cb5c7ee351f4276c9da0acbf959e868884f2b99b"
-url = "https://github.com/jdx/usage/releases/download/v7.1.3/usage-universal-apple-darwin.tar.gz"
+checksum = "sha256:cae1865b2bb4eb8c22087381d4fbc29344837960c71dbf865dc55296c19d535d"
+url = "https://github.com/jdx/usage/releases/download/v7.1.4/usage-universal-apple-darwin.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/usage/.github/workflows/publish-cli.yml"
 repository_ids = { repository = "677629099" }
 
 [tools.usage."platforms.macos-x64"]
-checksum = "sha256:4878938599894c051baaf601cb5c7ee351f4276c9da0acbf959e868884f2b99b"
-url = "https://github.com/jdx/usage/releases/download/v7.1.3/usage-universal-apple-darwin.tar.gz"
+checksum = "sha256:cae1865b2bb4eb8c22087381d4fbc29344837960c71dbf865dc55296c19d535d"
+url = "https://github.com/jdx/usage/releases/download/v7.1.4/usage-universal-apple-darwin.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/usage/.github/workflows/publish-cli.yml"
 repository_ids = { repository = "677629099" }
 
 [tools.usage."platforms.windows-x64"]
-checksum = "sha256:4abb3f7b7e9ecac17558be73336137fa83ec9a43d0c1168a9bbb5aedd1685a27"
-url = "https://github.com/jdx/usage/releases/download/v7.1.3/usage-x86_64-pc-windows-msvc.zip"
+checksum = "sha256:3254065ef86acb0131be75909ee9010cd41de22e10bcbbc1c1829494b9c7a23f"
+url = "https://github.com/jdx/usage/releases/download/v7.1.4/usage-x86_64-pc-windows-msvc.zip"
 signer = "sigstore-oidc:https://github.com/jdx/usage/.github/workflows/publish-cli.yml"
 repository_ids = { repository = "677629099" }
 
