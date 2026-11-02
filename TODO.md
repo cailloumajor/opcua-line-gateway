@@ -13,6 +13,10 @@ variable per mailbox), with the heartbeat at machine level
 - [ ] Discover mailboxes by browsing the machine object (components whose type
 derives from `TraceabilityMailboxType`), and the operation part sheet by type
 (derived from `TraceabilityPartSheetOperationType`)
+- [ ] Resolve the nodes with BrowseNames defined by the common namespace types
+(heartbeat, and request, response and general part sheet of each mailbox) with
+`TranslateBrowsePathsToNodeIds`, in a single request per machine, and report the
+unresolved paths
 - [ ] Simplify machine configuration to the namespace URL and the machine object
 node identifier
 - [ ] At session initialization (and on each reconnection), build a

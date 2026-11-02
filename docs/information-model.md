@@ -293,7 +293,14 @@ Node identifiers of the general part sheet differ between mailboxes and machines
 so they are not used as references. Instead:
 
 * Mailboxes are discovered by browsing the machine object, and the operation part
-sheet is found by its type;
+sheet is found by its type, as their BrowseNames are not known beforehand;
+* Nodes with BrowseNames defined by the common namespace types (the heartbeat in
+the machine object, the request, the response and the general part sheet in each
+mailbox) are resolved with the `TranslateBrowsePathsToNodeIds` service, in a
+single request for all the mailboxes of a machine. A missing node gives a
+specific error for its path (`BadNoMatch`), revealing an unexpected model;
+* The variables of the part sheets are discovered by browsing the part sheets
+objects, as all of them are needed;
 * At session initialization, a `BrowseName → NodeId` table is built for each mailbox,
 then OPC-UA reads and writes keep using numeric node identifiers;
 * Cached general part sheet items are keyed by BrowseName (name part only), which
