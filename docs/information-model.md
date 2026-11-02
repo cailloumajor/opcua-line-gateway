@@ -185,6 +185,11 @@ it, which defines (e.g. for OP30):
 The instances of the operation namespaces result in the tree shown in the
 [example](#example-for-a-production-line).
 
+All the variables of the model (heartbeat, request, response and part sheets
+variables) are data variables, i.e. components (`HasComponent` references) of
+`BaseDataVariableType`, rather than properties, as they hold the contents of their
+parent object and not characteristics of it. The part sheets have no properties.
+
 ### Diagrams
 
 Types of the common namespace:
@@ -320,5 +325,45 @@ The browse paths text format ([OPC-UA Part 4, Annex A][relative-path-bnf]) does
 not allow resolving all nodes with `TranslateBrowsePathsToNodeIds`: only the last
 element of a path can have no BrowseName (matching all targets), and the results
 only hold node identifiers, without BrowseNames nor types.
+
+### Resolution sequence
+
+Both services take an array of starting nodes (or of browse paths, each with its
+own starting node), and return the results in the same order. The nodes of a
+machine are thus resolved with a few requests, whatever the number of mailboxes:
+
+1. `Browse` of the machine object, to discover the mailboxes and their types;
+2. `TranslateBrowsePathsToNodeIds` of all the paths with BrowseNames known
+beforehand, starting from the machine object or from the mailboxes discovered at
+the previous step;
+3. `Browse` of all the part sheets (general part sheets found at the previous
+step, operation part sheets found at the first step), to list their variables.
+
+For example, with the three mailboxes of OP30, the second step is a single request
+with ten browse paths, the result at a given position matching the path at the
+same position:
+
+| # | Starting node | Relative path |
+| --- | --- | --- |
+| 1 | `OP30` | `.<common>:TraceabilityHeartbeat` |
+| 2 | `TraceabilityMailboxOP30In` | `.<common>:TraceabilityRequest` |
+| 3 | `TraceabilityMailboxOP30In` | `.<common>:TraceabilityResponse` |
+| 4 | `TraceabilityMailboxOP30In` | `.<common>:TraceabilityPartSheetGeneral` |
+| 5–7 | `TraceabilityMailboxOP30OkOut` | the same three paths |
+| 8–10 | `TraceabilityMailboxOP30ScrapOut` | the same three paths |
+
+Where `<common>` is the index of the common namespace on the server.
+
+Points to consider:
+
+* As all the children are components, the browse paths follow `Aggregates`
+references (`.`), which include `HasComponent` references, and the part sheets
+variables are found by browsing `HasComponent` references to nodes of `Variable`
+class;
+* Servers may limit the number of nodes or paths per request (`OperationLimits`
+of the server capabilities, e.g. `MaxNodesPerBrowse` and
+`MaxNodesPerTranslateBrowsePathsToNodeIds`). The limits of the controllers are
+not known yet: they can be read when connecting, or the requests split when
+rejected.
 
 [relative-path-bnf]: https://reference.opcfoundation.org/specs/OPC-10000-4

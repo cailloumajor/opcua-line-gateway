@@ -17,6 +17,9 @@ derives from `TraceabilityMailboxType`), and the operation part sheet by type
 (heartbeat, and request, response and general part sheet of each mailbox) with
 `TranslateBrowsePathsToNodeIds`, in a single request per machine, and report the
 unresolved paths
+- [ ] Browse the part sheets variables as data variables (`HasComponent`
+references to nodes of `Variable` class) instead of properties (`HasProperty`
+references)
 - [ ] Simplify machine configuration to the namespace URL and the machine object
 node identifier
 - [ ] At session initialization (and on each reconnection), build a
