@@ -305,3 +305,20 @@ objects, as all of them are needed;
 then OPC-UA reads and writes keep using numeric node identifiers;
 * Cached general part sheet items are keyed by BrowseName (name part only), which
 is identical on all machines as defined by the common namespace types.
+
+Summary of the OPC-UA service used for each kind of node:
+
+| Nodes to find | BrowseName known beforehand | Service |
+| --- | --- | --- |
+| Mailboxes of a machine | No (`<Mailbox>` placeholder) | `Browse`, filtering on the type |
+| Operation part sheet of a mailbox | No (specific to each operation) | `Browse`, filtering on the type |
+| Variables of the part sheets | All of them are needed, not a fixed list | `Browse` |
+| Request, response and general part sheet of a mailbox | Yes, in the common namespace | `TranslateBrowsePathsToNodeIds` |
+| Heartbeat of a machine | Yes, in the common namespace | `TranslateBrowsePathsToNodeIds` |
+
+The browse paths text format ([OPC-UA Part 4, Annex A][relative-path-bnf]) does
+not allow resolving all nodes with `TranslateBrowsePathsToNodeIds`: only the last
+element of a path can have no BrowseName (matching all targets), and the results
+only hold node identifiers, without BrowseNames nor types.
+
+[relative-path-bnf]: https://reference.opcfoundation.org/specs/OPC-10000-4
