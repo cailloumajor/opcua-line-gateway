@@ -19,7 +19,7 @@ language-servers = ["sqruff"]
 
 [language-server.mpls]
 command = "mpls"
-args = ["--theme", "dark", "--enable-emoji", "--full-sync"]
+args = ["--enable-emoji", "--full-sync"]
 
 [language-server.rumdl]
 command = "rumdl"
