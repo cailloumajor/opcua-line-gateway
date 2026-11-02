@@ -156,22 +156,34 @@ flowchart TB
 The model is split in companion specifications, imported in the machines
 controllers:
 
-* A common namespace, imported on all machines, which only defines types:
-  * `TraceabilityMachineType`, with the heartbeat and a `<Mailbox>` component of
-  `TraceabilityMailboxType`, with the `MandatoryPlaceholder` modelling rule (i.e.
-  one or more mailboxes, with any name);
-  * `TraceabilityMailboxType`, with the request, the response and the general part
-  sheet;
-  * `TraceabilityPartSheetGeneralType`;
-  * `TraceabilityPartSheetOperationType`, abstract base of operation part
-  sheets.
+* A common namespace, imported on all machines, which only defines types (it has
+no instances):
+  * `TraceabilityPartSheetGeneralType`, with the general part sheet variables;
+  * `TraceabilityPartSheetOperationType`, abstract and without variables, base of
+  the operation part sheets types;
+  * `TraceabilityMailboxType`, with:
+    * `TraceabilityRequest` (`Byte`, read only);
+    * `TraceabilityResponse` (`Byte`, read and write);
+    * `TraceabilityPartSheetGeneral`, a mandatory component of
+    `TraceabilityPartSheetGeneralType`;
+  * `TraceabilityMachineType`, with:
+    * `TraceabilityHeartbeat` (`Boolean`, read and write);
+    * a `<Mailbox>` component of `TraceabilityMailboxType`, with the
+    `MandatoryPlaceholder` modelling rule (i.e. one or more mailboxes, with any
+    name).
 * An operation namespace for each operation, imported on the machine performing
-it, which defines:
-  * the operation part sheet type, subtype of
-  `TraceabilityPartSheetOperationType`;
-  * the mailbox type, subtype of `TraceabilityMailboxType` adding the operation
-  part sheet;
-  * the machine instance, with its mailboxes.
+it, which defines (e.g. for OP30):
+  * the operation part sheet type (`TraceabilityPartSheetOP30Type`), subtype of
+  `TraceabilityPartSheetOperationType`, with the operation part sheet variables;
+  * the mailbox type (`TraceabilityMailboxOP30Type`), subtype of
+  `TraceabilityMailboxType`, adding the operation part sheet as a component
+  (`TraceabilityPartSheetOP30`);
+  * the machine instance (`OP30`), of `TraceabilityMachineType`, organized in the
+  `Objects` folder, with its mailboxes as components of the operation mailbox type
+  (e.g. `TraceabilityMailboxOP30In`).
+
+The instances of the operation namespaces result in the tree shown in the
+[example](#example-for-a-production-line).
 
 ### Diagrams
 
@@ -236,6 +248,44 @@ Legend: links with a filled diamond are `HasComponent` references (labelled with
 the BrowseName of the child, the diamond being on the parent side), links with a
 hollow triangle are `HasSubtype` references (the triangle pointing to the
 supertype), dashed links are `HasTypeDefinition` references.
+
+## Design rationale
+
+### Import in the machines controllers
+
+* A controller (e.g. S7-1500 with TIA Portal) imports a companion specification
+as a whole, and the variables of its instances are mapped to the controller
+variables. As each machine only imports the common namespace and the namespace
+of its operation, it has no instances of other machines to map.
+* Controllers can only map the variables of existing instances, they do not
+instantiate types. Instances are thus fully expanded in the operation namespaces
+nodesets, with all their children.
+* When several machines perform the same operation:
+  * if they are identical (same object name, same mailboxes), the same operation
+  namespace is imported on each of them, each OPC-UA server exposing its own
+  instance;
+  * otherwise, the operation namespace only defines the types, and each machine
+  has an additional namespace, depending on it, which defines its instance. The
+  types must not be duplicated in each machine namespace, as types from
+  different namespaces are different types.
+
+### BrowseNames
+
+* The children of an instance take the BrowseNames of the type children they are
+created from, including the namespace of the type defining them. The request, the
+response, the general part sheet and its variables thus have BrowseNames in the
+common namespace, identical on all machines, whatever the namespace of the
+machine instance. This is what allows resolving nodes by BrowseName.
+* The operation part sheet is found by its type rather than by its BrowseName,
+which can then be specific to each operation (e.g. `TraceabilityPartSheetOP30`).
+
+### Node identifiers stability
+
+Node identifiers are assigned when generating the nodesets. The generator keeps
+the identifiers of the previous generation, so that adding a variable does not
+renumber the other nodes: the mappings of the controllers variables remain valid
+when importing an updated nodeset. The gateway does not depend on these
+identifiers anyway (see below).
 
 ## Nodes resolution
 
