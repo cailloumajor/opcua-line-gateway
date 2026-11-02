@@ -345,10 +345,10 @@ same position:
 
 | # | Starting node | Relative path |
 | --- | --- | --- |
-| 1 | `OP30` | `.<common>:TraceabilityHeartbeat` |
-| 2 | `TraceabilityMailboxOP30In` | `.<common>:TraceabilityRequest` |
-| 3 | `TraceabilityMailboxOP30In` | `.<common>:TraceabilityResponse` |
-| 4 | `TraceabilityMailboxOP30In` | `.<common>:TraceabilityPartSheetGeneral` |
+| 1 | `OP30` | `<HasComponent><common>:TraceabilityHeartbeat` |
+| 2 | `TraceabilityMailboxOP30In` | `<HasComponent><common>:TraceabilityRequest` |
+| 3 | `TraceabilityMailboxOP30In` | `<HasComponent><common>:TraceabilityResponse` |
+| 4 | `TraceabilityMailboxOP30In` | `<HasComponent><common>:TraceabilityPartSheetGeneral` |
 | 5–7 | `TraceabilityMailboxOP30OkOut` | the same three paths |
 | 8–10 | `TraceabilityMailboxOP30ScrapOut` | the same three paths |
 
@@ -356,10 +356,11 @@ Where `<common>` is the index of the common namespace on the server.
 
 Points to consider:
 
-* As all the children are components, the browse paths follow `Aggregates`
-references (`.`), which include `HasComponent` references, and the part sheets
-variables are found by browsing `HasComponent` references to nodes of `Variable`
-class;
+* As all the children are components, both the browse paths and the browsing
+follow `HasComponent` references (subtypes included), matching the model exactly:
+a node modelled differently (e.g. as a property) is not found, revealing an
+unexpected model. The part sheets variables are found by browsing `HasComponent`
+references to nodes of `Variable` class;
 * Servers may limit the number of nodes or paths per request (`OperationLimits`
 of the server capabilities, e.g. `MaxNodesPerBrowse` and
 `MaxNodesPerTranslateBrowsePathsToNodeIds`). The limits of the controllers are
