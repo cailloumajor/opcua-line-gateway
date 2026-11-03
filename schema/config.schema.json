@@ -24,6 +24,7 @@
       "$ref": "#/$defs/TraceabilityCommonConfig"
     }
   },
+  "additionalProperties": false,
   "required": [
     "application_uri",
     "pki_dir",
@@ -47,6 +48,7 @@
           "$ref": "#/$defs/TraceabilityMachineConfig"
         }
       },
+      "additionalProperties": false,
       "required": [
         "opc_ua_server",
         "traceability"
@@ -83,6 +85,7 @@
           "format": "uri"
         }
       },
+      "additionalProperties": false,
       "required": [
         "url",
         "security_policy",
@@ -96,6 +99,13 @@
         "database": {
           "description": "ClickHouse database client configuration for archiving traceability data.",
           "$ref": "#/$defs/TraceabilityDatabaseConfig"
+        },
+        "line_id": {
+          "description": "Two character production line identifier for traceability.",
+          "type": "string",
+          "maxLength": 2,
+          "minLength": 2,
+          "pattern": "^[0-9A-Z]{2}$"
         },
         "opc_ua": {
           "description": "OPC-UA traceability information model, common to all machines.",
@@ -112,15 +122,17 @@
           "type": "string"
         }
       },
+      "additionalProperties": false,
       "required": [
+        "line_id",
         "redb_file",
+        "database",
         "queues_not_draining_threshold",
-        "opc_ua",
-        "database"
+        "opc_ua"
       ]
     },
     "TraceabilityCommonOpcUaConfig": {
-      "description": "OPC-UA traceability information model, as implemented by all machines.",
+      "description": "OPC-UA traceability information model, as implemented by all mailboxes of all\nmachines.",
       "type": "object",
       "properties": {
         "excluded_read_nids": {
@@ -180,6 +192,7 @@
           "minimum": 0
         }
       },
+      "additionalProperties": false,
       "required": [
         "namespace_url",
         "request_nid",
@@ -218,6 +231,7 @@
           "format": "uri"
         }
       },
+      "additionalProperties": false,
       "required": [
         "url",
         "default_database",
@@ -230,16 +244,6 @@
       "description": "Traceability related configuration for a machine.",
       "type": "object",
       "properties": {
-        "line_id": {
-          "description": "Two character production line identifier, only present if the machine makes\npart identifier creation requests.",
-          "type": [
-            "string",
-            "null"
-          ],
-          "maxLength": 2,
-          "minLength": 2,
-          "pattern": "^[0-9A-Z]{2}$"
-        },
         "opc_ua": {
           "description": "OPC-UA traceability information model for this machine.",
           "$ref": "#/$defs/TraceabilityMachineOpcUaConfig"
@@ -249,6 +253,7 @@
           "type": "string"
         }
       },
+      "additionalProperties": false,
       "required": [
         "publish_interval",
         "opc_ua"
@@ -270,6 +275,7 @@
           "minimum": 0
         }
       },
+      "additionalProperties": false,
       "required": [
         "namespace_url",
         "operation_part_sheet_nid"

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use futures_util::TryFutureExt;
-use opcua::types::{NodeId, ReadValueId, TimestampsToReturn, WriteValue};
+use opcua::types::{ReadValueId, TimestampsToReturn, WriteValue};
 use opcua_line_gateway_config::AsciiDigitsOrUpper;
 use thiserror::Error;
 use tokio::task::JoinError;
@@ -10,13 +10,11 @@ use tracing::{info, instrument};
 use crate::opcua::{DataValueExt, SessionExt, TryFromOpcUaValueError, WriteError};
 use crate::traceability::part_id::{PartIdentifierError, create_part_identifier};
 
-use super::{TraceabilityContext, TraceabilityHandler};
+use super::TraceabilityMailbox;
 
 /// Errors that can occur during part ID creation.
 #[derive(Debug, Error)]
 pub(super) enum CreatePartIdError {
-    #[error("part ID creation is not configured for this server")]
-    NotConfigured,
     #[error("error reading required variables")]
     ReadVariables(#[source] opcua::types::Error),
     #[error("invalid read length: expected {0}, got {1}")]
@@ -35,27 +33,15 @@ pub(super) enum CreatePartIdError {
     WritePartId(#[source] WriteError),
 }
 
-impl TraceabilityHandler<TraceabilityContext> {
+impl TraceabilityMailbox {
     /// Create the part ID by getting required data from the OPC-UA server and writing back the
     /// generated ID.
     #[instrument(err, skip_all)]
     pub(super) async fn create_part_id(&self) -> Result<(), CreatePartIdError> {
-        let line_id = self
-            .machine_config
-            .line_id
-            // Return an error if this instance has no part reference configuration.
-            .ok_or(CreatePartIdError::NotConfigured)?;
-
         // Read and convert needed OPC-UA variables.
         let read_value_ids = &[
-            ReadValueId::new_value(NodeId::new(
-                self.state.general_part_sheet.ns_index,
-                self.common_opcua_config.raw_part_ref_nid,
-            )),
-            ReadValueId::new_value(NodeId::new(
-                self.state.general_part_sheet.ns_index,
-                self.common_opcua_config.raw_batch_nid,
-            )),
+            ReadValueId::new_value(self.raw_part_ref_node.clone()),
+            ReadValueId::new_value(self.raw_batch_node.clone()),
         ];
         let values = self
             .session
@@ -83,14 +69,11 @@ impl TraceabilityHandler<TraceabilityContext> {
             .map_err(CreatePartIdError::NextSerial)?;
 
         // Create the part identifier.
-        let part_id = create_part_identifier(&part_ref, batch, line_id, today, serial)
+        let part_id = create_part_identifier(&part_ref, batch, self.line_id, today, serial)
             .map_err(CreatePartIdError::PartIdentifier)?;
 
         let write_values = &[WriteValue::value_attr(
-            NodeId::new(
-                self.state.general_part_sheet.ns_index,
-                self.common_opcua_config.part_id_nid,
-            ),
+            self.part_id_node.clone(),
             part_id.clone().into(),
         )];
         self.session

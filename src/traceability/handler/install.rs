@@ -25,6 +25,8 @@ const HEARTBEAT_INTERVAL: Duration = Duration::from_millis(500);
 pub(crate) enum TraceabilityInstallError {
     #[error("error creating subscription: {0}")]
     CreateSubscription(#[source] opcua::types::Error),
+    #[error("subscription not found for ID {0}")]
+    GetSubscription(u32),
     #[error("server raised publishing interval (requested {0:?}, got {1:?})")]
     PublishIntervalRaised(Duration, Duration),
     #[error("error creating monitored items: {0}")]
@@ -47,12 +49,12 @@ impl TraceabilityHandler<TraceabilityContext> {
         let publish_interval = self.machine_config.publish_interval;
 
         // Create a channel to pass data change notifications to the traceability handler.
-        let (tx, rx) = mpsc::unbounded_channel();
+        // let (tx, rx) = mpsc::unbounded_channel();
 
         let data_change_callback = DataChangeCallback::new(move |value, _monitored_item| {
-            if tx.send(value).is_err() {
-                warn!(msg = "traceability channel closed, dropping notification");
-            }
+            // if tx.send(value).is_err() {
+            //     warn!(msg = "traceability channel closed, dropping notification");
+            // }
         });
         let subscription_id = self
             .session
@@ -66,7 +68,7 @@ impl TraceabilityHandler<TraceabilityContext> {
             .subscription_state()
             .lock()
             .get(subscription_id)
-            .expect("getting successfully created subscription should not fail")
+            .ok_or_else(|| TraceabilityInstallError::GetSubscription(subscription_id))?
             .publishing_interval();
 
         if revised_publishing_interval > publish_interval {
@@ -95,10 +97,10 @@ impl TraceabilityHandler<TraceabilityContext> {
             .into_iter()
             .find(|item| !item.result.status_code.is_good())
         {
-            return Err(TraceabilityInstallError::MonitoredItem(
-                failed_item.item_to_monitor.node_id,
-                failed_item.result.status_code,
-            ));
+            let nid = failed_item.item_to_monitor.node_id;
+            let code = failed_item.result.status_code;
+
+            return Err(TraceabilityInstallError::MonitoredItem(nid, code));
         }
 
         // Create a collection of tasks.
@@ -136,41 +138,41 @@ impl TraceabilityHandler<TraceabilityContext> {
         );
 
         // Spawn traceability request handling task.
-        let server_id = self.server_id.clone();
-        let sent_session = Arc::clone(&self.session);
-        let response_node = self.state.protocol.response.clone();
-        tasks.spawn(
-            async move {
-                info!(msg = "traceability handler started");
+        // let server_id = self.server_id.clone();
+        // let sent_session = Arc::clone(&self.session);
+        // let response_node = self.state.protocol.response.clone();
+        // tasks.spawn(
+        //     async move {
+        //         info!(msg = "traceability handler started");
 
-                // Make a stream out of requests receiver, with graceful shutdown.
-                let stream = UnboundedReceiverStream::new(rx).take_until(shutdown.cancelled());
-                let mut pinned_stream = pin!(stream);
-                // The first value produced is the request code at subscription time,
-                // which must not be handled if it has already been answered.
-                let mut is_initial = true;
-                while let Some(request_value) = pinned_stream.next().await {
-                    if std::mem::take(&mut is_initial)
-                        && self.is_initial_request_answered(&request_value).await
-                    {
-                        info!(msg = "initial request code already answered, ignoring it");
-                        continue;
-                    }
-                    let response_value = self
-                        .handle_request(request_value)
-                        .await
-                        .unwrap_or_else(|e| e.to_response_code());
-                    let write_value =
-                        WriteValue::value_attr(response_node.clone(), response_value.into());
-                    // Ignore the result, as error logging is handled by the function
-                    // `instrument` attribute.
-                    let _ = sent_session.write_checked(&[write_value]).await;
-                }
+        //         // Make a stream out of requests receiver, with graceful shutdown.
+        //         let stream = UnboundedReceiverStream::new(rx).take_until(shutdown.cancelled());
+        //         let mut pinned_stream = pin!(stream);
+        //         // The first value produced is the request code at subscription time,
+        //         // which must not be handled if it has already been answered.
+        //         let mut is_initial = true;
+        //         while let Some(request_value) = pinned_stream.next().await {
+        //             if std::mem::take(&mut is_initial)
+        //                 && self.is_initial_request_answered(&request_value).await
+        //             {
+        //                 info!(msg = "initial request code already answered, ignoring it");
+        //                 continue;
+        //             }
+        //             let response_value = self
+        //                 .handle_request(request_value)
+        //                 .await
+        //                 .unwrap_or_else(|e| e.to_response_code());
+        //             let write_value =
+        //                 WriteValue::value_attr(response_node.clone(), response_value.into());
+        //             // Ignore the result, as error logging is handled by the function
+        //             // `instrument` attribute.
+        //             let _ = sent_session.write_checked(&[write_value]).await;
+        //         }
 
-                info!(msg = "traceability handler terminated");
-            }
-            .instrument(info_span!(parent:None, "traceability_handler", %server_id)),
-        );
+        //         info!(msg = "traceability handler terminated");
+        //     }
+        //     .instrument(info_span!(parent:None, "traceability_handler", %server_id)),
+        // );
 
         Ok(tasks)
     }

@@ -11,10 +11,12 @@ use thiserror::Error;
 
 pub use self::ascii_text::{AsciiDigitsOrUpper, AsciiDigitsOrUpperError};
 pub use self::credentials::{Credential, Credentials};
+pub use self::node_name::NodeName;
 
 mod ascii_text;
 mod credentials;
 mod foreign;
+mod node_name;
 
 /// Represents errors that can be encountered with configuration.
 #[derive(Debug, Error)]
@@ -37,6 +39,7 @@ pub enum LineGatewayConfigError {
 
 /// OPC-UA line gateway configuration.
 #[derive(Clone, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct LineGatewayConfig {
     /// Globally unique identifier for the application instance, as of OPC-UA.
     pub application_uri: String,
@@ -69,20 +72,25 @@ impl LineGatewayConfig {
 
 /// Traceability configuration for all machines.
 #[derive(Clone, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct TraceabilityCommonConfig {
+    /// Two character production line identifier for traceability.
+    pub line_id: AsciiDigitsOrUpper<2>,
     /// Path to the redb file to use for traceability cache. It will be created
     /// if it does not exist.
     pub redb_file: PathBuf,
+    /// ClickHouse database client configuration for archiving traceability data.
+    pub database: TraceabilityDatabaseConfig,
     /// The upper limit of enqueued part sheets to consider draining as working.
     pub queues_not_draining_threshold: u64,
     /// OPC-UA traceability information model, common to all machines.
     pub opc_ua: TraceabilityCommonOpcUaConfig,
-    /// ClickHouse database client configuration for archiving traceability data.
-    pub database: TraceabilityDatabaseConfig,
 }
 
-/// OPC-UA traceability information model, as implemented by all machines.
+/// OPC-UA traceability information model, as implemented by all mailboxes of all
+/// machines.
 #[derive(Clone, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct TraceabilityCommonOpcUaConfig {
     /// OPC-UA namespace URL used for common part of traceability.
     #[schemars(url)]
@@ -107,6 +115,7 @@ pub struct TraceabilityCommonOpcUaConfig {
 
 /// ClickHouse database configuration for traceability.
 #[derive(Clone, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct TraceabilityDatabaseConfig {
     /// URL of the ClickHouse HTTP(S) endpoint.
     #[schemars(url)]
@@ -125,6 +134,7 @@ pub struct TraceabilityDatabaseConfig {
 
 /// Connected machine configuration.
 #[derive(Clone, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct MachineConfig {
     /// OPC-UA server configuration for this machine.
     pub opc_ua_server: OpcUaServerConfig,
@@ -134,6 +144,7 @@ pub struct MachineConfig {
 
 /// Connected OPC-UA server configuration.
 #[derive(Clone, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct OpcUaServerConfig {
     /// OPC-UA server URL.
     #[schemars(url)]
@@ -148,24 +159,25 @@ pub struct OpcUaServerConfig {
 
 /// Traceability related configuration for a machine.
 #[derive(Clone, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct TraceabilityMachineConfig {
     /// Publish interval for OPC-UA subscription to request variable.
     #[serde(with = "jiff::fmt::serde::unsigned_duration::friendly::compact::required")]
     #[schemars(with = "String")]
     pub publish_interval: Duration,
-    /// Two character production line identifier, only present if the machine makes
-    /// part identifier creation requests.
-    pub line_id: Option<AsciiDigitsOrUpper<2>>,
     /// OPC-UA traceability information model for this machine.
     pub opc_ua: TraceabilityMachineOpcUaConfig,
 }
 
 /// OPC-UA traceability information model, specific for each machine.
 #[derive(Clone, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct TraceabilityMachineOpcUaConfig {
     /// OPC-UA namespace URL used for operation part of traceability.
     #[schemars(url)]
     pub namespace_url: String,
+    /// OPC-UA node identifier of the machine object (root traceability object).
+    pub machine_nid: u32,
     /// OPC-UA node identifier of the operation part sheet object.
     pub operation_part_sheet_nid: u32,
 }

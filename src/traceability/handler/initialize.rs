@@ -1,6 +1,10 @@
 use std::sync::Arc;
+use std::time::Duration;
 
-use opcua::types::NodeId;
+use opcua::client::browser::{BrowseFilter, Browser};
+use opcua::client::{DefaultRetryPolicy, ExponentialBackoff};
+use opcua::nodes::DefaultTypeTree;
+use opcua::types::{BrowseDirection, NodeClassMask, NodeId, ReferenceTypeId};
 use thiserror::Error;
 use tracing::{info, instrument};
 
@@ -11,12 +15,12 @@ use super::{BrowsePartSheetError, InitialState, TraceabilityHandler};
 pub(crate) enum TraceabilityInitializeError {
     #[error("error getting common traceability namespace index")]
     GetCommonNamespaceIndex(#[source] opcua::types::Error),
+    #[error("error getting operation traceability namespace index")]
+    GetOperationNamespaceIndex(#[source] opcua::types::Error),
     #[error("error browsing the general part sheet object")]
     BrowseGeneralPartSheet(#[source] BrowsePartSheetError),
     #[error("part identifier node not found in general part sheet")]
     NoPartIdNode,
-    #[error("error getting operation traceability namespace index")]
-    GetOperationNamespaceIndex(#[source] opcua::types::Error),
     #[error("error browsing the operation part sheet object")]
     BrowseOperationPartSheet(#[source] BrowsePartSheetError),
 }
@@ -73,6 +77,40 @@ impl TraceabilityHandler<InitialState> {
             .await
             .map_err(TraceabilityInitializeError::GetCommonNamespaceIndex)?;
 
+        // Get the namespace index for traceability operation part.
+        let operation_ns_index = self
+            .session
+            .get_namespace_index(&self.machine_config.opc_ua.namespace_url)
+            .await
+            .map_err(TraceabilityInitializeError::GetOperationNamespaceIndex)?;
+
+        // Browse the root machine object.
+        let machine_node_id =
+            NodeId::new(operation_ns_index, self.machine_config.opc_ua.machine_nid);
+        // Prepare the browser configuration.
+        let retry_policy = DefaultRetryPolicy::new(ExponentialBackoff::new(
+            Duration::from_secs(5),     // max sleep
+            Some(3),                    // max retries
+            Duration::from_millis(500), // initial sleep
+        ));
+        let browse_filter = BrowseFilter::new(
+            BrowseDirection::Forward,
+            ReferenceTypeId::HasComponent,
+            true,
+        )
+        .node_class_mask(NodeClassMask::OBJECT | NodeClassMask::VARIABLE);
+        let initial = browse_filter.new_description_from_node(machine_node_id.clone());
+        let browser = Browser::new(&self.session, browse_filter, retry_policy);
+        let browser_result = browser.run_into_result(vec![initial]).await.unwrap();
+        for item in browser_result.references.find_references(
+            &machine_node_id,
+            None::<(NodeId, _)>,
+            &DefaultTypeTree::new(),
+            BrowseDirection::Forward,
+        ) {
+            dbg!(item);
+        }
+
         // Browse the general part sheet object.
         let general_part_sheet_node_id = NodeId::new(
             common_ns_index,
@@ -93,13 +131,6 @@ impl TraceabilityHandler<InitialState> {
             msg = "general part sheet nodes discovered",
             count = general_part_sheet_nodes.len()
         );
-
-        // Get the namespace index for traceability operation part.
-        let operation_ns_index = self
-            .session
-            .get_namespace_index(&self.machine_config.opc_ua.namespace_url)
-            .await
-            .map_err(TraceabilityInitializeError::GetOperationNamespaceIndex)?;
 
         // Browse the operation part sheet.
         let operation_part_sheet_node_id = NodeId::new(

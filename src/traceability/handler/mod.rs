@@ -22,12 +22,8 @@ use initialize::TraceabilityContext;
 pub(crate) use initialize::TraceabilityInitializeError;
 pub(crate) use install::TraceabilityInstallError;
 
-mod create_part_id;
-mod handle_request;
 mod initialize;
 mod install;
-mod read_part_sheet;
-mod save_part_sheets;
 
 /// Error that can occur during browsing a part sheet object.
 #[derive(Debug, Error)]
