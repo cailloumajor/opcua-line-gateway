@@ -12,9 +12,7 @@ use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 use tracing::instrument;
 
-use super::opcua_server::{
-    OpcUaTestServer, traceability_common_opcua_config, traceability_machine_opcua_config,
-};
+use super::opcua_server::{OpcUaTestServer, traceability_common_opcua_config};
 
 const APPLICATION_URI: &str = "urn:line-gateway:test";
 
@@ -58,7 +56,7 @@ pub struct TestGateway {
 }
 
 impl TestGateway {
-    /// Start a gateway connected to the OPC-UA server at the given URL.
+    /// Start a gateway connected to the given OPC-UA servers.
     #[instrument(skip_all)]
     pub async fn start(
         temp_dir: &Path,
@@ -77,7 +75,7 @@ impl TestGateway {
                         traceability: TraceabilityMachineConfig {
                             publish_interval: Duration::from_millis(10),
                             line_id: server.line_id(),
-                            opc_ua: traceability_machine_opcua_config(),
+                            opc_ua: server.traceability_machine_opcua_config(),
                         },
                     },
                 )
@@ -118,9 +116,9 @@ impl TestGateway {
             shutdown.clone(),
         ));
 
-        // Wait for request subscription on all servers.
+        // Wait for request subscription on all the mailboxes of all servers.
         for server in servers {
-            server.wait_request_subscription().await;
+            server.wait_request_subscriptions().await;
         }
 
         Self {
