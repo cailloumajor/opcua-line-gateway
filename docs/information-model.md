@@ -297,74 +297,98 @@ identifiers anyway (see below).
 Node identifiers of the general part sheet differ between mailboxes and machines,
 so they are not used as references. Instead:
 
-* Mailboxes are discovered by browsing the machine object, and the operation part
-sheet is found by its type, as their BrowseNames are not known beforehand;
+* All the nodes of a machine are discovered by browsing recursively the machine
+object, following `HasComponent` references: the results hold, for each node
+found, its BrowseName, its node class and its type definition;
 * Nodes with BrowseNames defined by the common namespace types (the heartbeat in
 the machine object, the request, the response and the general part sheet in each
-mailbox) are resolved with the `TranslateBrowsePathsToNodeIds` service, in a
-single request for all the mailboxes of a machine. A missing node gives a
-specific error for its path (`BadNoMatch`), revealing an unexpected model;
-* The variables of the part sheets are discovered by browsing the part sheets
-objects, as all of them are needed;
+mailbox) are identified by their BrowseName. A missing node gives a specific
+error, naming the parent node and the expected BrowseName, revealing an
+unexpected model;
+* Mailboxes and operation part sheets are identified by their type, as their
+BrowseNames are not known beforehand;
+* The variables of the part sheets are all the variables found below the part
+sheets objects, as all of them are needed;
 * At session initialization, a `BrowseName → NodeId` table is built for each mailbox,
 then OPC-UA reads and writes keep using numeric node identifiers;
 * Cached general part sheet items are keyed by BrowseName (name part only), which
 is identical on all machines as defined by the common namespace types.
 
-Summary of the OPC-UA service used for each kind of node:
+Summary of how each kind of node is identified in the browse results:
 
-| Nodes to find | BrowseName known beforehand | Service |
+| Nodes to find | BrowseName known beforehand | Identified by |
 | --- | --- | --- |
-| Mailboxes of a machine | No (`<Mailbox>` placeholder) | `Browse`, filtering on the type |
-| Operation part sheet of a mailbox | No (specific to each operation) | `Browse`, filtering on the type |
-| Variables of the part sheets | All of them are needed, not a fixed list | `Browse` |
-| Request, response and general part sheet of a mailbox | Yes, in the common namespace | `TranslateBrowsePathsToNodeIds` |
-| Heartbeat of a machine | Yes, in the common namespace | `TranslateBrowsePathsToNodeIds` |
+| Heartbeat of a machine | Yes, in the common namespace | BrowseName |
+| Mailboxes of a machine | No (`<Mailbox>` placeholder) | Type definition |
+| Request, response and general part sheet of a mailbox | Yes, in the common namespace | BrowseName |
+| Operation part sheet of a mailbox | No (specific to each operation) | Type definition |
+| Variables of the part sheets | All of them are needed, not a fixed list | Node class (`Variable`) |
 
-The browse paths text format ([OPC-UA Part 4, Annex A][relative-path-bnf]) does
-not allow resolving all nodes with `TranslateBrowsePathsToNodeIds`: only the last
-element of a path can have no BrowseName (matching all targets), and the results
-only hold node identifiers, without BrowseNames nor types.
+The `TranslateBrowsePathsToNodeIds` service is not used: it would only resolve
+the nodes with BrowseNames known beforehand, in an additional request, and its
+results only hold node identifiers, without BrowseNames nor types. Browsing
+already returns all of them.
 
 ### Resolution sequence
 
-Both services take an array of starting nodes (or of browse paths, each with its
-own starting node), and return the results in the same order. The nodes of a
-machine are thus resolved with a few requests, whatever the number of mailboxes:
+The `Browse` service only returns the references of the nodes it is given, one
+level at a time. The recursion is done by the client, with the `Browser` of
+`async-opcua`: at each level, it browses all the nodes found at the previous
+level in a single request, and handles the continuation points (`BrowseNext`).
+Its policy follows `HasComponent` references (subtypes included), to nodes of
+`Object` and `Variable` classes, and only descends into objects, so the
+recursion stops at the part sheets variables.
 
-1. `Browse` of the machine object, to discover the mailboxes and their types;
-2. `TranslateBrowsePathsToNodeIds` of all the paths with BrowseNames known
-beforehand, starting from the machine object or from the mailboxes discovered at
-the previous step;
-3. `Browse` of all the part sheets (general part sheets found at the previous
-step, operation part sheets found at the first step), to list their variables.
+The nodes of a machine are thus resolved with three requests, whatever the number
+of mailboxes:
 
-For example, with the three mailboxes of OP30, the second step is a single request
-with ten browse paths, the result at a given position matching the path at the
-same position:
+1. `Browse` of the machine object: heartbeat and mailboxes;
+2. `Browse` of all the mailboxes: request, response, general part sheet and
+operation part sheet of each mailbox;
+3. `Browse` of all the part sheets: their variables.
 
-| # | Starting node | Relative path |
+For example, with the three mailboxes of OP30:
+
+| # | Nodes browsed | Nodes found |
 | --- | --- | --- |
-| 1 | `OP30` | `<HasComponent><common>:TraceabilityHeartbeat` |
-| 2 | `TraceabilityMailboxOP30In` | `<HasComponent><common>:TraceabilityRequest` |
-| 3 | `TraceabilityMailboxOP30In` | `<HasComponent><common>:TraceabilityResponse` |
-| 4 | `TraceabilityMailboxOP30In` | `<HasComponent><common>:TraceabilityPartSheetGeneral` |
-| 5–7 | `TraceabilityMailboxOP30OkOut` | the same three paths |
-| 8–10 | `TraceabilityMailboxOP30ScrapOut` | the same three paths |
+| 1 | `OP30` | `TraceabilityHeartbeat`, `TraceabilityMailboxOP30In`, `TraceabilityMailboxOP30OkOut`, `TraceabilityMailboxOP30ScrapOut` |
+| 2 | The three mailboxes | For each mailbox: `TraceabilityRequest`, `TraceabilityResponse`, `TraceabilityPartSheetGeneral`, `TraceabilityPartSheetOP30` |
+| 3 | The six part sheets | Their variables |
 
-Where `<common>` is the index of the common namespace on the server.
+The browser collects the results in a single structure: the references between
+the nodes found (parent, child and reference type), and the description of each
+node (BrowseName, node class and type definition). Each mailbox is then
+initialized in its own routine, from its part of these results, without sending
+any request itself.
+
+The results are walked down from the machine object, following the references
+from each node to its children:
+
+1. The children of the machine object whose type is a mailbox type are the
+mailboxes, each one given to its own initialization routine;
+2. The children of a mailbox are its request, response and general part sheet
+(identified by BrowseName), and its operation part sheet (identified by type);
+3. The children of a part sheet are its variables.
+
+Walking down from each mailbox, the nodes found always belong to it, without
+having to match them afterwards. No filtering on the reference type is needed:
+the browser only followed `HasComponent` references, so the children recorded
+are only components. As instances are fully expanded in the nodesets, each
+mailbox has its own nodes, with distinct node identifiers, so a part sheet
+variable has a single parent.
 
 Points to consider:
 
-* As all the children are components, both the browse paths and the browsing
-follow `HasComponent` references (subtypes included), matching the model exactly:
-a node modelled differently (e.g. as a property) is not found, revealing an
-unexpected model. The part sheets variables are found by browsing `HasComponent`
-references to nodes of `Variable` class;
-* Servers may limit the number of nodes or paths per request (`OperationLimits`
-of the server capabilities, e.g. `MaxNodesPerBrowse` and
-`MaxNodesPerTranslateBrowsePathsToNodeIds`). The limits of the controllers are
-not known yet: they can be read when connecting, or the requests split when
-rejected.
-
-[relative-path-bnf]: https://reference.opcfoundation.org/specs/OPC-10000-4
+* As all the children are components, the browsing follows `HasComponent`
+references, matching the model exactly: a node modelled differently (e.g. as a
+property) is not found, revealing an unexpected model;
+* The type definitions found are the concrete types of the operation namespace
+(e.g. `TraceabilityMailboxOP30Type`), not the types of the common namespace.
+Checking that they derive from `TraceabilityMailboxType` or
+`TraceabilityPartSheetOperationType` takes a `Browse` of the inverse `HasSubtype`
+references of these types, in a single additional request (the operation types
+are direct subtypes of the common types);
+* Servers may limit the number of nodes per request (`OperationLimits` of the
+server capabilities, e.g. `MaxNodesPerBrowse`). The limits of the controllers are
+not known yet: they can be read when connecting and given to the browser, which
+splits its requests accordingly (`max_nodes_per_request`).

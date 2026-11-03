@@ -13,10 +13,11 @@ variable per mailbox), with the heartbeat at machine level
 - [ ] Discover mailboxes by browsing the machine object (components whose type
 derives from `TraceabilityMailboxType`), and the operation part sheet by type
 (derived from `TraceabilityPartSheetOperationType`)
-- [ ] Resolve the nodes with BrowseNames defined by the common namespace types
-(heartbeat, and request, response and general part sheet of each mailbox) with
-`TranslateBrowsePathsToNodeIds`, in a single request per machine, and report the
-unresolved paths
+- [ ] Resolve all the nodes of a machine with a single recursive `Browser` run
+from the machine object (one `Browse` request per level), then initialize each
+mailbox from its part of the results; identify the nodes with BrowseNames
+defined by the common namespace types (heartbeat, and request, response and
+general part sheet of each mailbox) by BrowseName, and report the missing ones
 - [ ] Browse the part sheets variables as data variables (`HasComponent`
 references to nodes of `Variable` class) instead of properties (`HasProperty`
 references)
