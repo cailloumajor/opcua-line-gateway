@@ -339,13 +339,16 @@ Its policy follows `HasComponent` references (subtypes included), to nodes of
 `Object` and `Variable` classes, and only descends into objects, so the
 recursion stops at the part sheets variables.
 
-The nodes of a machine are thus resolved with three requests, whatever the number
-of mailboxes:
+The nodes of a machine are thus resolved with four requests, whatever the number
+of mailboxes: three by the browser, and one to check the types found:
 
 1. `Browse` of the machine object: heartbeat and mailboxes;
 2. `Browse` of all the mailboxes: request, response, general part sheet and
 operation part sheet of each mailbox;
-3. `Browse` of all the part sheets: their variables.
+3. `Browse` of all the part sheets: their variables;
+4. `Browse` of the inverse `HasSubtype` references of the distinct type
+definitions of the mailboxes and operation part sheets found, to get their
+supertypes (see [Types check](#types-check)).
 
 For example, with the three mailboxes of OP30:
 
@@ -354,6 +357,7 @@ For example, with the three mailboxes of OP30:
 | 1 | `OP30` | `TraceabilityHeartbeat`, `TraceabilityMailboxOP30In`, `TraceabilityMailboxOP30OkOut`, `TraceabilityMailboxOP30ScrapOut` |
 | 2 | The three mailboxes | For each mailbox: `TraceabilityRequest`, `TraceabilityResponse`, `TraceabilityPartSheetGeneral`, `TraceabilityPartSheetOP30` |
 | 3 | The six part sheets | Their variables |
+| 4 | `TraceabilityMailboxOP30Type`, `TraceabilityPartSheetOP30Type` | Their supertypes: `TraceabilityMailboxType`, `TraceabilityPartSheetOperationType` |
 
 The browser collects the results in a single structure: the references between
 the nodes found (parent, child and reference type), and the description of each
@@ -364,10 +368,12 @@ any request itself.
 The results are walked down from the machine object, following the references
 from each node to its children:
 
-1. The children of the machine object whose type is a mailbox type are the
-mailboxes, each one given to its own initialization routine;
+1. The children of the machine object whose type derives from
+`TraceabilityMailboxType` are the mailboxes, each one given to its own
+initialization routine;
 2. The children of a mailbox are its request, response and general part sheet
-(identified by BrowseName), and its operation part sheet (identified by type);
+(identified by BrowseName), and its operation part sheet (identified by its type,
+deriving from `TraceabilityPartSheetOperationType`);
 3. The children of a part sheet are its variables.
 
 Walking down from each mailbox, the nodes found always belong to it, without
@@ -377,17 +383,41 @@ are only components. As instances are fully expanded in the nodesets, each
 mailbox has its own nodes, with distinct node identifiers, so a part sheet
 variable has a single parent.
 
-Points to consider:
+### Types check
+
+The browser results do not hold the types hierarchy: the browser only followed
+`HasComponent` references from the machine object, and never browsed the types.
+The type definition of a node found is its concrete type, from the operation
+namespace (e.g. `TraceabilityMailboxOP30Type`), whose node identifier is not known
+beforehand, rather than the type of the common namespace it derives from.
+
+The types are thus checked after the browser, with a single request:
+
+1. Collect the distinct type definitions of the objects found whose BrowseName is
+not known beforehand: the objects of the machine object, and the objects of the
+mailboxes other than the general part sheet. There are usually two types per
+machine (one mailbox type and one operation part sheet type), whatever the number
+of mailboxes;
+2. `Browse` the inverse `HasSubtype` references of these types, which return
+their direct supertype, with its BrowseName;
+3. Keep as mailboxes the children of the machine object whose type has
+`<common>:TraceabilityMailboxType` as supertype, and as operation part sheet the
+child of a mailbox whose type has `<common>:TraceabilityPartSheetOperationType`
+as supertype, where `<common>` is the index of the common namespace, known when
+connecting.
+
+A single level of the types hierarchy is enough, as the operation types are
+direct subtypes of the common types. The supertypes are compared by BrowseName,
+as the node identifiers of the common namespace types are not used either.
+
+An object of the machine object that is not a mailbox, or a mailbox without
+exactly one operation part sheet, reveals an unexpected model.
+
+### Points to consider
 
 * As all the children are components, the browsing follows `HasComponent`
 references, matching the model exactly: a node modelled differently (e.g. as a
 property) is not found, revealing an unexpected model;
-* The type definitions found are the concrete types of the operation namespace
-(e.g. `TraceabilityMailboxOP30Type`), not the types of the common namespace.
-Checking that they derive from `TraceabilityMailboxType` or
-`TraceabilityPartSheetOperationType` takes a `Browse` of the inverse `HasSubtype`
-references of these types, in a single additional request (the operation types
-are direct subtypes of the common types);
 * Servers may limit the number of nodes per request (`OperationLimits` of the
 server capabilities, e.g. `MaxNodesPerBrowse`). The limits of the controllers are
 not known yet: they can be read when connecting and given to the browser, which
