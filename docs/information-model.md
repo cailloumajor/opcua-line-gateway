@@ -359,11 +359,12 @@ For example, with the three mailboxes of OP30:
 | 3 | The six part sheets | Their variables |
 | 4 | `TraceabilityMailboxOP30Type`, `TraceabilityPartSheetOP30Type` | Their supertypes: `TraceabilityMailboxType`, `TraceabilityPartSheetOperationType` |
 
-The browser collects the results in a single structure: the references between
-the nodes found (parent, child and reference type), and the description of each
-node (BrowseName, node class and type definition). Each mailbox is then
-initialized in its own routine, from its part of these results, without sending
-any request itself.
+The browser returns a stream of results, one for each node browsed, holding the
+references to its children with their description (BrowseName, node class and
+type definition). The gateway collects them in a table giving the children of
+each node browsed, once the whole stream is consumed, as the results come in any
+order. Each mailbox is then initialized in its own routine, from its part of this
+table, without sending any request itself.
 
 The results are walked down from the machine object, following the references
 from each node to its children:
@@ -421,4 +422,12 @@ property) is not found, revealing an unexpected model;
 * Servers may limit the number of nodes per request (`OperationLimits` of the
 server capabilities, e.g. `MaxNodesPerBrowse`). The limits of the controllers are
 not known yet: they can be read when connecting and given to the browser, which
-splits its requests accordingly (`max_nodes_per_request`).
+splits its requests accordingly (`max_nodes_per_request`);
+* A node with more references than the browser asks for in a single result
+(`max_references_per_node`) is continued with `BrowseNext`, each continuation
+giving a separate result for the same node: its children are added to the ones
+already in the table, rather than replacing them;
+* A node rejected by the server (e.g. `BadNodeIdUnknown` or `BadUserAccessDenied`)
+does not make the stream fail: it gives a result with a bad status code and no
+references. The status code of each result is checked, so that an inaccessible
+mailbox is not taken for an empty one.
