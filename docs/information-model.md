@@ -333,38 +333,52 @@ already returns all of them.
 
 The `Browse` service only returns the references of the nodes it is given, one
 level at a time. The recursion is done by the client, with the `Browser` of
-`async-opcua`: at each level, it browses all the nodes found at the previous
-level in a single request, and handles the continuation points (`BrowseNext`).
-Its policy follows `HasComponent` references (subtypes included), to nodes of
-`Object` and `Variable` classes, and only descends into objects, so the
-recursion stops at the part sheets variables.
+`async-opcua`: at each level, it browses all the nodes given by its policy for the
+results of the previous level in a single request, and handles the continuation
+points (`BrowseNext`).
 
-The nodes of a machine are thus resolved with four requests, whatever the number
-of mailboxes: three by the browser, and one to check the types found:
+The policy is a closure, called for each result, returning the nodes to browse
+next. For each object found (node of `Object` class), it returns two browse
+descriptions:
+
+* the object itself, following its `HasComponent` references forward (subtypes
+included), to nodes of `Object` and `Variable` classes, to find its components;
+* its type definition, following its `HasSubtype` references inverse (displayed
+as `SubtypeOf` by clients), to find its direct supertype (see
+[Types check](#types-check)).
+
+The policy returns nothing for the results of a type (inverse browse), and for the
+results of the part sheets (their variables, at the third level), which ends the
+recursion. The browser never browses a node twice in the same direction, so a type
+shared by several objects (e.g. the type of all the mailboxes of a machine) is
+only browsed once.
+
+The types being browsed together with the components of the objects of the same
+level, the nodes of a machine are resolved with three requests, whatever the
+number of mailboxes:
 
 1. `Browse` of the machine object: heartbeat and mailboxes;
-2. `Browse` of all the mailboxes: request, response, general part sheet and
-operation part sheet of each mailbox;
-3. `Browse` of all the part sheets: their variables;
-4. `Browse` of the inverse `HasSubtype` references of the distinct type
-definitions of the mailboxes and operation part sheets found, to get their
-supertypes (see [Types check](#types-check)).
+2. `Browse` of all the mailboxes, and of the types of the objects of the machine
+object: request, response, general part sheet and operation part sheet of each
+mailbox, and the supertypes;
+3. `Browse` of all the part sheets, and of their types: the variables of the part
+sheets, and the supertypes.
 
 For example, with the three mailboxes of OP30:
 
 | # | Nodes browsed | Nodes found |
 | --- | --- | --- |
 | 1 | `OP30` | `TraceabilityHeartbeat`, `TraceabilityMailboxOP30In`, `TraceabilityMailboxOP30OkOut`, `TraceabilityMailboxOP30ScrapOut` |
-| 2 | The three mailboxes | For each mailbox: `TraceabilityRequest`, `TraceabilityResponse`, `TraceabilityPartSheetGeneral`, `TraceabilityPartSheetOP30` |
-| 3 | The six part sheets | Their variables |
-| 4 | `TraceabilityMailboxOP30Type`, `TraceabilityPartSheetOP30Type` | Their supertypes: `TraceabilityMailboxType`, `TraceabilityPartSheetOperationType` |
+| 2 | The three mailboxes, `TraceabilityMailboxOP30Type` | For each mailbox: `TraceabilityRequest`, `TraceabilityResponse`, `TraceabilityPartSheetGeneral`, `TraceabilityPartSheetOP30`; the supertype `TraceabilityMailboxType` |
+| 3 | The six part sheets, `TraceabilityPartSheetGeneralType`, `TraceabilityPartSheetOP30Type` | The variables of the part sheets; the supertypes `BaseObjectType` and `TraceabilityPartSheetOperationType` |
 
-The browser returns a stream of results, one for each node browsed, holding the
-references to its children with their description (BrowseName, node class and
-type definition). The gateway collects them in a table giving the children of
-each node browsed, once the whole stream is consumed, as the results come in any
-order. Each mailbox is then initialized in its own routine, from its part of this
-table, without sending any request itself.
+The browser returns a stream of results, one for each node browsed, holding its
+references with their description (BrowseName, node class and type definition).
+The gateway collects them in two tables, depending on the browse direction of the
+result: the children of each object (forward browse), and the supertype of each
+type (inverse browse). The tables are used once the whole stream is consumed, as
+the results come in any order. Each mailbox is then initialized in its own
+routine, from its part of these tables, without sending any request itself.
 
 The results are walked down from the machine object, following the references
 from each node to its children:
@@ -378,41 +392,38 @@ deriving from `TraceabilityPartSheetOperationType`);
 3. The children of a part sheet are its variables.
 
 Walking down from each mailbox, the nodes found always belong to it, without
-having to match them afterwards. No filtering on the reference type is needed:
-the browser only followed `HasComponent` references, so the children recorded
-are only components. As instances are fully expanded in the nodesets, each
-mailbox has its own nodes, with distinct node identifiers, so a part sheet
-variable has a single parent.
+having to match them afterwards. The entries of the children table can be removed
+as they are used, so that their contents are moved into the mailboxes rather than
+copied. No filtering on the reference type is needed: the browser only followed
+`HasComponent` references, so the children recorded are only components. As
+instances are fully expanded in the nodesets, each mailbox has its own nodes, with
+distinct node identifiers, so a part sheet variable has a single parent.
 
 ### Types check
 
-The browser results do not hold the types hierarchy: the browser only followed
-`HasComponent` references from the machine object, and never browsed the types.
 The type definition of a node found is its concrete type, from the operation
 namespace (e.g. `TraceabilityMailboxOP30Type`), whose node identifier is not known
-beforehand, rather than the type of the common namespace it derives from.
+beforehand, rather than the type of the common namespace it derives from. The
+policy of the browser thus also browses the type definition of each object found,
+to get its direct supertype, with its BrowseName (see
+[Resolution sequence](#resolution-sequence)).
 
-The types are thus checked after the browser, with a single request:
-
-1. Collect the distinct type definitions of the objects found whose BrowseName is
-not known beforehand: the objects of the machine object, and the objects of the
-mailboxes other than the general part sheet. There are usually two types per
-machine (one mailbox type and one operation part sheet type), whatever the number
-of mailboxes;
-2. `Browse` the inverse `HasSubtype` references of these types, which return
-their direct supertype, with its BrowseName;
-3. Keep as mailboxes the children of the machine object whose type has
-`<common>:TraceabilityMailboxType` as supertype, and as operation part sheet the
-child of a mailbox whose type has `<common>:TraceabilityPartSheetOperationType`
-as supertype, where `<common>` is the index of the common namespace, known when
-connecting.
+Once the stream is consumed, the supertypes table gives, for each type, the
+BrowseName of its direct supertype. The mailboxes are the children of the machine
+object whose type has `<common>:TraceabilityMailboxType` as supertype, and the
+operation part sheet is the child of a mailbox whose type has
+`<common>:TraceabilityPartSheetOperationType` as supertype, where `<common>` is
+the index of the common namespace, known when connecting.
 
 A single level of the types hierarchy is enough, as the operation types are
 direct subtypes of the common types. The supertypes are compared by BrowseName,
-as the node identifiers of the common namespace types are not used either.
+as the node identifiers of the common namespace types are not used either. The
+types of the objects identified by BrowseName (the general part sheet) are browsed
+too, without additional request, but their supertypes are not used.
 
-An object of the machine object that is not a mailbox, or a mailbox without
-exactly one operation part sheet, reveals an unexpected model.
+An object of the machine object that is not a mailbox is ignored (and logged),
+while a mailbox without exactly one operation part sheet reveals an unexpected
+model.
 
 ### Points to consider
 
