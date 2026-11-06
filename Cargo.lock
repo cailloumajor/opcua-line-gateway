@@ -2444,11 +2444,10 @@ dependencies = [
 
 [[package]]
 name = "tick"
-version = "0.8.0"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d78ddf145aada8350702c88dc94d6da7e4b08e4e18723484b2d244f8da5f20c"
+checksum = "d22341ae5de4c1a3c6ce007e7584558e2b039bc6ef5bcbcab15cc9dd3826c770"
 dependencies = [
- "futures-core",
  "performables",
  "pin-project-lite",
  "thread_aware",
