@@ -8,7 +8,9 @@ set -eo pipefail
 
 #MISE description="Generate configuration documentation"
 
-readonly gencmd="jsonschema-markdown --no-empty-columns schema/config.schema.json"
+# Keep the Python dependency graph in a uv project: Renovate's safe mise
+# maintenance cannot regenerate pypi tool dependency graphs.
+readonly gencmd="uv run --locked --project .config/config-doc jsonschema-markdown --no-empty-columns schema/config.schema.json"
 readonly outfile=docs/configuration.md
 
 if [[ "$usage_diff" = "true" ]]; then

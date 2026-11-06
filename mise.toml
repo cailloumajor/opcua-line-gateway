@@ -17,7 +17,6 @@ node = "lts"
 "npm:bash-language-server" = "latest"
 "npm:yaml-language-server" = "latest"
 pkl = "latest"
-"pypi:jsonschema-markdown" = { version = "latest", python = "3.14" }
 rumdl = "latest"
 rust = { version = "1.99.1", components = "rust-analyzer", profile = "default" }
 shellcheck = "latest"
