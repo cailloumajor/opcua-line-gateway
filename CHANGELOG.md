@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.12](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.4.11...v0.4.12) (2026-11-07)
+
+
+### Bug Fixes
+
+* **deps:** update rust crate tick to 0.9.0 ([829d676](https://github.com/cailloumajor/opcua-line-gateway/commit/829d67647a2133c0d9daaa0b9d188a980d8ce839))
+* manage documentation generator dependencies with uv ([434e6e0](https://github.com/cailloumajor/opcua-line-gateway/commit/434e6e0bd2305f24bbf0e7c242590e2d1fa0bcdf))
+
 ## [0.4.11](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.4.10...v0.4.11) (2026-10-28)
 
 
