@@ -283,39 +283,45 @@ url_api = "https://api.github.com/repos/editorconfig-checker/editorconfig-checke
 provenance = "github-attestations"
 
 [[tools."github:ClickHouse/clickhousectl"]]
-version = "0.5.0"
+version = "0.5.1"
 backend = "github:ClickHouse/clickhousectl"
 specifiers = ["latest"]
 
 [tools."github:ClickHouse/clickhousectl"."platforms.linux-arm64"]
-checksum = "sha256:fe566ca2908218344621c9961ac5ad2f91ce20e4677ff709435f439916319aaf"
-url = "https://github.com/ClickHouse/clickhousectl/releases/download/v0.5.0/clickhousectl-aarch64-unknown-linux-musl-v0.5.0.tar.gz"
-url_api = "https://api.github.com/repos/ClickHouse/clickhousectl/releases/assets/666573890"
+checksum = "sha256:0a6c5f65ff3f64edaa4d0f00fdd36711205bef60ed2fd3c8bbe8b23bf00eec98"
+checksum_source = "mise-versions"
+url = "https://github.com/ClickHouse/clickhousectl/releases/download/v0.5.1/clickhousectl-aarch64-unknown-linux-musl-v0.5.1.tar.gz"
+url_api = "https://api.github.com/repos/ClickHouse/clickhousectl/releases/assets/718181326"
 
 [tools."github:ClickHouse/clickhousectl"."platforms.linux-arm64-musl"]
-checksum = "sha256:fe566ca2908218344621c9961ac5ad2f91ce20e4677ff709435f439916319aaf"
-url = "https://github.com/ClickHouse/clickhousectl/releases/download/v0.5.0/clickhousectl-aarch64-unknown-linux-musl-v0.5.0.tar.gz"
-url_api = "https://api.github.com/repos/ClickHouse/clickhousectl/releases/assets/666573890"
+checksum = "sha256:0a6c5f65ff3f64edaa4d0f00fdd36711205bef60ed2fd3c8bbe8b23bf00eec98"
+checksum_source = "mise-versions"
+url = "https://github.com/ClickHouse/clickhousectl/releases/download/v0.5.1/clickhousectl-aarch64-unknown-linux-musl-v0.5.1.tar.gz"
+url_api = "https://api.github.com/repos/ClickHouse/clickhousectl/releases/assets/718181326"
 
 [tools."github:ClickHouse/clickhousectl"."platforms.linux-x64"]
-checksum = "sha256:4c182a9056930113c6d5c642af1eed4393e42f81e8cd977ae82ca53a29ca1b94"
-url = "https://github.com/ClickHouse/clickhousectl/releases/download/v0.5.0/clickhousectl-x86_64-unknown-linux-musl-v0.5.0.tar.gz"
-url_api = "https://api.github.com/repos/ClickHouse/clickhousectl/releases/assets/666573885"
+checksum = "sha256:26263d680542070ffd5f835992b55c75797eecbb0b775708f101b9a0ca492a73"
+checksum_source = "mise-versions"
+url = "https://github.com/ClickHouse/clickhousectl/releases/download/v0.5.1/clickhousectl-x86_64-unknown-linux-musl-v0.5.1.tar.gz"
+url_api = "https://api.github.com/repos/ClickHouse/clickhousectl/releases/assets/718181318"
 
 [tools."github:ClickHouse/clickhousectl"."platforms.linux-x64-musl"]
-checksum = "sha256:4c182a9056930113c6d5c642af1eed4393e42f81e8cd977ae82ca53a29ca1b94"
-url = "https://github.com/ClickHouse/clickhousectl/releases/download/v0.5.0/clickhousectl-x86_64-unknown-linux-musl-v0.5.0.tar.gz"
-url_api = "https://api.github.com/repos/ClickHouse/clickhousectl/releases/assets/666573885"
+checksum = "sha256:26263d680542070ffd5f835992b55c75797eecbb0b775708f101b9a0ca492a73"
+checksum_source = "mise-versions"
+url = "https://github.com/ClickHouse/clickhousectl/releases/download/v0.5.1/clickhousectl-x86_64-unknown-linux-musl-v0.5.1.tar.gz"
+url_api = "https://api.github.com/repos/ClickHouse/clickhousectl/releases/assets/718181318"
 
 [tools."github:ClickHouse/clickhousectl"."platforms.macos-arm64"]
-checksum = "sha256:2d23565b4b779c92f6a42f495a3e2a245792fe0d5a4391fb76ac5a585ed29ba0"
-url = "https://github.com/ClickHouse/clickhousectl/releases/download/v0.5.0/clickhousectl-aarch64-apple-darwin-v0.5.0.tar.gz"
-url_api = "https://api.github.com/repos/ClickHouse/clickhousectl/releases/assets/666573891"
+checksum = "sha256:0d38c571cfaed59465a9b00ca02877f8dfe38e8fc0e4de6ca92f522f744068d9"
+checksum_source = "mise-versions"
+url = "https://github.com/ClickHouse/clickhousectl/releases/download/v0.5.1/clickhousectl-aarch64-apple-darwin-v0.5.1.tar.gz"
+url_api = "https://api.github.com/repos/ClickHouse/clickhousectl/releases/assets/718181324"
 
 [tools."github:ClickHouse/clickhousectl"."platforms.macos-x64"]
-checksum = "sha256:95ed2fbed9926454eff79bd12bdc71575f83be312e06f640c035a22cd7f99cd0"
-url = "https://github.com/ClickHouse/clickhousectl/releases/download/v0.5.0/clickhousectl-x86_64-apple-darwin-v0.5.0.tar.gz"
-url_api = "https://api.github.com/repos/ClickHouse/clickhousectl/releases/assets/666573892"
+checksum = "sha256:9e5f57fbcb861393575389cb8b7c64c118432194c2d6fa87fcb4f33721297581"
+checksum_source = "mise-versions"
+url = "https://github.com/ClickHouse/clickhousectl/releases/download/v0.5.1/clickhousectl-x86_64-apple-darwin-v0.5.1.tar.gz"
+url_api = "https://api.github.com/repos/ClickHouse/clickhousectl/releases/assets/718181317"
 
 [[tools."github:JFRyy/systemd-lsp"]]
 version = "2026.11.02"
