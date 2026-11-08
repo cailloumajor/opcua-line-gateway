@@ -2,4 +2,4 @@
 name = "config-doc"
 version = "0.0.0"
 requires-python = "==3.15.*"
-dependencies = ["jsonschema-markdown==2026.8.0"]
+dependencies = ["jsonschema-markdown==2026.11.0"]
