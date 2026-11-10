@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
-use opcua::types::{NodeId, ReadValueId, TimestampsToReturn, WriteValue};
+use opcua::types::{DataValue, NodeId, ReadValueId, TimestampsToReturn, WriteValue};
 use opcua_line_gateway_config::{AsciiDigitsOrUpper, NodeName};
 use thiserror::Error;
 use tokio::task::JoinError;
@@ -18,6 +18,8 @@ use super::{MailboxContext, TraceabilityMailbox};
 pub(crate) enum HandleReadError {
     #[error("error reading the part ID")]
     ReadPartId(#[source] opcua::types::Error),
+    #[error("invalid read length: expected 1, got {0}")]
+    ReadLength(usize),
     #[error("invalid part identifier value, cause: {0}")]
     PartIdValue(#[source] TryFromOpcUaValueError),
     #[error("error getting general part sheet from cache")]
@@ -42,12 +44,7 @@ impl TraceabilityMailbox<MailboxContext> {
             .read(&[read_value_id], TimestampsToReturn::Neither, 0.0)
             .await
             .map_err(HandleReadError::ReadPartId)?;
-        let [part_id_value] = values
-            .try_into()
-            .expect("read values vector should have the expected size");
-        let part_id: AsciiDigitsOrUpper<23> = part_id_value
-            .try_ua_value_as()
-            .map_err(HandleReadError::PartIdValue)?;
+        let part_id = parse_part_id(values)?;
 
         // Get the general part sheet from the cache, using a blocking task.
         let sent_cache = Arc::clone(&self.cache);
@@ -79,6 +76,17 @@ impl TraceabilityMailbox<MailboxContext> {
     }
 }
 
+/// Parse the part identifier read from the OPC-UA server.
+fn parse_part_id(values: Vec<DataValue>) -> Result<AsciiDigitsOrUpper<23>, HandleReadError> {
+    let [part_id_value] = values
+        .try_into()
+        .map_err(|err: Vec<_>| HandleReadError::ReadLength(err.len()))?;
+
+    part_id_value
+        .try_ua_value_as()
+        .map_err(HandleReadError::PartIdValue)
+}
+
 /// Build the values to write to the OPC-UA server from a general part sheet
 /// retrieved from the cache. Nodes configured to be excluded, and nodes unknown
 /// to this mailbox general part sheet, are skipped.
@@ -100,12 +108,53 @@ fn general_part_sheet_write_values(
 
 #[cfg(test)]
 mod tests {
+    use std::assert_matches;
+
     use opcua::types::{AttributeId, Variant};
 
     use super::*;
 
     fn name(s: &str) -> NodeName {
         s.to_owned().try_into().expect("node name should be valid")
+    }
+
+    mod parse_part_id {
+        use super::*;
+
+        const PART_ID: &str = "123456789XX422634300001";
+
+        #[test]
+        fn ok() {
+            let got = parse_part_id(vec![DataValue::value_only(PART_ID)]).expect("should succeed");
+
+            assert_eq!(got.as_str(), PART_ID);
+        }
+
+        #[test]
+        fn no_value() {
+            let result = parse_part_id(vec![]);
+
+            assert_matches!(result, Err(HandleReadError::ReadLength(0)));
+        }
+
+        #[test]
+        fn too_many_values() {
+            let values = vec![
+                DataValue::value_only(PART_ID),
+                DataValue::value_only(PART_ID),
+            ];
+
+            let result = parse_part_id(values);
+
+            assert_matches!(result, Err(HandleReadError::ReadLength(2)));
+        }
+
+        #[test]
+        fn invalid_value() {
+            let result = parse_part_id(vec![DataValue::value_only("too short")]);
+
+            assert_matches!(result, Err(HandleReadError::PartIdValue(_)));
+        }
     }
 
     mod general_part_sheet_write_values {
