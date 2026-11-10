@@ -38,14 +38,33 @@
       },
       {
         "type": "query",
+        "name": "mailbox",
+        "label": "Mailbox",
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "opcua-line-gateway-clickhouse"
+        },
+        "definition": "SELECT mailbox FROM part_sheet_general WHERE machine_id IN (${machine:singlequote})\nUNION DISTINCT\nSELECT mailbox FROM part_sheet_operation WHERE machine_id IN (${machine:singlequote})",
+        "query": "SELECT mailbox FROM part_sheet_general WHERE machine_id IN (${machine:singlequote})\nUNION DISTINCT\nSELECT mailbox FROM part_sheet_operation WHERE machine_id IN (${machine:singlequote})",
+        "refresh": 2,
+        "sort": 1,
+        "multi": true,
+        "includeAll": true,
+        "allowCustomValue": true,
+        "current": {},
+        "options": [],
+        "regex": ""
+      },
+      {
+        "type": "query",
         "name": "part_id",
         "label": "Part ID",
         "datasource": {
           "type": "grafana-clickhouse-datasource",
           "uid": "opcua-line-gateway-clickhouse"
         },
-        "definition": "SELECT part_id\nFROM part_sheet_general\nWHERE $__timeFilter(saved_at) AND machine_id IN (${machine:singlequote})\nGROUP BY part_id\nORDER BY max(saved_at) DESC\nLIMIT 500",
-        "query": "SELECT part_id\nFROM part_sheet_general\nWHERE $__timeFilter(saved_at) AND machine_id IN (${machine:singlequote})\nGROUP BY part_id\nORDER BY max(saved_at) DESC\nLIMIT 500",
+        "definition": "SELECT part_id\nFROM part_sheet_general\nWHERE $__timeFilter(saved_at) AND machine_id IN (${machine:singlequote}) AND mailbox IN (${mailbox:singlequote})\nGROUP BY part_id\nORDER BY max(saved_at) DESC\nLIMIT 500",
+        "query": "SELECT part_id\nFROM part_sheet_general\nWHERE $__timeFilter(saved_at) AND machine_id IN (${machine:singlequote}) AND mailbox IN (${mailbox:singlequote})\nGROUP BY part_id\nORDER BY max(saved_at) DESC\nLIMIT 500",
         "refresh": 2,
         "sort": 0,
         "multi": false,
@@ -99,7 +118,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT\n    saved_at AS `Saved at`,\n    machine_id AS Machine,\n    part_id AS `Part ID`,\n    data.RefePiecForg AS RefePiecForg,\n    data.LotMati AS LotMati,\n    data.RefePiecFini AS RefePiecFini,\n    data.PiecAnnoChgtRefPiecFini AS PiecAnnoChgtRefPiecFini,\n    data.PiecAnnoChgtLotMati AS PiecAnnoChgtLotMati,\n    arrayStringConcat(arrayMap(x -> if(x, '1', '0'), data.SuivTravPiecParPost)) AS SuivTravPiecParPost,\n    arrayStringConcat(arrayMap(x -> if(x, '1', '0'), data.SuivConfPiecParPost)) AS SuivConfPiecParPost,\n    data.QuiDeclNonConf AS QuiDeclNonConf,\n    data.QuiDeclConf AS QuiDeclConf,\n    data.ProgReceMach AS ProgReceMach,\n    arrayStringConcat(arrayMap(x -> if(x, '1', '0'), data.SuivPostAvecPassTrav)) AS SuivPostAvecPassTrav,\n    arrayStringConcat(arrayMap(x -> if(x, '1', '0'), data.SuivPrelPiecParPost)) AS SuivPrelPiecParPost,\n    arrayStringConcat(arrayMap(x -> if(x, '1', '0'), data.SuivRejePiecParPost)) AS SuivRejePiecParPost,\n    data.RefePiecFiniInco AS RefePiecFiniInco,\n    data.PiecTravInco AS PiecTravInco,\n    data.PiecNonConfAmon AS PiecNonConfAmon,\n    data.LotMatiInco AS LotMatiInco,\n    data.PiecRebu AS PiecRebu,\n    data.DeclRebuMoti AS DeclRebuMoti,\n    data.DeclRebuQui AS DeclRebuQui\nFROM part_sheet_general\nWHERE $__timeFilter(saved_at) AND machine_id IN (${machine:singlequote})\nORDER BY saved_at DESC\nLIMIT 1000",
+          "rawSql": "SELECT\n    saved_at AS `Saved at`,\n    machine_id AS Machine,\n    mailbox AS Mailbox,\n    part_id AS `Part ID`,\n    data.RefePiecForg AS RefePiecForg,\n    data.LotMati AS LotMati,\n    data.RefePiecFini AS RefePiecFini,\n    data.PiecAnnoChgtRefPiecFini AS PiecAnnoChgtRefPiecFini,\n    data.PiecAnnoChgtLotMati AS PiecAnnoChgtLotMati,\n    arrayStringConcat(arrayMap(x -> if(x, '1', '0'), data.SuivTravPiecParPost)) AS SuivTravPiecParPost,\n    arrayStringConcat(arrayMap(x -> if(x, '1', '0'), data.SuivConfPiecParPost)) AS SuivConfPiecParPost,\n    data.QuiDeclNonConf AS QuiDeclNonConf,\n    data.QuiDeclConf AS QuiDeclConf,\n    data.ProgReceMach AS ProgReceMach,\n    arrayStringConcat(arrayMap(x -> if(x, '1', '0'), data.SuivPostAvecPassTrav)) AS SuivPostAvecPassTrav,\n    arrayStringConcat(arrayMap(x -> if(x, '1', '0'), data.SuivPrelPiecParPost)) AS SuivPrelPiecParPost,\n    arrayStringConcat(arrayMap(x -> if(x, '1', '0'), data.SuivRejePiecParPost)) AS SuivRejePiecParPost,\n    data.RefePiecFiniInco AS RefePiecFiniInco,\n    data.PiecTravInco AS PiecTravInco,\n    data.PiecNonConfAmon AS PiecNonConfAmon,\n    data.LotMatiInco AS LotMatiInco,\n    data.PiecRebu AS PiecRebu,\n    data.DeclRebuMoti AS DeclRebuMoti,\n    data.DeclRebuQui AS DeclRebuQui\nFROM part_sheet_general\nWHERE $__timeFilter(saved_at) AND machine_id IN (${machine:singlequote}) AND mailbox IN (${mailbox:singlequote})\nORDER BY saved_at DESC\nLIMIT 1000",
           "refId": "A"
         }
       ],
@@ -149,7 +168,7 @@
                 "value": [
                   {
                     "title": "Show part history",
-                    "url": "/d/opcua-line-gateway-part-sheets?${__url_time_range}&${machine:queryparam}&var-part_id=${__value.raw}"
+                    "url": "/d/opcua-line-gateway-part-sheets?${__url_time_range}&${machine:queryparam}&${mailbox:queryparam}&var-part_id=${__value.raw}"
                   }
                 ]
               }
@@ -193,7 +212,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT\n    saved_at AS `Saved at`,\n    machine_id AS Machine,\n    part_id AS `Part ID`,\n    toJSONString(data) AS data\nFROM part_sheet_operation\nWHERE $__timeFilter(saved_at) AND machine_id IN (${machine:singlequote})\nORDER BY saved_at DESC\nLIMIT 1000",
+          "rawSql": "SELECT\n    saved_at AS `Saved at`,\n    machine_id AS Machine,\n    mailbox AS Mailbox,\n    part_id AS `Part ID`,\n    toJSONString(data) AS data\nFROM part_sheet_operation\nWHERE $__timeFilter(saved_at) AND machine_id IN (${machine:singlequote}) AND mailbox IN (${mailbox:singlequote})\nORDER BY saved_at DESC\nLIMIT 1000",
           "refId": "A"
         }
       ],
@@ -261,7 +280,7 @@
                 "value": [
                   {
                     "title": "Show part history",
-                    "url": "/d/opcua-line-gateway-part-sheets?${__url_time_range}&${machine:queryparam}&var-part_id=${__value.raw}"
+                    "url": "/d/opcua-line-gateway-part-sheets?${__url_time_range}&${machine:queryparam}&${mailbox:queryparam}&var-part_id=${__value.raw}"
                   }
                 ]
               }
@@ -318,7 +337,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "WITH\n    -- Station arrays as \"1\"/\"0\" strings, JSON strings unquoted.\n    raw -> multiIf(\n        match(raw, '^\\\\[(true|false)(,(true|false))*\\\\]$'),\n        arrayStringConcat(arrayMap(x -> if(x, '1', '0'), JSONExtract(raw, 'Array(Bool)'))),\n        startsWith(raw, '\"'), JSONExtractString(raw),\n        raw\n    ) AS display,\n    fields AS (\n        SELECT saved_at, machine_id, kv.1 AS field, kv.2 AS value\n        FROM part_sheet_general\n        ARRAY JOIN JSONExtractKeysAndValuesRaw(toJSONString(data)) AS kv\n        WHERE part_id = ${part_id:singlequote}\n    )\nSELECT\n    saved_at AS `Saved at`,\n    machine_id AS Machine,\n    field AS Field,\n    display(previous) AS Before,\n    display(value) AS After\nFROM (\n    SELECT\n        *,\n        lagInFrame(value) OVER w AS previous,\n        row_number() OVER w AS version\n    FROM fields\n    WINDOW w AS (PARTITION BY field ORDER BY saved_at ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)\n)\nWHERE version > 1 AND value != previous\nORDER BY `Saved at` DESC, Field",
+          "rawSql": "WITH\n    -- Station arrays as \"1\"/\"0\" strings, JSON strings unquoted.\n    raw -> multiIf(\n        match(raw, '^\\\\[(true|false)(,(true|false))*\\\\]$'),\n        arrayStringConcat(arrayMap(x -> if(x, '1', '0'), JSONExtract(raw, 'Array(Bool)'))),\n        startsWith(raw, '\"'), JSONExtractString(raw),\n        raw\n    ) AS display,\n    fields AS (\n        SELECT saved_at, machine_id, mailbox, kv.1 AS field, kv.2 AS value\n        FROM part_sheet_general\n        ARRAY JOIN JSONExtractKeysAndValuesRaw(toJSONString(data)) AS kv\n        WHERE part_id = ${part_id:singlequote}\n    )\nSELECT\n    saved_at AS `Saved at`,\n    machine_id AS Machine,\n    mailbox AS Mailbox,\n    field AS Field,\n    display(previous) AS Before,\n    display(value) AS After\nFROM (\n    SELECT\n        *,\n        lagInFrame(value) OVER w AS previous,\n        row_number() OVER w AS version\n    FROM fields\n    WINDOW w AS (PARTITION BY field ORDER BY saved_at ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)\n)\nWHERE version > 1 AND value != previous\nORDER BY `Saved at` DESC, Field",
           "refId": "A"
         }
       ],
@@ -395,7 +414,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT\n    saved_at AS `Saved at`,\n    machine_id AS Machine,\n    part_id AS `Part ID`,\n    data.RefePiecForg AS RefePiecForg,\n    data.LotMati AS LotMati,\n    data.RefePiecFini AS RefePiecFini,\n    data.PiecAnnoChgtRefPiecFini AS PiecAnnoChgtRefPiecFini,\n    data.PiecAnnoChgtLotMati AS PiecAnnoChgtLotMati,\n    arrayStringConcat(arrayMap(x -> if(x, '1', '0'), data.SuivTravPiecParPost)) AS SuivTravPiecParPost,\n    arrayStringConcat(arrayMap(x -> if(x, '1', '0'), data.SuivConfPiecParPost)) AS SuivConfPiecParPost,\n    data.QuiDeclNonConf AS QuiDeclNonConf,\n    data.QuiDeclConf AS QuiDeclConf,\n    data.ProgReceMach AS ProgReceMach,\n    arrayStringConcat(arrayMap(x -> if(x, '1', '0'), data.SuivPostAvecPassTrav)) AS SuivPostAvecPassTrav,\n    arrayStringConcat(arrayMap(x -> if(x, '1', '0'), data.SuivPrelPiecParPost)) AS SuivPrelPiecParPost,\n    arrayStringConcat(arrayMap(x -> if(x, '1', '0'), data.SuivRejePiecParPost)) AS SuivRejePiecParPost,\n    data.RefePiecFiniInco AS RefePiecFiniInco,\n    data.PiecTravInco AS PiecTravInco,\n    data.PiecNonConfAmon AS PiecNonConfAmon,\n    data.LotMatiInco AS LotMatiInco,\n    data.PiecRebu AS PiecRebu,\n    data.DeclRebuMoti AS DeclRebuMoti,\n    data.DeclRebuQui AS DeclRebuQui\nFROM part_sheet_general\nWHERE part_id = ${part_id:singlequote}\nORDER BY saved_at DESC",
+          "rawSql": "SELECT\n    saved_at AS `Saved at`,\n    machine_id AS Machine,\n    mailbox AS Mailbox,\n    part_id AS `Part ID`,\n    data.RefePiecForg AS RefePiecForg,\n    data.LotMati AS LotMati,\n    data.RefePiecFini AS RefePiecFini,\n    data.PiecAnnoChgtRefPiecFini AS PiecAnnoChgtRefPiecFini,\n    data.PiecAnnoChgtLotMati AS PiecAnnoChgtLotMati,\n    arrayStringConcat(arrayMap(x -> if(x, '1', '0'), data.SuivTravPiecParPost)) AS SuivTravPiecParPost,\n    arrayStringConcat(arrayMap(x -> if(x, '1', '0'), data.SuivConfPiecParPost)) AS SuivConfPiecParPost,\n    data.QuiDeclNonConf AS QuiDeclNonConf,\n    data.QuiDeclConf AS QuiDeclConf,\n    data.ProgReceMach AS ProgReceMach,\n    arrayStringConcat(arrayMap(x -> if(x, '1', '0'), data.SuivPostAvecPassTrav)) AS SuivPostAvecPassTrav,\n    arrayStringConcat(arrayMap(x -> if(x, '1', '0'), data.SuivPrelPiecParPost)) AS SuivPrelPiecParPost,\n    arrayStringConcat(arrayMap(x -> if(x, '1', '0'), data.SuivRejePiecParPost)) AS SuivRejePiecParPost,\n    data.RefePiecFiniInco AS RefePiecFiniInco,\n    data.PiecTravInco AS PiecTravInco,\n    data.PiecNonConfAmon AS PiecNonConfAmon,\n    data.LotMatiInco AS LotMatiInco,\n    data.PiecRebu AS PiecRebu,\n    data.DeclRebuMoti AS DeclRebuMoti,\n    data.DeclRebuQui AS DeclRebuQui\nFROM part_sheet_general\nWHERE part_id = ${part_id:singlequote}\nORDER BY saved_at DESC",
           "refId": "A"
         }
       ],
@@ -472,7 +491,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT\n    saved_at AS `Saved at`,\n    machine_id AS Machine,\n    toJSONString(data) AS data\nFROM part_sheet_operation\nWHERE part_id = ${part_id:singlequote}\nORDER BY saved_at DESC",
+          "rawSql": "SELECT\n    saved_at AS `Saved at`,\n    machine_id AS Machine,\n    mailbox AS Mailbox,\n    toJSONString(data) AS data\nFROM part_sheet_operation\nWHERE part_id = ${part_id:singlequote}\nORDER BY saved_at DESC",
           "refId": "A"
         }
       ],
