@@ -4,7 +4,7 @@ use std::sync::Arc;
 use opcua::client::transport::TcpConnector;
 use opcua::client::{Client, IdentityToken, Session, SessionEventLoop};
 use opcua::types::{EndpointDescription, StatusCode};
-use opcua_line_gateway_config::{Credential, MachineConfig, TraceabilityCommonOpcUaConfig};
+use opcua_line_gateway_config::{Credential, MachineConfig, TraceabilityCommonConfig};
 use parking_lot::Mutex;
 use thiserror::Error;
 use tokio::task::{JoinHandle, JoinSet};
@@ -102,7 +102,7 @@ pub(super) struct SessionStartConfig {
     pub(super) server_id: String,
     pub(super) machine_config: MachineConfig,
     pub(super) credential: Option<Credential>,
-    pub(super) traceability_opc_ua: TraceabilityCommonOpcUaConfig,
+    pub(super) traceability_common: TraceabilityCommonConfig,
     pub(super) traceability_cache: Arc<TraceabilityCache>,
     pub(super) registry: Arc<Mutex<BTreeMap<String, OpcUaSession>>>,
 }
@@ -120,7 +120,7 @@ pub(super) async fn start_session(config: SessionStartConfig) -> Result<(), Crea
         server_id,
         machine_config,
         credential,
-        traceability_opc_ua,
+        traceability_common,
         traceability_cache,
         registry,
     } = config;
@@ -161,16 +161,17 @@ pub(super) async fn start_session(config: SessionStartConfig) -> Result<(), Crea
     let traceability_cancel = CancellationToken::new();
     let traceability_handler = TraceabilityHandler::new(
         server_id.clone().into(),
-        traceability_opc_ua,
-        machine_config.traceability,
         Arc::clone(&session),
         traceability_cache,
         time_provider,
     );
     let traceability_tasks = traceability_handler
-        .initialize()
+        .initialize(&traceability_common, &machine_config.traceability)
         .await?
-        .install(traceability_cancel.clone())
+        .install(
+            traceability_cancel.clone(),
+            machine_config.opc_ua_server.publish_interval,
+        )
         .await?;
 
     // Get back the event loop handle and disable the abort-on-drop effect.

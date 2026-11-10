@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use opcua::types::{NodeId, ReadValueId, TimestampsToReturn, WriteValue};
+use opcua::types::{ReadValueId, TimestampsToReturn, WriteValue};
 use opcua_line_gateway_config::AsciiDigitsOrUpper;
 use thiserror::Error;
 use tokio::task::JoinError;
@@ -9,11 +9,11 @@ use tracing::{info, instrument};
 use crate::opcua::{DataValueExt, SessionExt, TryFromOpcUaValueError, WriteError};
 use crate::traceability::cache::GetGeneralPartSheetError;
 
-use super::{TraceabilityContext, TraceabilityHandler};
+use super::{MailboxContext, TraceabilityMailbox};
 
 /// Errors that can occur during handling the request to read the general part sheet.
 #[derive(Debug, Error)]
-pub(super) enum HandleReadError {
+pub(crate) enum HandleReadError {
     #[error("error reading the part ID")]
     ReadPartId(#[source] opcua::types::Error),
     #[error("invalid part identifier value, cause: {0}")]
@@ -28,16 +28,13 @@ pub(super) enum HandleReadError {
     WritePartSheet(#[source] WriteError),
 }
 
-impl TraceabilityHandler<TraceabilityContext> {
+impl TraceabilityMailbox<MailboxContext> {
     /// Run the request from the OPC-UA server to read the part sheet, i.e.
     /// read general part data from the cache and write it to the server.
     #[instrument(err, skip_all)]
     pub(super) async fn handle_read(&self) -> Result<(), HandleReadError> {
         // Get the part ID from the OPC-UA server.
-        let read_value_id = ReadValueId::new_value(NodeId::new(
-            self.state.general_part_sheet.ns_index,
-            self.common_opcua_config.part_id_nid,
-        ));
+        let read_value_id = ReadValueId::new_value(self.state.part_id_nid.clone());
         let values = self
             .session
             .read(&[read_value_id], TimestampsToReturn::Neither, 0.0)
@@ -66,16 +63,16 @@ impl TraceabilityHandler<TraceabilityContext> {
         // Write the general part sheet to the server.
         let write_values = part_sheet
             .into_iter()
-            .filter_map(|(id, val)| {
+            .filter_map(|(name, val)| {
                 // Exclude nodes whose identifier is configured to be excluded.
-                self.common_opcua_config
-                    .excluded_read_nids
-                    .iter()
-                    .all(|i| *i != id)
-                    .then(|| {
-                        let node_id = NodeId::new(self.state.general_part_sheet.ns_index, id);
-                        WriteValue::value_attr(node_id, val)
-                    })
+                if self.state.excluded_read_nodes.contains(&name) {
+                    None
+                } else {
+                    self.state
+                        .general_part_sheet
+                        .get(&name)
+                        .map(|nid| WriteValue::value_attr(nid.clone(), val))
+                }
             })
             .collect::<Vec<_>>();
         self.session

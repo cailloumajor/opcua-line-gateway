@@ -1,6 +1,7 @@
 mod cache;
 mod database;
 mod handler;
+mod mailbox;
 mod part_id;
 mod part_sheet;
 

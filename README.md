@@ -152,3 +152,24 @@ sequenceDiagram
     Data-->>us:Get request code notification
     us->>Data:Reset response code
 ```
+
+#### Request code at connection
+
+Each time the gateway connects to a machine, at startup or after a connection
+loss, the first request code it gets from each mailbox is the current value of
+the variable, which may have been set while the gateway was not connected. As it
+cannot tell whether such a request has already been handled, the gateway does
+not handle it:
+
+* A reset request code (`0`) resets the response code, as usual;
+* Any other request code is refused with the `93` response code, without
+  reading or writing any traceability data.
+
+After a `93` response code, the machine program must reset the request code,
+wait for the response code to be reset, then set the request code again, if the
+request is still needed.
+
+A request answered just before a connection loss, whose request code was not
+reset yet when the gateway reconnects, also gets its response code overwritten
+with `93`, although it succeeded. The machine program should therefore act on a
+response code as soon as it gets it.

@@ -11,10 +11,12 @@ use thiserror::Error;
 
 pub use self::ascii_text::{AsciiDigitsOrUpper, AsciiDigitsOrUpperError};
 pub use self::credentials::{Credential, Credentials};
+pub use self::node_name::{NodeName, NodeNameError};
 
 mod ascii_text;
 mod credentials;
 mod foreign;
+mod node_name;
 
 /// Represents errors that can be encountered with configuration.
 #[derive(Debug, Error)]
@@ -23,20 +25,13 @@ pub enum LineGatewayConfigError {
     ReadFile(#[source] io::Error),
     #[error(transparent)]
     ParseToml(toml::de::Error),
-    #[error("error getting database password file metadata")]
-    DbPassFileMeta(#[source] io::Error),
-    #[error("invalid database password file permissions (expected '0600', got '{0:04o}')")]
-    DbPassFilePermissions(u32),
     #[error("no OPC-UA server configured, running would be pointless")]
     EmptyServers,
-    #[error("missing OPC-UA username for `{0}` server configuration")]
-    MissingUsername(String),
-    #[error("missing OPC-UA password for `{0}` server configuration")]
-    MissingPassword(String),
 }
 
 /// OPC-UA line gateway configuration.
 #[derive(Clone, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct LineGatewayConfig {
     /// Globally unique identifier for the application instance, as of OPC-UA.
     pub application_uri: String,
@@ -69,44 +64,54 @@ impl LineGatewayConfig {
 
 /// Traceability configuration for all machines.
 #[derive(Clone, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct TraceabilityCommonConfig {
+    /// Two character production line identifier for traceability.
+    pub line_id: AsciiDigitsOrUpper<2>,
     /// Path to the redb file to use for traceability cache. It will be created
     /// if it does not exist.
     pub redb_file: PathBuf,
+    /// ClickHouse database client configuration for archiving traceability data.
+    pub database: TraceabilityDatabaseConfig,
     /// The upper limit of enqueued part sheets to consider draining as working.
     pub queues_not_draining_threshold: u64,
     /// OPC-UA traceability information model, common to all machines.
     pub opc_ua: TraceabilityCommonOpcUaConfig,
-    /// ClickHouse database client configuration for archiving traceability data.
-    pub database: TraceabilityDatabaseConfig,
 }
 
-/// OPC-UA traceability information model, as implemented by all machines.
+/// OPC-UA traceability information model, as implemented by all mailboxes of all
+/// machines.
 #[derive(Clone, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct TraceabilityCommonOpcUaConfig {
     /// OPC-UA namespace URL used for common part of traceability.
     #[schemars(url)]
     pub namespace_url: String,
-    /// OPC-UA node identifier of the request variable.
-    pub request_nid: u32,
-    /// OPC-UA node identifier of the response variable.
-    pub response_nid: u32,
-    /// OPC-UA node identifier of the heartbeat variable.
-    pub heartbeat_nid: u32,
-    /// OPC-UA node identifier of the general part sheet object.
-    pub general_part_sheet_nid: u32,
-    /// OPC-UA node identifier of the `part ID` variable.
-    pub part_id_nid: u32,
-    /// OPC-UA node identifier of the raw part reference variable.
-    pub raw_part_ref_nid: u32,
-    /// OPC-UA node identifier of the raw material batch variable.
-    pub raw_batch_nid: u32,
-    /// Identifiers of OPC-UA nodes to be excluded from general part sheet read request.
-    pub excluded_read_nids: Vec<u32>,
+    /// OPC-UA `BrowseName` of the traceability heartbeat node.
+    pub heartbeat_node: String,
+    /// OPC-UA `BrowseName` of the traceability mailbox common type.
+    pub mailbox_type: String,
+    /// OPC-UA `BrowseName` of the traceability request node.
+    pub request_node: String,
+    /// OPC-UA `BrowseName` of the traceability response node.
+    pub response_node: String,
+    /// OPC-UA `BrowseName` of the general part sheet object.
+    pub general_part_sheet_node: String,
+    /// OPC-UA `BrowseName` of the operation part sheet common type.
+    pub operation_part_sheet_type: String,
+    /// OPC-UA `BrowseName` of the part identifier variable.
+    pub part_id_node: NodeName,
+    /// OPC-UA `BrowseName` of the raw part reference variable.
+    pub raw_part_ref_node: NodeName,
+    /// OPC-UA `BrowseName` of the raw material batch variable.
+    pub raw_batch_node: NodeName,
+    /// OPC-UA `BrowseName` of the nodes to be excluded from general part sheet read request.
+    pub excluded_read_nodes: Vec<NodeName>,
 }
 
 /// ClickHouse database configuration for traceability.
 #[derive(Clone, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct TraceabilityDatabaseConfig {
     /// URL of the ClickHouse HTTP(S) endpoint.
     #[schemars(url)]
@@ -125,6 +130,7 @@ pub struct TraceabilityDatabaseConfig {
 
 /// Connected machine configuration.
 #[derive(Clone, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct MachineConfig {
     /// OPC-UA server configuration for this machine.
     pub opc_ua_server: OpcUaServerConfig,
@@ -134,6 +140,7 @@ pub struct MachineConfig {
 
 /// Connected OPC-UA server configuration.
 #[derive(Clone, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct OpcUaServerConfig {
     /// OPC-UA server URL.
     #[schemars(url)]
@@ -144,28 +151,19 @@ pub struct OpcUaServerConfig {
     /// OPC-UA security mode.
     #[serde(with = "foreign::MessageSecurityMode")]
     pub security_mode: MessageSecurityMode,
-}
-
-/// Traceability related configuration for a machine.
-#[derive(Clone, Deserialize, JsonSchema)]
-pub struct TraceabilityMachineConfig {
     /// Publish interval for OPC-UA subscription to request variable.
     #[serde(with = "jiff::fmt::serde::unsigned_duration::friendly::compact::required")]
     #[schemars(with = "String")]
     pub publish_interval: Duration,
-    /// Two character production line identifier, only present if the machine makes
-    /// part identifier creation requests.
-    pub line_id: Option<AsciiDigitsOrUpper<2>>,
-    /// OPC-UA traceability information model for this machine.
-    pub opc_ua: TraceabilityMachineOpcUaConfig,
 }
 
-/// OPC-UA traceability information model, specific for each machine.
+/// Traceability related configuration for a machine.
 #[derive(Clone, Deserialize, JsonSchema)]
-pub struct TraceabilityMachineOpcUaConfig {
+#[serde(deny_unknown_fields)]
+pub struct TraceabilityMachineConfig {
     /// OPC-UA namespace URL used for operation part of traceability.
     #[schemars(url)]
     pub namespace_url: String,
-    /// OPC-UA node identifier of the operation part sheet object.
-    pub operation_part_sheet_nid: u32,
+    /// OPC-UA node identifier of the machine object (root traceability object).
+    pub machine_nid: u32,
 }

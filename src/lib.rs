@@ -60,7 +60,7 @@ pub async fn run_main(
         client.into(),
         config.machines,
         credentials.opc_ua,
-        config.traceability.opc_ua,
+        config.traceability,
         shutdown,
         traceability_cache,
         time_provider,
