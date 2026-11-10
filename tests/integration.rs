@@ -482,7 +482,7 @@ async fn general_part_sheet_between_mailboxes() {
     let gateway = TestGateway::start(
         temp_dir.path(),
         time_provider,
-        db_config,
+        db_config.clone(),
         db_creds,
         &[&server],
     )
@@ -507,6 +507,19 @@ async fn general_part_sheet_between_mailboxes() {
     assert_eq!(response, RESPONSE_OK);
 
     assert_general_part_sheet_loaded(&mailbox_out, &general_part_sheet);
+
+    // The archived general part sheet must record the mailbox it was saved from.
+    let general_rows =
+        wait_archived_part_sheets(&db_config, &db_config.general_part_sheet_table, PART_ID).await;
+    assert_eq!(
+        general_rows.len(),
+        1,
+        "general part sheets: {general_rows:?}"
+    );
+    assert_eq!(
+        general_rows[0]["mailbox"],
+        json!("TraceabilityMailboxOP20In")
+    );
 
     gateway.stop().await;
     server.stop().await;
@@ -566,6 +579,10 @@ async fn part_sheets_archived_from_their_mailbox() {
     );
     assert_eq!(general_rows[0]["machine_id"], json!(server.name()));
     assert_eq!(
+        general_rows[0]["mailbox"],
+        json!("TraceabilityMailboxOP30OkOut")
+    );
+    assert_eq!(
         general_rows[0]["data"][general::RAW_PART_REF],
         json!("1-498GR14")
     );
@@ -578,6 +595,10 @@ async fn part_sheets_archived_from_their_mailbox() {
         "operation part sheets: {operation_rows:?}"
     );
     assert_eq!(operation_rows[0]["machine_id"], json!(server.name()));
+    assert_eq!(
+        operation_rows[0]["mailbox"],
+        json!("TraceabilityMailboxOP30OkOut")
+    );
     assert_eq!(
         operation_rows[0]["data"],
         json!({"Conforming": true, "Operator": "Alice"})
