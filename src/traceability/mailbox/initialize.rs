@@ -10,7 +10,7 @@ use thiserror::Error;
 use tracing::{Span, debug, info, instrument, warn};
 
 use crate::opcua::{DataValueExt, SerializeVariant, TryFromOpcUaValueError};
-use crate::traceability::handler::BrowseResults;
+use crate::traceability::handler::{BrowseResults, has_common_supertype};
 
 use super::{MailboxContext, TraceabilityMailbox};
 
@@ -147,13 +147,12 @@ fn find_mailbox_children(
         let browse_name = &node_ref.browse_name;
         let node_id = node_ref.node_id.node_id;
         let is_operation_part_sheet = || {
-            supertypes
-                .get(&node_ref.type_definition.node_id)
-                .is_some_and(|refs| {
-                    refs.iter().any(|r| {
-                        is_common_name(&r.browse_name, &opcua_config.operation_part_sheet_type)
-                    })
-                })
+            has_common_supertype(
+                supertypes,
+                &node_ref.type_definition.node_id,
+                common_ns_index,
+                &opcua_config.operation_part_sheet_type,
+            )
         };
 
         match node_ref.node_class {

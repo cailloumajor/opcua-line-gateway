@@ -81,22 +81,13 @@ impl TraceabilityHandler<HandlerContext> {
             ));
         }
 
-        // Create the monitored item. Given that we only have one item, we use sane
-        // defaults, including not attributing client ID to monitored item.
-        let monitored_items = self
-            .state
-            .mailboxes
-            .iter()
-            .zip(1..)
-            .map(|(mailbox, client_handle)| MonitoredItemCreateRequest {
-                item_to_monitor: mailbox.request_node().into(),
-                monitoring_mode: MonitoringMode::Reporting,
-                requested_parameters: MonitoringParameters {
-                    client_handle,
-                    ..Default::default()
-                },
-            })
-            .collect();
+        // Create a monitored item for the request node of each mailbox.
+        let monitored_items = request_monitored_items(
+            self.state
+                .mailboxes
+                .iter()
+                .map(|mailbox| mailbox.request_node()),
+        );
         let created = self
             .session
             .create_monitored_items(subscription_id, TimestampsToReturn::Source, monitored_items)
@@ -159,9 +150,7 @@ impl TraceabilityHandler<HandlerContext> {
                 let stream = UnboundedReceiverStream::new(rx).take_until(shutdown.cancelled());
                 let mut pinned_stream = pin!(stream);
                 while let Some((client_handle, request_value)) = pinned_stream.next().await {
-                    let Some(target_mailbox) = client_handle
-                        .checked_sub(1)
-                        .and_then(|i| usize::try_from(i).ok())
+                    let Some(target_mailbox) = mailbox_index(client_handle)
                         .and_then(|index| self.state.mailboxes.get_mut(index))
                     else {
                         error!(
@@ -189,5 +178,64 @@ impl TraceabilityHandler<HandlerContext> {
         );
 
         Ok(tasks)
+    }
+}
+
+/// Build the monitored items creation requests for the request nodes of the
+/// mailboxes, in order. The mailbox index of a notification is obtained from
+/// the monitored item client handle with [`mailbox_index`].
+fn request_monitored_items<'a>(
+    request_nodes: impl Iterator<Item = &'a NodeId>,
+) -> Vec<MonitoredItemCreateRequest> {
+    // Start client handles at 1, so that a default (zero) client handle does not
+    // match any mailbox.
+    request_nodes
+        .zip(1..)
+        .map(|(node_id, client_handle)| MonitoredItemCreateRequest {
+            item_to_monitor: node_id.into(),
+            monitoring_mode: MonitoringMode::Reporting,
+            requested_parameters: MonitoringParameters {
+                client_handle,
+                ..Default::default()
+            },
+        })
+        .collect()
+}
+
+/// Get the mailbox index from the client handle of a monitored item created by
+/// [`request_monitored_items`].
+fn mailbox_index(client_handle: u32) -> Option<usize> {
+    client_handle
+        .checked_sub(1)
+        .and_then(|index| usize::try_from(index).ok())
+}
+
+#[cfg(test)]
+mod tests {
+    use opcua::types::AttributeId;
+
+    use super::*;
+
+    #[test]
+    fn request_monitored_items_roundtrip() {
+        let request_nodes = [NodeId::new(3, 10), NodeId::new(3, 20), NodeId::new(3, 30)];
+
+        let items = request_monitored_items(request_nodes.iter());
+
+        assert_eq!(items.len(), request_nodes.len());
+        for (index, item) in items.iter().enumerate() {
+            assert_eq!(item.item_to_monitor.node_id, request_nodes[index]);
+            assert_eq!(item.item_to_monitor.attribute_id, AttributeId::Value as u32);
+            assert_eq!(item.monitoring_mode, MonitoringMode::Reporting);
+            assert_eq!(
+                mailbox_index(item.requested_parameters.client_handle),
+                Some(index)
+            );
+        }
+    }
+
+    #[test]
+    fn mailbox_index_zero_client_handle() {
+        assert_eq!(mailbox_index(0), None);
     }
 }
