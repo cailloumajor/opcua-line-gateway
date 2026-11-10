@@ -101,16 +101,7 @@ impl TraceabilityMailbox<MailboxContext> {
         value: DataValue,
     ) -> Result<u8, HandleRequestError> {
         let is_initial = mem::take(&mut self.state.request_is_initial);
-
-        let request_code = value
-            .try_ua_value_as()
-            .map_err(HandleRequestError::ValueError)?;
-        let req = TraceabilityRequest::from_repr(request_code)
-            .ok_or(HandleRequestError::UnknownValue(request_code))?;
-
-        if is_initial && req != TraceabilityRequest::Reset {
-            return Err(HandleRequestError::InitialRequest(req));
-        }
+        let req = parse_request(value, is_initial)?;
 
         match req {
             TraceabilityRequest::Reset => {
@@ -124,5 +115,115 @@ impl TraceabilityMailbox<MailboxContext> {
         }
 
         Ok(RESPONSE_SUCCESS)
+    }
+}
+
+/// Parse the request value received from the OPC-UA server. The first request
+/// received (`is_initial`) must be a reset request.
+fn parse_request(
+    value: DataValue,
+    is_initial: bool,
+) -> Result<TraceabilityRequest, HandleRequestError> {
+    let request_code = value
+        .try_ua_value_as()
+        .map_err(HandleRequestError::ValueError)?;
+    let req = TraceabilityRequest::from_repr(request_code)
+        .ok_or(HandleRequestError::UnknownValue(request_code))?;
+
+    if is_initial && req != TraceabilityRequest::Reset {
+        return Err(HandleRequestError::InitialRequest(req));
+    }
+
+    Ok(req)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::assert_matches;
+
+    use opcua::types::{StatusCode, Variant};
+
+    use super::*;
+
+    mod parse_request {
+        use super::*;
+
+        #[test]
+        fn initial_reset() {
+            let req = parse_request(DataValue::value_only(0u8), true).expect("should succeed");
+
+            assert_eq!(req, TraceabilityRequest::Reset);
+        }
+
+        #[test]
+        fn initial_not_reset() {
+            let result = parse_request(DataValue::value_only(1u8), true);
+
+            assert_matches!(
+                result,
+                Err(HandleRequestError::InitialRequest(
+                    TraceabilityRequest::CreatePartId
+                ))
+            );
+        }
+
+        #[test]
+        fn not_initial() {
+            for (code, expected) in [
+                (0u8, TraceabilityRequest::Reset),
+                (1, TraceabilityRequest::CreatePartId),
+                (2, TraceabilityRequest::ReadPartSheet),
+                (3, TraceabilityRequest::SavePartSheets),
+            ] {
+                let req =
+                    parse_request(DataValue::value_only(code), false).expect("should succeed");
+
+                assert_eq!(req, expected);
+            }
+        }
+
+        #[test]
+        fn unknown_value() {
+            let result = parse_request(DataValue::value_only(4u8), false);
+
+            assert_matches!(result, Err(HandleRequestError::UnknownValue(4)));
+        }
+
+        #[test]
+        fn unknown_value_before_initial_check() {
+            let result = parse_request(DataValue::value_only(42u8), true);
+
+            assert_matches!(result, Err(HandleRequestError::UnknownValue(42)));
+        }
+
+        #[test]
+        fn invalid_type() {
+            let result = parse_request(DataValue::value_only(1u16), false);
+
+            assert_matches!(
+                result,
+                Err(HandleRequestError::ValueError(
+                    TryFromOpcUaValueError::InvalidType("Byte", _)
+                ))
+            );
+        }
+
+        #[test]
+        fn bad_status() {
+            let value = DataValue {
+                value: Some(Variant::from(1u8)),
+                status: Some(StatusCode::BadNodeIdUnknown),
+                ..Default::default()
+            };
+
+            let result = parse_request(value, false);
+
+            assert_matches!(
+                result,
+                Err(HandleRequestError::ValueError(
+                    TryFromOpcUaValueError::BadStatus(StatusCode::BadNodeIdUnknown)
+                ))
+            );
+        }
     }
 }

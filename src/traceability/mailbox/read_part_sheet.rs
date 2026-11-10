@@ -1,13 +1,15 @@
+use std::collections::BTreeMap;
 use std::sync::Arc;
 
-use opcua::types::{ReadValueId, TimestampsToReturn, WriteValue};
-use opcua_line_gateway_config::AsciiDigitsOrUpper;
+use opcua::types::{NodeId, ReadValueId, TimestampsToReturn, WriteValue};
+use opcua_line_gateway_config::{AsciiDigitsOrUpper, NodeName};
 use thiserror::Error;
 use tokio::task::JoinError;
 use tracing::{info, instrument};
 
 use crate::opcua::{DataValueExt, SessionExt, TryFromOpcUaValueError, WriteError};
 use crate::traceability::cache::GetGeneralPartSheetError;
+use crate::traceability::part_sheet::SavedPartSheetItem;
 
 use super::{MailboxContext, TraceabilityMailbox};
 
@@ -61,20 +63,11 @@ impl TraceabilityMailbox<MailboxContext> {
             .ok_or_else(|| HandleReadError::CacheMissing(part_id.to_string()))?;
 
         // Write the general part sheet to the server.
-        let write_values = part_sheet
-            .into_iter()
-            .filter_map(|(name, val)| {
-                // Exclude nodes whose identifier is configured to be excluded.
-                if self.state.excluded_read_nodes.contains(&name) {
-                    None
-                } else {
-                    self.state
-                        .general_part_sheet
-                        .get(&name)
-                        .map(|nid| WriteValue::value_attr(nid.clone(), val))
-                }
-            })
-            .collect::<Vec<_>>();
+        let write_values = general_part_sheet_write_values(
+            part_sheet,
+            &self.state.general_part_sheet,
+            &self.state.excluded_read_nodes,
+        );
         self.session
             .write_checked(&write_values)
             .await
@@ -83,5 +76,91 @@ impl TraceabilityMailbox<MailboxContext> {
         info!(msg = "general part sheet read", %part_id);
 
         Ok(())
+    }
+}
+
+/// Build the values to write to the OPC-UA server from a general part sheet
+/// retrieved from the cache. Nodes configured to be excluded, and nodes unknown
+/// to this mailbox general part sheet, are skipped.
+fn general_part_sheet_write_values(
+    part_sheet: Vec<SavedPartSheetItem>,
+    general_part_sheet: &BTreeMap<NodeName, NodeId>,
+    excluded_read_nodes: &[NodeName],
+) -> Vec<WriteValue> {
+    part_sheet
+        .into_iter()
+        .filter(|(name, _)| !excluded_read_nodes.contains(name))
+        .filter_map(|(name, val)| {
+            general_part_sheet
+                .get(&name)
+                .map(|nid| WriteValue::value_attr(nid.clone(), val))
+        })
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use opcua::types::{AttributeId, Variant};
+
+    use super::*;
+
+    fn name(s: &str) -> NodeName {
+        s.to_owned().try_into().expect("node name should be valid")
+    }
+
+    mod general_part_sheet_write_values {
+        use super::*;
+
+        #[test]
+        fn maps_names_to_node_ids() {
+            let general = BTreeMap::from([
+                (name("a"), NodeId::new(1, 10)),
+                (name("b"), NodeId::new(1, 11)),
+            ]);
+            let part_sheet = vec![
+                (name("a"), Variant::from(true)),
+                (name("b"), Variant::from(42u16)),
+            ];
+
+            let got = general_part_sheet_write_values(part_sheet, &general, &[]);
+
+            assert_eq!(got.len(), 2);
+            assert_eq!(got[0].node_id, NodeId::new(1, 10));
+            assert_eq!(got[0].attribute_id, AttributeId::Value as u32);
+            assert_eq!(got[0].value.value, Some(Variant::from(true)));
+            assert_eq!(got[1].node_id, NodeId::new(1, 11));
+            assert_eq!(got[1].value.value, Some(Variant::from(42u16)));
+        }
+
+        #[test]
+        fn skips_excluded_nodes() {
+            let general = BTreeMap::from([
+                (name("a"), NodeId::new(1, 10)),
+                (name("b"), NodeId::new(1, 11)),
+            ]);
+            let part_sheet = vec![
+                (name("a"), Variant::from(true)),
+                (name("b"), Variant::from(42u16)),
+            ];
+
+            let got = general_part_sheet_write_values(part_sheet, &general, &[name("a")]);
+
+            assert_eq!(got.len(), 1);
+            assert_eq!(got[0].node_id, NodeId::new(1, 11));
+        }
+
+        #[test]
+        fn skips_unknown_nodes() {
+            let general = BTreeMap::from([(name("a"), NodeId::new(1, 10))]);
+            let part_sheet = vec![
+                (name("a"), Variant::from(true)),
+                (name("unknown"), Variant::from(42u16)),
+            ];
+
+            let got = general_part_sheet_write_values(part_sheet, &general, &[]);
+
+            assert_eq!(got.len(), 1);
+            assert_eq!(got[0].node_id, NodeId::new(1, 10));
+        }
     }
 }

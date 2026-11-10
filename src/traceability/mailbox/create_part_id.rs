@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use futures_util::TryFutureExt;
-use opcua::types::{ReadValueId, TimestampsToReturn, WriteValue};
+use opcua::types::{DataValue, ReadValueId, TimestampsToReturn, WriteValue};
 use opcua_line_gateway_config::AsciiDigitsOrUpper;
 use thiserror::Error;
 use tokio::task::JoinError;
@@ -48,15 +48,7 @@ impl TraceabilityMailbox<MailboxContext> {
             .read(read_value_ids, TimestampsToReturn::Neither, 0.0)
             .await
             .map_err(CreatePartIdError::ReadVariables)?;
-        let [part_ref_value, batch_value] = values
-            .try_into()
-            .map_err(|err: Vec<_>| CreatePartIdError::ReadLength(2, err.len()))?;
-        let part_ref: String = part_ref_value
-            .try_ua_value_as()
-            .map_err(CreatePartIdError::PartRefValue)?;
-        let batch: AsciiDigitsOrUpper<2> = batch_value
-            .try_ua_value_as()
-            .map_err(CreatePartIdError::BatchValue)?;
+        let (part_ref, batch) = parse_part_id_inputs(values)?;
 
         let today = self.time_provider.now_zoned().date();
 
@@ -84,5 +76,97 @@ impl TraceabilityMailbox<MailboxContext> {
         info!(msg = "created part identifier", part_id);
 
         Ok(())
+    }
+}
+
+/// Parse the values read from the OPC-UA server to create the part ID, i.e. the
+/// raw part reference and the raw material batch, in this order.
+fn parse_part_id_inputs(
+    values: Vec<DataValue>,
+) -> Result<(String, AsciiDigitsOrUpper<2>), CreatePartIdError> {
+    let [part_ref_value, batch_value] = values
+        .try_into()
+        .map_err(|err: Vec<_>| CreatePartIdError::ReadLength(2, err.len()))?;
+    let part_ref = part_ref_value
+        .try_ua_value_as()
+        .map_err(CreatePartIdError::PartRefValue)?;
+    let batch = batch_value
+        .try_ua_value_as()
+        .map_err(CreatePartIdError::BatchValue)?;
+
+    Ok((part_ref, batch))
+}
+
+#[cfg(test)]
+mod tests {
+    use std::assert_matches;
+
+    use crate::opcua::TryFromOpcUaValueError;
+
+    use super::*;
+
+    mod parse_part_id_inputs {
+        use super::*;
+
+        #[test]
+        fn ok() {
+            let values = vec![
+                DataValue::value_only("P89-4865ABCD513A-X846"),
+                DataValue::value_only("A1"),
+            ];
+
+            let (part_ref, batch) = parse_part_id_inputs(values).expect("should succeed");
+
+            assert_eq!(part_ref, "P89-4865ABCD513A-X846");
+            assert_eq!(batch.as_str(), "A1");
+        }
+
+        #[test]
+        fn too_few_values() {
+            let values = vec![DataValue::value_only("P89-4865ABCD513A-X846")];
+
+            let result = parse_part_id_inputs(values);
+
+            assert_matches!(result, Err(CreatePartIdError::ReadLength(2, 1)));
+        }
+
+        #[test]
+        fn too_many_values() {
+            let values = vec![
+                DataValue::value_only("P89-4865ABCD513A-X846"),
+                DataValue::value_only("A1"),
+                DataValue::value_only("A1"),
+            ];
+
+            let result = parse_part_id_inputs(values);
+
+            assert_matches!(result, Err(CreatePartIdError::ReadLength(2, 3)));
+        }
+
+        #[test]
+        fn invalid_part_ref() {
+            let values = vec![DataValue::value_only(42u8), DataValue::value_only("A1")];
+
+            let result = parse_part_id_inputs(values);
+
+            assert_matches!(
+                result,
+                Err(CreatePartIdError::PartRefValue(
+                    TryFromOpcUaValueError::InvalidType(..)
+                ))
+            );
+        }
+
+        #[test]
+        fn invalid_batch() {
+            let values = vec![
+                DataValue::value_only("P89-4865ABCD513A-X846"),
+                DataValue::value_only("a1"),
+            ];
+
+            let result = parse_part_id_inputs(values);
+
+            assert_matches!(result, Err(CreatePartIdError::BatchValue(_)));
+        }
     }
 }
