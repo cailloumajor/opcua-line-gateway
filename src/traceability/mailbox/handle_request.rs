@@ -97,12 +97,13 @@ impl HandleRequestError {
 impl TraceabilityMailbox<MailboxContext> {
     /// Handle a request code from the OPC-UA server. Upon success, return the response code
     /// that must be written to the server.
-    #[instrument(err, skip_all)]
+    #[instrument(err, skip_all, fields(mailbox = self.state.mailbox_name))]
     pub(crate) async fn handle_request(
         &mut self,
         value: DataValue,
     ) -> Result<u8, HandleRequestError> {
         let is_initial = mem::take(&mut self.state.request_is_initial);
+
         let req = parse_request(value, is_initial)?;
 
         match req {

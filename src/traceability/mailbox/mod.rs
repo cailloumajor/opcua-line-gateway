@@ -19,6 +19,8 @@ mod save_part_sheets;
 
 /// Initialized mailbox context.
 pub(super) struct MailboxContext {
+    /// Mailbox name.
+    mailbox_name: String,
     /// Whether the request is the first one received.
     request_is_initial: bool,
     /// Request OPC-UA `NodeId`.

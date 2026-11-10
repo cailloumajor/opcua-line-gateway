@@ -34,7 +34,7 @@ pub(crate) enum TraceabilityInitializeError {
 
 impl TraceabilityHandler<()> {
     /// Initialize the traceability handler. This involves interacting with the session.
-    #[instrument(name = "traceability_initialize", err, skip_all)]
+    #[instrument(name = "traceability_init", err, skip_all)]
     pub(crate) async fn initialize(
         self,
         common_config: &TraceabilityCommonConfig,

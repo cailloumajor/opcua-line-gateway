@@ -41,7 +41,7 @@ pub(crate) enum MailboxInitializeError {
 
 impl TraceabilityMailbox<()> {
     /// Initialize the mailbox. This involves interacting with the session.
-    #[instrument(name = "mailbox_initialize", err, skip_all, fields(mailbox))]
+    #[instrument(name = "mailbox_init", err, skip_all, fields(mailbox))]
     pub(crate) async fn initialize(
         self,
         common_ns_index: u16,
@@ -50,7 +50,8 @@ impl TraceabilityMailbox<()> {
         supertypes: &BrowseResults,
         root_node_ref: ReferenceDescription,
     ) -> Result<TraceabilityMailbox<MailboxContext>, MailboxInitializeError> {
-        Span::current().record("mailbox", root_node_ref.browse_name.name.as_ref());
+        let mailbox_name = root_node_ref.browse_name.name.to_string();
+        Span::current().record("mailbox", &mailbox_name);
 
         let root_node_id = &root_node_ref.node_id.node_id;
         let root_node_refs = children
@@ -90,6 +91,7 @@ impl TraceabilityMailbox<()> {
         );
 
         let state = MailboxContext {
+            mailbox_name,
             request_is_initial: true,
             request_nid,
             response_nid,
