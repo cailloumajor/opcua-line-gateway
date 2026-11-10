@@ -80,6 +80,14 @@ tempfile = "3.27.0"
 tick = { version = "0.9.0", features = ["test-util"] }
 tokio = { version = "1.52.3", features = ["net"] }
 
+# RSA key generation, done for each integration test certificate, is very slow
+# without optimizations.
+[profile.dev.package.num-bigint-dig]
+opt-level = 3
+
+[profile.dev.package.rsa]
+opt-level = 3
+
 [profile.deb]
 inherits = "release"
 debug = "line-tables-only"
