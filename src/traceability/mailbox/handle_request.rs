@@ -69,7 +69,9 @@ impl HandleRequestError {
             Self::CreatePartId(CreatePartIdError::PartIdentifier(_)) => 16,
             Self::CreatePartId(CreatePartIdError::WritePartId(_)) => 17,
 
+            // Group the two following errors in the same error code.
             Self::HandleRead(HandleReadError::ReadPartId(_)) => 21,
+            Self::HandleRead(HandleReadError::ReadLength(_)) => 21,
             Self::HandleRead(HandleReadError::PartIdValue(_)) => 22,
             // Group the two following errors in the same error code.
             Self::HandleRead(HandleReadError::CacheGet(_)) => 23,
