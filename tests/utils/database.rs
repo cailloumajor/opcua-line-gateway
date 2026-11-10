@@ -7,6 +7,7 @@ use indoc::formatdoc;
 use opcua_line_gateway_config::{Credential, TraceabilityDatabaseConfig};
 use rand::distr::{Alphanumeric, SampleString};
 use serde::Deserialize;
+use serde_json::Value;
 
 /// Name of the CLickHouse server testing instance.
 const CH_SERVER_NAME: &str = "integration-tests";
@@ -115,4 +116,48 @@ pub fn init_database() -> (TraceabilityDatabaseConfig, Credential) {
     let credential = Credential { user, password };
 
     (config, credential)
+}
+
+/// Wait for the part sheets of the given part to have been archived in the given
+/// table, and return them as JSON objects (`machine_id` and `data` columns).
+pub async fn wait_archived_part_sheets(
+    db_config: &TraceabilityDatabaseConfig,
+    table: &str,
+    part_id: &str,
+) -> Vec<Value> {
+    let database = &db_config.default_database;
+    let query = formatdoc! {"
+        SELECT machine_id, data FROM {database}.{table}
+        WHERE part_id = {{part_id: String}}
+        ORDER BY saved_at
+        FORMAT JSONEachRow
+    "};
+
+    tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            let output = cmd!(
+                "clickhousectl",
+                "local",
+                "client",
+                "--name",
+                CH_SERVER_NAME,
+                "--",
+                format!("--param_part_id={part_id}"),
+                "--query",
+                &query
+            )
+            .read()
+            .expect("querying the archived part sheets should not fail");
+            let rows = output
+                .lines()
+                .map(|line| serde_json::from_str(line).expect("rows should be valid JSON"))
+                .collect::<Vec<Value>>();
+            if !rows.is_empty() {
+                return rows;
+            }
+            tokio::time::sleep(Duration::from_millis(50)).await;
+        }
+    })
+    .await
+    .unwrap_or_else(|_| panic!("part sheets of part {part_id} should be archived in {table}"))
 }

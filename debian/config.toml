@@ -22,25 +22,33 @@ application_uri = "urn:ORG:line-gateway:LINE"
 pki_dir = "pki"
 
 [traceability]
+# Two characters production line identifier (digits or uppercase letters), used
+# in the created part identifiers.
+line_id = "01"
 # Traceability cache, created if missing.
 redb_file = "cache.redb"
 # Above this count of part sheets waiting to be archived, the archiving is
 # considered not working.
 queues_not_draining_threshold = 50
 
-# OPC-UA traceability information model common to all machines: these node
-# identifiers must match the PLC programs.
+# OPC-UA traceability information model common to all machines: these
+# BrowseNames, in the common namespace, must match the PLC programs.
 [traceability.opc_ua]
 namespace_url = "urn:ORG:traceability:LINE:common"
-request_nid = 1006
-response_nid = 1007
-heartbeat_nid = 1008
-general_part_sheet_nid = 1031
-part_id_nid = 1032
-raw_part_ref_nid = 1033
-raw_batch_nid = 1034
-# Nodes of the general part sheet object not to be read.
-excluded_read_nids = []
+# Types, from which the machines nodes are discovered.
+mailbox_type = "MailboxType"
+operation_part_sheet_type = "OperationPartSheetType"
+# Nodes of the machine object, and of each mailbox.
+heartbeat_node = "Heartbeat"
+request_node = "Request"
+response_node = "Response"
+general_part_sheet_node = "GeneralPartSheet"
+# Variables of the general part sheet.
+part_id_node = "PartId"
+raw_part_ref_node = "RawPartRef"
+raw_batch_node = "RawBatch"
+# Variables of the general part sheet not to be read.
+excluded_read_nodes = []
 
 # ClickHouse database archiving the part sheets.
 [traceability.database]
@@ -51,8 +59,8 @@ general_part_sheet_table = "part_sheet_general"
 operation_part_sheet_table = "part_sheet_operation"
 
 # Connected machines, keyed by an identifier also used in the credentials file
-# and in the logs. At least one machine is required. Copy the three tables
-# below for each machine.
+# and in the logs. At least one machine is required. Copy the two tables below
+# for each machine.
 
 [machines.PLC1.opc_ua_server]
 url = "opc.tcp://192.0.2.1:4840"
@@ -61,15 +69,12 @@ url = "opc.tcp://192.0.2.1:4840"
 security_policy = "None"
 # One of: None, Sign, SignAndEncrypt.
 security_mode = "None"
+# Publish interval of the OPC-UA subscriptions to the request variables.
+publish_interval = "100ms"
 
 [machines.PLC1.traceability]
-# Publish interval of the OPC-UA subscription to the request variable.
-publish_interval = "100ms"
-# Two characters production line identifier (digits or uppercase letters),
-# only for the machine making part identifier creation requests. Remove it for
-# other machines.
-line_id = "01"
-
-[machines.PLC1.traceability.opc_ua]
+# Operation namespace of the machine.
 namespace_url = "urn:ORG:traceability:LINE:PLC1"
-operation_part_sheet_nid = 1013
+# Numeric identifier, in the operation namespace, of the machine object, from
+# which the heartbeat and the mailboxes are discovered.
+machine_nid = 1000

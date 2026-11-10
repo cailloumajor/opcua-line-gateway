@@ -6,17 +6,17 @@ use opcua::types::{ApplicationDescription, ApplicationType};
 use opcua_line_gateway::{TimeProvider, run_main};
 use opcua_line_gateway_config::{
     Credential, Credentials, LineGatewayConfig, MachineConfig, TraceabilityCommonConfig,
-    TraceabilityDatabaseConfig, TraceabilityMachineConfig,
+    TraceabilityDatabaseConfig,
 };
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 use tracing::instrument;
 
-use super::opcua_server::{
-    OpcUaTestServer, traceability_common_opcua_config, traceability_machine_opcua_config,
-};
+use super::opcua_server::{OpcUaTestServer, traceability_common_opcua_config};
 
 const APPLICATION_URI: &str = "urn:line-gateway:test";
+/// Production line identifier, used in created part identifiers.
+const LINE_ID: &str = "AB";
 
 /// Return the path to the PKI for the gateway, provided the temporary path.
 pub fn gateway_pki_dir(temp_dir: &Path) -> PathBuf {
@@ -58,7 +58,7 @@ pub struct TestGateway {
 }
 
 impl TestGateway {
-    /// Start a gateway connected to the OPC-UA server at the given URL.
+    /// Start a gateway connected to the given OPC-UA servers.
     #[instrument(skip_all)]
     pub async fn start(
         temp_dir: &Path,
@@ -74,11 +74,7 @@ impl TestGateway {
                     server.name().into(),
                     MachineConfig {
                         opc_ua_server: server.opcua_config(),
-                        traceability: TraceabilityMachineConfig {
-                            publish_interval: Duration::from_millis(10),
-                            line_id: server.line_id(),
-                            opc_ua: traceability_machine_opcua_config(),
-                        },
+                        traceability: server.traceability_config(),
                     },
                 )
             })
@@ -88,6 +84,7 @@ impl TestGateway {
             application_uri: APPLICATION_URI.into(),
             pki_dir: gateway_pki_dir(temp_dir),
             traceability: TraceabilityCommonConfig {
+                line_id: LINE_ID.parse().expect("line identifier should be valid"),
                 redb_file: temp_dir.join("test.redb"),
                 queues_not_draining_threshold: 10,
                 opc_ua: traceability_common_opcua_config(),
@@ -110,6 +107,13 @@ impl TestGateway {
             opc_ua: opcua_creds,
         };
 
+        // Take the response codes timestamps before the gateway starts, to detect
+        // its handling of the initial request codes.
+        let responses_timestamps = servers
+            .iter()
+            .map(|server| server.responses_timestamps())
+            .collect::<Vec<_>>();
+
         let shutdown = CancellationToken::new();
         let task_handle = tokio::spawn(run_main(
             config,
@@ -118,9 +122,11 @@ impl TestGateway {
             shutdown.clone(),
         ));
 
-        // Wait for request subscription on all servers.
-        for server in servers {
-            server.wait_request_subscription().await;
+        // Wait for the initial request codes of all the mailboxes of all servers to
+        // have been handled, so that the requests written by the tests are not merged
+        // with them.
+        for (server, timestamps) in servers.iter().zip(&responses_timestamps) {
+            server.wait_initial_requests_handled(timestamps).await;
         }
 
         Self {

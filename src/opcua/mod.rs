@@ -1,5 +1,5 @@
 pub(crate) use client::create_client;
-pub(crate) use data_value::{DataValueExt, TryFromOpcUaValueError, TryFromVariant};
+pub(crate) use data_value::{DataValueExt, TryFromOpcUaValueError};
 pub(crate) use session_ext::{SessionExt, WriteError};
 pub(crate) use session_manager::sessions_manager;
 pub(crate) use variant::SerializeVariant;

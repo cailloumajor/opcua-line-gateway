@@ -1,68 +1,53 @@
+use std::collections::HashMap;
 use std::pin::pin;
 use std::sync::Arc;
 use std::time::Duration;
 
 use futures_util::TryStreamExt;
-use opcua::client::browser::{Browser, NoneBrowserPolicy};
+use opcua::client::browser::{BrowseResultItem, Browser};
 use opcua::client::{DefaultRetryPolicy, ExponentialBackoff, Session};
 use opcua::types::{
-    BrowseDescription, BrowseDirection, BrowseResultMaskFlags, Identifier, NodeClassMask, NodeId,
-    ReadValueId, ReferenceTypeId, StatusCode, TimestampsToReturn,
+    BrowseDescription, BrowseDirection, BrowseResultMaskFlags, NodeClass, NodeClassMask, NodeId,
+    ReferenceDescription, ReferenceTypeId, StatusCode,
 };
-use opcua_line_gateway_config::{TraceabilityCommonOpcUaConfig, TraceabilityMachineConfig};
 use thiserror::Error;
-use tracing::{instrument, warn};
+use tracing::instrument;
 
-use crate::opcua::{DataValueExt, SerializeVariant, TryFromOpcUaValueError};
 use crate::time::TimeProvider;
 
 use super::cache::TraceabilityCache;
+use super::mailbox::{MailboxContext, TraceabilityMailbox};
 
-use initialize::TraceabilityContext;
 pub(crate) use initialize::TraceabilityInitializeError;
 pub(crate) use install::TraceabilityInstallError;
 
-mod create_part_id;
-mod handle_request;
 mod initialize;
 mod install;
-mod read_part_sheet;
-mod save_part_sheets;
 
-/// Error that can occur during browsing a part sheet object.
+/// Aggregation of browsed nodes.
+pub(super) type BrowseResults = HashMap<NodeId, Vec<ReferenceDescription>>;
+
+/// Errors that can occur during browsing of the root machine object.
 #[derive(Debug, Error)]
-pub(crate) enum BrowsePartSheetError {
-    #[error("error browsing part sheet OPC-UA nodes")]
-    BrowseGeneralPartSheet(#[source] opcua::types::Error),
-    #[error("bad BrowseResult status code: {0}")]
-    BrowseResultStatus(StatusCode),
-    #[error("browse name for node identifier {0} is null")]
-    NullBrowseName(NodeId),
-    #[error("no node found when browsing the part sheet")]
-    EmptyBrowse,
-    #[error("error with OPC-UA read request")]
-    ReadRequest(#[source] opcua::types::Error),
-    #[error("invalid number of read variables (discovered {0}, read {1})")]
-    ValuesCount(usize, usize),
-    #[error("invalid discovered data value for node {1}, cause: {0}")]
-    InvalidDataValue(TryFromOpcUaValueError, String),
-    #[error("unsupported Variant for serialization for node {1}, cause: {0}")]
-    NotSerializable(serde_json::Error, String),
-    #[error("unexpected node identifier {0}, expected numeric")]
-    NodeIdentifier(Identifier),
+pub(crate) enum BrowseMachineError {
+    #[error("browse request error: {0}")]
+    Service(#[source] opcua::types::Error),
+    #[error("bad BrowseResult status code for node {0}: {1}")]
+    BrowseResultStatus(NodeId, StatusCode),
 }
 
-/// The initial state of the traceability handler.
-pub(crate) struct InitialState;
+/// The traceability handler state after initialization.
+pub(crate) struct HandlerContext {
+    /// [`NodeId`] of the heartbeat variable.
+    heartbeat: NodeId,
+    /// Initialized traceability mailboxes.
+    mailboxes: Vec<TraceabilityMailbox<MailboxContext>>,
+}
 
 /// Manages traceability for an OPC-UA session.
 pub(crate) struct TraceabilityHandler<S> {
     /// The ID of the machine this handler works with.
-    server_id: Arc<str>,
-    /// The OPC-UA traceability configuration, common to all machines.
-    common_opcua_config: TraceabilityCommonOpcUaConfig,
-    /// The traceability configuration for this machine.
-    machine_config: TraceabilityMachineConfig,
+    machine_id: Arc<str>,
     /// The OPC-UA session.
     session: Arc<Session>,
     /// The traceability cache.
@@ -73,123 +58,115 @@ pub(crate) struct TraceabilityHandler<S> {
     state: S,
 }
 
-impl TraceabilityHandler<InitialState> {
+impl TraceabilityHandler<()> {
     /// Create a new [`TraceabilityHandler`].
     pub(crate) fn new(
-        server_id: Arc<str>,
-        common_opcua_config: TraceabilityCommonOpcUaConfig,
-        machine_config: TraceabilityMachineConfig,
+        machine_id: Arc<str>,
         session: Arc<Session>,
         cache: Arc<TraceabilityCache>,
         time_provider: TimeProvider,
     ) -> Self {
         Self {
-            server_id,
-            common_opcua_config,
-            machine_config,
+            machine_id,
             session,
             cache,
             time_provider,
-            state: InitialState,
+            state: (),
         }
     }
-}
 
-impl TraceabilityHandler<InitialState> {
-    /// Browse a part sheet (i.e. an OPC-UA object), provided its node identifier.
-    /// Return a collection of numeric node identifiers and browse names couples,
-    /// which are those of the object's properties of variable type.
+    /// Browse the machine root object recursively to discover all of its object
+    /// and variable children.
+    ///
+    /// Return two mappings of references per node, respectively children one and
+    /// supertype one.
     #[instrument(err, skip(self))]
-    async fn browse_part_sheet(
+    async fn browse_machine(
         &self,
-        root_node_id: NodeId,
-    ) -> Result<Vec<(u32, Arc<str>)>, BrowsePartSheetError> {
+        machine_node: NodeId,
+    ) -> Result<(BrowseResults, BrowseResults), BrowseMachineError> {
         // Prepare the browser configuration.
         let retry_policy = DefaultRetryPolicy::new(ExponentialBackoff::new(
             Duration::from_secs(5),     // max sleep
             Some(3),                    // max retries
             Duration::from_millis(500), // initial sleep
         ));
-        let cloned_session = Arc::clone(&self.session);
-        let browser = Browser::new(&cloned_session, NoneBrowserPolicy, retry_policy);
-        let initial = BrowseDescription {
-            // Start browsing at the part sheet object.
-            node_id: root_node_id,
-            // Browse forward.
-            browse_direction: BrowseDirection::Forward,
-            // Only follow `HasProperty` references.
-            reference_type_id: ReferenceTypeId::HasProperty.into(),
-            // Do not include subtypes of reference type.
-            include_subtypes: false,
-            // Return only nodes of `Variable` class.
-            node_class_mask: NodeClassMask::VARIABLE.bits(),
-            // Enable `BrowseName` field in the returned `ReferenceDescription`.
-            result_mask: BrowseResultMaskFlags::BrowseName.bits(),
+        let browse_policy = |item: &BrowseResultItem| -> Vec<BrowseDescription> {
+            // Supertype of a type: nothing more to browse.
+            if item.request().browse_direction == BrowseDirection::Inverse {
+                return Vec::new();
+            }
+            item.references()
+                .iter()
+                .filter(|r| r.node_class == NodeClass::Object && r.node_id.server_index == 0)
+                .flat_map(|r| {
+                    [
+                        components_of(r.node_id.node_id.clone()),
+                        supertype_of(r.type_definition.node_id.clone()),
+                    ]
+                })
+                .collect()
         };
 
-        let mut browsed_nodes: Vec<(NodeId, Arc<str>)> = Vec::new();
+        let mut children: HashMap<NodeId, Vec<ReferenceDescription>> = HashMap::new();
+        let mut supertypes: HashMap<NodeId, Vec<ReferenceDescription>> = HashMap::new();
 
-        // Browse the part sheet object to build the node identifiers list.
-        let mut pinned_stream = pin!(browser.run(vec![initial]));
+        // Build the browser and collect the results.
+        let browser = Browser::new(&self.session, browse_policy, retry_policy);
+        let mut pinned_stream = pin!(browser.run(vec![components_of(machine_node)]));
         while let Some(item) = pinned_stream
             .try_next()
             .await
-            .map_err(BrowsePartSheetError::BrowseGeneralPartSheet)?
+            .map_err(BrowseMachineError::Service)?
         {
             let status = item.status();
             if !status.is_good() {
-                return Err(BrowsePartSheetError::BrowseResultStatus(status));
+                return Err(BrowseMachineError::BrowseResultStatus(
+                    item.parent_id().clone(),
+                    status,
+                ));
             }
-            for ref_description in item.references() {
-                let node_id = ref_description.node_id.node_id.clone();
-                if !node_id.is_numeric() {
-                    warn!(msg = "non-numeric NodeId found", %node_id);
-                }
-                let Some(browse_name) = ref_description.browse_name.name.value() else {
-                    return Err(BrowsePartSheetError::NullBrowseName(node_id));
-                };
 
-                browsed_nodes.push((node_id, browse_name.as_str().into()));
+            let is_inverse = item.request().browse_direction == BrowseDirection::Inverse;
+            let (parent_id, references) = item.into_results();
+            if is_inverse {
+                supertypes.entry(parent_id).or_default().extend(references);
+            } else {
+                children.entry(parent_id).or_default().extend(references);
             }
         }
 
-        // If browsing the part sheet did not find any node, do not continue with
-        // read request, which would fail with a less contextual error.
-        if browsed_nodes.is_empty() {
-            return Err(BrowsePartSheetError::EmptyBrowse);
-        }
+        Ok((children, supertypes))
+    }
+}
 
-        // Read the nodes values and ensure we can serialize them.
-        let read_value_ids = browsed_nodes
-            .iter()
-            .map(|(id, _)| ReadValueId::new_value(id.clone()))
-            .collect::<Vec<_>>();
-        let values = self
-            .session
-            .read(&read_value_ids, TimestampsToReturn::Neither, 0.0)
-            .await
-            .map_err(BrowsePartSheetError::ReadRequest)?;
-        let expected_len = browsed_nodes.len();
-        let got_len = values.len();
-        if got_len != expected_len {
-            return Err(BrowsePartSheetError::ValuesCount(expected_len, got_len));
-        }
-        for (value, (_, name)) in values.into_iter().zip(&browsed_nodes) {
-            let variant = value
-                .try_into_variant()
-                .map_err(|err| BrowsePartSheetError::InvalidDataValue(err, name.to_string()))?;
-            serde_json::to_value(SerializeVariant(&variant))
-                .map_err(|err| BrowsePartSheetError::NotSerializable(err, name.to_string()))?;
-        }
+/// Build the [`NodeDescription`] to browse the components (objects and variables)
+/// of a node.
+fn components_of(node_id: NodeId) -> BrowseDescription {
+    let node_class_mask = NodeClassMask::OBJECT | NodeClassMask::VARIABLE;
+    let result_mask = BrowseResultMaskFlags::NodeClass
+        | BrowseResultMaskFlags::BrowseName
+        | BrowseResultMaskFlags::TypeDefinition;
 
-        let nodes = browsed_nodes
-            .into_iter()
-            .map(|(nid, name)| match nid.identifier {
-                Identifier::Numeric(id) => Ok((id, name)),
-                unexpected_id => Err(BrowsePartSheetError::NodeIdentifier(unexpected_id)),
-            })
-            .collect::<Result<_, _>>()?;
+    BrowseDescription {
+        node_id,
+        browse_direction: BrowseDirection::Forward,
+        reference_type_id: ReferenceTypeId::HasComponent.into(),
+        include_subtypes: true,
+        node_class_mask: node_class_mask.bits(),
+        // BrowseName, NodeClass and TypeDefinition are needed.
+        result_mask: result_mask.bits(),
+    }
+}
 
-        Ok(nodes)
+/// Build the [`NodeDescription`] to browse the direct supertype of a type.
+fn supertype_of(type_id: NodeId) -> BrowseDescription {
+    BrowseDescription {
+        node_id: type_id,
+        browse_direction: BrowseDirection::Inverse,
+        reference_type_id: ReferenceTypeId::HasSubtype.into(),
+        include_subtypes: false,
+        node_class_mask: NodeClassMask::OBJECT_TYPE.bits(),
+        result_mask: BrowseResultMaskFlags::BrowseName.bits(),
     }
 }

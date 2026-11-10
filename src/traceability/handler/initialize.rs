@@ -1,142 +1,127 @@
 use std::sync::Arc;
 
-use opcua::types::NodeId;
+use opcua::types::{NodeClass, NodeId, QualifiedName};
+use opcua_line_gateway_config::{TraceabilityCommonConfig, TraceabilityMachineConfig};
 use thiserror::Error;
-use tracing::{info, instrument};
+use tracing::{debug, instrument};
 
-use super::{BrowsePartSheetError, InitialState, TraceabilityHandler};
+use crate::traceability::mailbox::{MailboxInitializeError, TraceabilityMailbox};
+
+use super::{BrowseMachineError, HandlerContext, TraceabilityHandler};
 
 /// Errors that can be encountered during traceability handler initialization.
 #[derive(Debug, Error)]
 pub(crate) enum TraceabilityInitializeError {
     #[error("error getting common traceability namespace index")]
     GetCommonNamespaceIndex(#[source] opcua::types::Error),
-    #[error("error browsing the general part sheet object")]
-    BrowseGeneralPartSheet(#[source] BrowsePartSheetError),
-    #[error("part identifier node not found in general part sheet")]
-    NoPartIdNode,
     #[error("error getting operation traceability namespace index")]
     GetOperationNamespaceIndex(#[source] opcua::types::Error),
-    #[error("error browsing the operation part sheet object")]
-    BrowseOperationPartSheet(#[source] BrowsePartSheetError),
+    #[error("error browsing the machine object")]
+    BrowseMachine(#[source] BrowseMachineError),
+    #[error("missing machine root object in browsed nodes")]
+    MissingMachine,
+    #[error("heartbeat node not found")]
+    MissingHeartbeat,
+    #[error("error initializing mailbox")]
+    MailboxInitialize(#[source] MailboxInitializeError),
 }
 
-/// The traceability handler state after initialization.
-pub(crate) struct TraceabilityContext {
-    /// Protocol context.
-    pub(super) protocol: ProtocolContext,
-    /// General part sheet context.
-    pub(super) general_part_sheet: GeneralPartSheetContext,
-    /// Operation part sheet context.
-    pub(super) operation_part_sheet: OperationPartSheetContext,
-}
-
-/// Traceability protocol context.
-pub(super) struct ProtocolContext {
-    /// [`NodeId`] of the request variable.
-    pub(super) request: NodeId,
-    /// [`NodeId`] of the response variable.
-    pub(super) response: NodeId,
-    /// [`NodeId`] of the heartbeat variable.
-    pub(super) heartbeat: NodeId,
-}
-
-/// Traceability context related to general part sheet.
-pub(super) struct GeneralPartSheetContext {
-    /// Namespace index.
-    pub(super) ns_index: u16,
-    /// Discovered nodes, couples of NodeIds and browse name.
-    pub(super) nodes: Vec<(u32, Arc<str>)>,
-    /// Index of the part identifier in the nodes collection.
-    pub(super) part_id_index: usize,
-}
-
-/// Traceability context related to operation part sheet.
-#[derive(Clone)]
-pub(super) struct OperationPartSheetContext {
-    /// Namespace index.
-    pub(super) ns_index: u16,
-    /// Discovered nodes, couples of numeric identifier and browse name.
-    pub(super) nodes: Vec<(u32, Arc<str>)>,
-}
-
-impl TraceabilityHandler<InitialState> {
+impl TraceabilityHandler<()> {
     /// Initialize the traceability handler. This involves interacting with the session.
     #[instrument(name = "traceability_initialize", err, skip_all)]
     pub(crate) async fn initialize(
         self,
-    ) -> Result<TraceabilityHandler<TraceabilityContext>, TraceabilityInitializeError> {
+        common_config: &TraceabilityCommonConfig,
+        machine_config: &TraceabilityMachineConfig,
+    ) -> Result<TraceabilityHandler<HandlerContext>, TraceabilityInitializeError> {
         // Get the namespace index for traceability common part.
         let common_ns_index = self
             .session
-            .get_namespace_index(&self.common_opcua_config.namespace_url)
+            .get_namespace_index(&common_config.opc_ua.namespace_url)
             .await
             .map_err(TraceabilityInitializeError::GetCommonNamespaceIndex)?;
 
-        // Browse the general part sheet object.
-        let general_part_sheet_node_id = NodeId::new(
-            common_ns_index,
-            self.common_opcua_config.general_part_sheet_nid,
-        );
-        let general_part_sheet_nodes = self
-            .browse_part_sheet(general_part_sheet_node_id)
-            .await
-            .map_err(TraceabilityInitializeError::BrowseGeneralPartSheet)?;
-
-        // Get the index of the part identifier in general part sheet nodes.
-        let part_id_index = general_part_sheet_nodes
-            .iter()
-            .position(|(id, _)| *id == self.common_opcua_config.part_id_nid)
-            .ok_or(TraceabilityInitializeError::NoPartIdNode)?;
-
-        info!(
-            msg = "general part sheet nodes discovered",
-            count = general_part_sheet_nodes.len()
-        );
+        // Whether a `BrowseName` is the given name, in the common namespace.
+        let is_common_name = |browse_name: &QualifiedName, name: &str| {
+            browse_name.namespace_index == common_ns_index && browse_name.name == name
+        };
 
         // Get the namespace index for traceability operation part.
         let operation_ns_index = self
             .session
-            .get_namespace_index(&self.machine_config.opc_ua.namespace_url)
+            .get_namespace_index(&machine_config.namespace_url)
             .await
             .map_err(TraceabilityInitializeError::GetOperationNamespaceIndex)?;
 
-        // Browse the operation part sheet.
-        let operation_part_sheet_node_id = NodeId::new(
-            operation_ns_index,
-            self.machine_config.opc_ua.operation_part_sheet_nid,
-        );
-        let operation_part_sheet_nodes = self
-            .browse_part_sheet(operation_part_sheet_node_id)
+        let machine_node = NodeId::new(operation_ns_index, machine_config.machine_nid);
+
+        let (mut children, supertypes) = self
+            .browse_machine(machine_node.clone())
             .await
-            .map_err(TraceabilityInitializeError::BrowseOperationPartSheet)?;
+            .map_err(TraceabilityInitializeError::BrowseMachine)?;
 
-        info!(
-            msg = "operation part sheet nodes discovered",
-            count = operation_part_sheet_nodes.len()
-        );
+        // Get the references of the root machine node children.
+        let machine_children = children
+            .remove(&machine_node)
+            .ok_or(TraceabilityInitializeError::MissingMachine)?;
 
-        let state = TraceabilityContext {
-            protocol: ProtocolContext {
-                request: NodeId::new(common_ns_index, self.common_opcua_config.request_nid),
-                response: NodeId::new(common_ns_index, self.common_opcua_config.response_nid),
-                heartbeat: NodeId::new(common_ns_index, self.common_opcua_config.heartbeat_nid),
-            },
-            general_part_sheet: GeneralPartSheetContext {
-                ns_index: common_ns_index,
-                nodes: general_part_sheet_nodes,
-                part_id_index,
-            },
-            operation_part_sheet: OperationPartSheetContext {
-                ns_index: operation_ns_index,
-                nodes: operation_part_sheet_nodes,
-            },
+        // Extract heartbeat and  mailboxes nodes.
+        let mut heartbeat = None;
+        let mut mailboxes = Vec::new();
+        for node_ref in machine_children {
+            let browse_name = &node_ref.browse_name;
+            let is_mailbox = || {
+                supertypes
+                    .get(&node_ref.type_definition.node_id)
+                    .is_some_and(|refs| {
+                        refs.iter().any(|r| {
+                            is_common_name(&r.browse_name, &common_config.opc_ua.mailbox_type)
+                        })
+                    })
+            };
+
+            match node_ref.node_class {
+                NodeClass::Variable
+                    if is_common_name(browse_name, &common_config.opc_ua.heartbeat_node) =>
+                {
+                    heartbeat = Some(node_ref.node_id.node_id);
+                }
+                NodeClass::Object if is_mailbox() => {
+                    let mailbox = TraceabilityMailbox::new(
+                        common_config.line_id,
+                        Arc::clone(&self.machine_id),
+                        self.time_provider.clone(),
+                        Arc::clone(&self.cache),
+                        Arc::clone(&self.session),
+                    );
+                    let mailbox = mailbox
+                        .initialize(
+                            common_ns_index,
+                            &common_config.opc_ua,
+                            &mut children,
+                            &supertypes,
+                            node_ref,
+                        )
+                        .await
+                        .map_err(TraceabilityInitializeError::MailboxInitialize)?;
+
+                    mailboxes.push(mailbox);
+                }
+                _ => {
+                    debug!(msg = "ignored machine node child", %browse_name);
+                }
+            }
+        }
+
+        let heartbeat = heartbeat.ok_or(TraceabilityInitializeError::MissingHeartbeat)?;
+
+        let state = HandlerContext {
+            heartbeat,
+            mailboxes,
         };
 
         Ok(TraceabilityHandler {
-            server_id: self.server_id,
-            common_opcua_config: self.common_opcua_config,
-            machine_config: self.machine_config,
+            machine_id: self.machine_id,
             session: self.session,
             cache: self.cache,
             time_provider: self.time_provider,

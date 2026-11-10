@@ -4,6 +4,8 @@ OPC-UA line gateway configuration.
 
 ### Type: `object`
 
+> ⚠️ Additional properties are not allowed.
+
 | Property | Type | Required | Possible values | Description |
 | -------- | ---- | -------- | --------------- | ----------- |
 | application_uri | `string` | ✅ | string | Globally unique identifier for the application instance, as of OPC-UA. |
@@ -22,10 +24,19 @@ Connected machine configuration.
 
 #### Type: `object`
 
+> ⚠️ Additional properties are not allowed.
+
 | Property | Type | Required | Possible values | Description |
 | -------- | ---- | -------- | --------------- | ----------- |
 | opc_ua_server | `object` | ✅ | [OpcUaServerConfig](#opcuaserverconfig) | OPC-UA server configuration for this machine. |
 | traceability | `object` | ✅ | [TraceabilityMachineConfig](#traceabilitymachineconfig) | Traceability settings for this machine. |
+
+## NodeName
+
+`BrowseName` of an OPC-UA node, whose length in bytes is guaranteed to fit in
+an [`u8`].
+
+#### Type: `string`
 
 ## OpcUaServerConfig
 
@@ -33,8 +44,11 @@ Connected OPC-UA server configuration.
 
 #### Type: `object`
 
+> ⚠️ Additional properties are not allowed.
+
 | Property | Type | Required | Possible values | Description |
 | -------- | ---- | -------- | --------------- | ----------- |
+| publish_interval | `string` | ✅ | string | Publish interval for OPC-UA subscription to request variable. |
 | security_mode | `string` | ✅ | `None` `Sign` `SignAndEncrypt` | OPC-UA security mode. |
 | security_policy | `string` | ✅ | `None` `Aes128Sha256RsaOaep` `Basic256Sha256` `Aes256Sha256RsaPss` `Basic128Rsa15` `Basic256` | OPC-UA security policy. |
 | url | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | OPC-UA server URL. |
@@ -45,36 +59,46 @@ Traceability configuration for all machines.
 
 #### Type: `object`
 
+> ⚠️ Additional properties are not allowed.
+
 | Property | Type | Required | Possible values | Description |
 | -------- | ---- | -------- | --------------- | ----------- |
 | database | `object` | ✅ | [TraceabilityDatabaseConfig](#traceabilitydatabaseconfig) | ClickHouse database client configuration for archiving traceability data. |
+| line_id | `string` | ✅ | [`^[0-9A-Z]{2}$`](https://regex101.com/?regex=%5E%5B0-9A-Z%5D%7B2%7D%24) | Two character production line identifier for traceability. |
 | opc_ua | `object` | ✅ | [TraceabilityCommonOpcUaConfig](#traceabilitycommonopcuaconfig) | OPC-UA traceability information model, common to all machines. |
 | queues_not_draining_threshold | `integer` | ✅ | `0 <= x ` | The upper limit of enqueued part sheets to consider draining as working. |
 | redb_file | `string` | ✅ | string | Path to the redb file to use for traceability cache. It will be created<br />if it does not exist. |
 
 ## TraceabilityCommonOpcUaConfig
 
-OPC-UA traceability information model, as implemented by all machines.
+OPC-UA traceability information model, as implemented by all mailboxes of all
+machines.
 
 #### Type: `object`
 
+> ⚠️ Additional properties are not allowed.
+
 | Property | Type | Required | Possible values | Description |
 | -------- | ---- | -------- | --------------- | ----------- |
-| excluded_read_nids | `array` | ✅ | `0 <= x ` | Identifiers of OPC-UA nodes to be excluded from general part sheet read request. |
-| general_part_sheet_nid | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the general part sheet object. |
-| heartbeat_nid | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the heartbeat variable. |
+| excluded_read_nodes | `array` | ✅ | [NodeName](#nodename) | OPC-UA `BrowseName` of the nodes to be excluded from general part sheet read request. |
+| general_part_sheet_node | `string` | ✅ | string | OPC-UA `BrowseName` of the general part sheet object. |
+| heartbeat_node | `string` | ✅ | string | OPC-UA `BrowseName` of the traceability heartbeat node. |
+| mailbox_type | `string` | ✅ | string | OPC-UA `BrowseName` of the traceability mailbox common type. |
 | namespace_url | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | OPC-UA namespace URL used for common part of traceability. |
-| part_id_nid | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the `part ID` variable. |
-| raw_batch_nid | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the raw material batch variable. |
-| raw_part_ref_nid | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the raw part reference variable. |
-| request_nid | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the request variable. |
-| response_nid | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the response variable. |
+| operation_part_sheet_type | `string` | ✅ | string | OPC-UA `BrowseName` of the operation part sheet common type. |
+| part_id_node | `string` | ✅ | [NodeName](#nodename) | OPC-UA `BrowseName` of the part identifier variable. |
+| raw_batch_node | `string` | ✅ | [NodeName](#nodename) | OPC-UA `BrowseName` of the raw material batch variable. |
+| raw_part_ref_node | `string` | ✅ | [NodeName](#nodename) | OPC-UA `BrowseName` of the raw part reference variable. |
+| request_node | `string` | ✅ | string | OPC-UA `BrowseName` of the traceability request node. |
+| response_node | `string` | ✅ | string | OPC-UA `BrowseName` of the traceability response node. |
 
 ## TraceabilityDatabaseConfig
 
 ClickHouse database configuration for traceability.
 
 #### Type: `object`
+
+> ⚠️ Additional properties are not allowed.
 
 | Property | Type | Required | Possible values | Description |
 | -------- | ---- | -------- | --------------- | ----------- |
@@ -90,22 +114,12 @@ Traceability related configuration for a machine.
 
 #### Type: `object`
 
-| Property | Type | Required | Possible values | Description |
-| -------- | ---- | -------- | --------------- | ----------- |
-| opc_ua | `object` | ✅ | [TraceabilityMachineOpcUaConfig](#traceabilitymachineopcuaconfig) | OPC-UA traceability information model for this machine. |
-| publish_interval | `string` | ✅ | string | Publish interval for OPC-UA subscription to request variable. |
-| line_id | `string` or `null` |  | [`^[0-9A-Z]{2}$`](https://regex101.com/?regex=%5E%5B0-9A-Z%5D%7B2%7D%24) | Two character production line identifier, only present if the machine makes<br />part identifier creation requests. |
-
-## TraceabilityMachineOpcUaConfig
-
-OPC-UA traceability information model, specific for each machine.
-
-#### Type: `object`
+> ⚠️ Additional properties are not allowed.
 
 | Property | Type | Required | Possible values | Description |
 | -------- | ---- | -------- | --------------- | ----------- |
+| machine_nid | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the machine object (root traceability object). |
 | namespace_url | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | OPC-UA namespace URL used for operation part of traceability. |
-| operation_part_sheet_nid | `integer` | ✅ | `0 <= x ` | OPC-UA node identifier of the operation part sheet object. |
 
 
 ---
