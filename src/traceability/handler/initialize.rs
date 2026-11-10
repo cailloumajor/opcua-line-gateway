@@ -26,6 +26,8 @@ pub(crate) enum TraceabilityInitializeError {
     MissingMachine,
     #[error("heartbeat node not found")]
     MissingHeartbeat,
+    #[error("no mailbox found")]
+    MissingMailboxes,
     #[error("error initializing mailbox")]
     MailboxInitialize(#[source] MailboxInitializeError),
 }
@@ -159,8 +161,13 @@ fn find_machine_children(
         }
     }
 
+    let heartbeat_nid = heartbeat_nid.ok_or(TraceabilityInitializeError::MissingHeartbeat)?;
+    if mailbox_refs.is_empty() {
+        return Err(TraceabilityInitializeError::MissingMailboxes);
+    }
+
     Ok(MachineChildren {
-        heartbeat_nid: heartbeat_nid.ok_or(TraceabilityInitializeError::MissingHeartbeat)?,
+        heartbeat_nid,
         mailbox_refs,
     })
 }
@@ -299,6 +306,23 @@ mod tests {
             let result = find_machine_children(refs, NS, &config(), &supertypes());
 
             assert_matches!(result, Err(TraceabilityInitializeError::MissingHeartbeat));
+        }
+
+        #[test]
+        fn mailboxes_missing() {
+            let mut refs = children();
+            refs.truncate(1);
+
+            let result = find_machine_children(refs, NS, &config(), &supertypes());
+
+            assert_matches!(result, Err(TraceabilityInitializeError::MissingMailboxes));
+        }
+
+        #[test]
+        fn mailboxes_unknown_type() {
+            let result = find_machine_children(children(), NS, &config(), &BrowseResults::new());
+
+            assert_matches!(result, Err(TraceabilityInitializeError::MissingMailboxes));
         }
 
         #[test]
