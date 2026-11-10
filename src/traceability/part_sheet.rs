@@ -99,12 +99,14 @@ pub(super) fn decode_cached_part_sheet(
 pub(super) fn encode_part_sheet_for_db(
     saved_at: Timestamp,
     machine_id: &str,
+    mailbox: &str,
     part_id: AsciiDigitsOrUpper<23>,
     part_sheet: &[SavedPartSheetItem],
 ) -> serde_json::Result<String> {
     let row = PartSheetRow {
         saved_at,
         machine_id,
+        mailbox,
         part_id,
         data: part_sheet,
     };
@@ -118,6 +120,7 @@ struct PartSheetRow<'a> {
     #[serde(serialize_with = "serialize_timestamp")]
     saved_at: Timestamp,
     machine_id: &'a str,
+    mailbox: &'a str,
     part_id: AsciiDigitsOrUpper<23>,
     #[serde(serialize_with = "serialize_part_sheet")]
     data: &'a [SavedPartSheetItem],
@@ -186,6 +189,7 @@ mod tests {
         let row = PartSheetRow {
             saved_at,
             machine_id: "MAC1",
+            mailbox: "TestingMailbox",
             part_id,
             data: part_sheet,
         };
@@ -195,12 +199,14 @@ mod tests {
             &[
                 Token::Struct {
                     name: "PartSheetRow",
-                    len: 4,
+                    len: 5,
                 },
                 Token::Str("saved_at"),
                 Token::Str("1984-12-09 04:30:54.123"),
                 Token::Str("machine_id"),
                 Token::Str("MAC1"),
+                Token::Str("mailbox"),
+                Token::Str("TestingMailbox"),
                 Token::Str("part_id"),
                 Token::Str("123456789XX422611100001"),
                 Token::Str("data"),

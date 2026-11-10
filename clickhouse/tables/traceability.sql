@@ -41,6 +41,17 @@ CREATE TABLE IF NOT EXISTS part_sheet_general
     saved_at   DateTime64(3, 'UTC') CODEC(DoubleDelta, ZSTD(1)),
     machine_id LowCardinality(String),
 
+    -- BrowseName of the mailbox the Save request came from, stored verbatim
+    -- (no prefix stripping, no normalisation). A machine may have several
+    -- mailboxes (e.g. `…OP30In`, `…OP30OkOut`, `…OP30ScrapOut`), and this tells
+    -- which point of the part's path through the machine the row records.
+    --
+    -- The name is chosen by the machine builder, not by a contract: renaming a
+    -- mailbox on the PLC splits the history. Fine for investigating an event,
+    -- not something to build business queries on. Deliberately kept out of the
+    -- sorting keys for the same reason.
+    mailbox    LowCardinality(String),
+
     -- Part identifier. Kept as a real column rather than MATERIALIZED from
     -- `data.NumeUniq`, for three reasons:
     --   * it is the pivot of the traceability protocol — the gateway generates
@@ -173,6 +184,7 @@ CREATE TABLE IF NOT EXISTS part_sheet_operation
     -- Same gateway-owned columns as above, same rationale.
     saved_at   DateTime64(3, 'UTC') CODEC(DoubleDelta, ZSTD(1)),
     machine_id LowCardinality(String),
+    mailbox    LowCardinality(String),
     part_id    FixedString(23),
 
     -- Bare `JSON`, with no declared paths: unlike the general sheet, this
