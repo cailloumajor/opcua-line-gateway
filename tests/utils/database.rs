@@ -119,7 +119,7 @@ pub fn init_database() -> (TraceabilityDatabaseConfig, Credential) {
 }
 
 /// Wait for the part sheets of the given part to have been archived in the given
-/// table, and return them as JSON objects (`machine_id` and `data` columns).
+/// table, and return them as JSON objects (`machine_id`, `mailbox` and `data` columns).
 pub async fn wait_archived_part_sheets(
     db_config: &TraceabilityDatabaseConfig,
     table: &str,
@@ -127,7 +127,7 @@ pub async fn wait_archived_part_sheets(
 ) -> Vec<Value> {
     let database = &db_config.default_database;
     let query = formatdoc! {"
-        SELECT machine_id, data FROM {database}.{table}
+        SELECT machine_id, mailbox, data FROM {database}.{table}
         WHERE part_id = {{part_id: String}}
         ORDER BY saved_at
         FORMAT JSONEachRow
