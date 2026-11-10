@@ -27,6 +27,20 @@ mod install;
 /// Aggregation of browsed nodes.
 pub(super) type BrowseResults = HashMap<NodeId, Vec<ReferenceDescription>>;
 
+/// Whether the type `type_definition` has a direct supertype with the given
+/// `BrowseName` in the common namespace, according to the browsed `supertypes`.
+pub(super) fn has_common_supertype(
+    supertypes: &BrowseResults,
+    type_definition: &NodeId,
+    common_ns_index: u16,
+    name: &str,
+) -> bool {
+    supertypes.get(type_definition).is_some_and(|refs| {
+        refs.iter()
+            .any(|r| r.browse_name.namespace_index == common_ns_index && r.browse_name.name == name)
+    })
+}
+
 /// Errors that can occur during browsing of the root machine object.
 #[derive(Debug, Error)]
 pub(crate) enum BrowseMachineError {
@@ -168,5 +182,69 @@ fn supertype_of(type_id: NodeId) -> BrowseDescription {
         include_subtypes: false,
         node_class_mask: NodeClassMask::OBJECT_TYPE.bits(),
         result_mask: BrowseResultMaskFlags::BrowseName.bits(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use opcua::types::QualifiedName;
+
+    use super::*;
+
+    mod has_common_supertype {
+        use super::*;
+
+        const NS: u16 = 2;
+
+        fn supertypes() -> BrowseResults {
+            BrowseResults::from([(
+                NodeId::new(3, 1000),
+                vec![ReferenceDescription {
+                    browse_name: QualifiedName::new(NS, "SuperType"),
+                    node_class: NodeClass::ObjectType,
+                    ..Default::default()
+                }],
+            )])
+        }
+
+        #[test]
+        fn found() {
+            assert!(has_common_supertype(
+                &supertypes(),
+                &NodeId::new(3, 1000),
+                NS,
+                "SuperType"
+            ));
+        }
+
+        #[test]
+        fn other_name() {
+            assert!(!has_common_supertype(
+                &supertypes(),
+                &NodeId::new(3, 1000),
+                NS,
+                "OtherType"
+            ));
+        }
+
+        #[test]
+        fn other_namespace() {
+            assert!(!has_common_supertype(
+                &supertypes(),
+                &NodeId::new(3, 1000),
+                NS + 1,
+                "SuperType"
+            ));
+        }
+
+        #[test]
+        fn unknown_type() {
+            assert!(!has_common_supertype(
+                &supertypes(),
+                &NodeId::new(3, 1001),
+                NS,
+                "SuperType"
+            ));
+        }
     }
 }
