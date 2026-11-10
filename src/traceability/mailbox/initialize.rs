@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::sync::Arc;
 
 use opcua::client::Session;
 use opcua::types::{
@@ -17,6 +18,8 @@ use super::{MailboxContext, TraceabilityMailbox};
 /// Errors that can occur during mailbox initialization.
 #[derive(Debug, Error)]
 pub(crate) enum MailboxInitializeError {
+    #[error("mailbox node BrowseName is null")]
+    NullBrowseName,
     #[error("mailbox node {0} not found in browsed nodes")]
     MailboxMissing(NodeId),
     #[error("request node not found")]
@@ -50,8 +53,14 @@ impl TraceabilityMailbox<()> {
         supertypes: &BrowseResults,
         root_node_ref: ReferenceDescription,
     ) -> Result<TraceabilityMailbox<MailboxContext>, MailboxInitializeError> {
-        let mailbox_name = root_node_ref.browse_name.name.to_string();
-        Span::current().record("mailbox", &mailbox_name);
+        let mailbox_name: Arc<str> = match root_node_ref.browse_name.name.value() {
+            Some(n) => n.as_str().into(),
+            None => {
+                return Err(MailboxInitializeError::NullBrowseName);
+            }
+        };
+
+        Span::current().record("mailbox", mailbox_name.as_ref());
 
         let root_node_id = &root_node_ref.node_id.node_id;
         let root_node_refs = children

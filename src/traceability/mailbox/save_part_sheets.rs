@@ -74,10 +74,12 @@ impl TraceabilityMailbox<MailboxContext> {
         // Insert the part sheets in the cache, using a blocking task.
         let sent_cache = Arc::clone(&self.cache);
         let sent_machine_id = Arc::clone(&self.machine_id);
+        let sent_mailbox_name = Arc::clone(&self.state.mailbox_name);
         let sent_context = self.session.context();
         let task = tokio::task::spawn_blocking(move || {
             sent_cache.save_part_sheets(
                 sent_machine_id,
+                sent_mailbox_name,
                 part_id,
                 &general_part_sheet,
                 &operation_part_sheet,

@@ -97,7 +97,7 @@ impl HandleRequestError {
 impl TraceabilityMailbox<MailboxContext> {
     /// Handle a request code from the OPC-UA server. Upon success, return the response code
     /// that must be written to the server.
-    #[instrument(err, skip_all, fields(mailbox = self.state.mailbox_name))]
+    #[instrument(err, skip_all, fields(mailbox = self.state.mailbox_name.as_ref()))]
     pub(crate) async fn handle_request(
         &mut self,
         value: DataValue,

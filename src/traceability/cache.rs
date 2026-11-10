@@ -171,6 +171,7 @@ impl TraceabilityCache {
     pub(super) fn save_part_sheets(
         &self,
         machine_id: Arc<str>,
+        mailbox: Arc<str>,
         part_id: AsciiDigitsOrUpper<23>,
         general: &[SavedPartSheetItem],
         operation: &[SavedPartSheetItem],
@@ -181,12 +182,14 @@ impl TraceabilityCache {
         // Encode general part sheet for caching and archiving.
         let cached_general = encode_part_sheet_for_cache(general, ctx)
             .map_err(SavePartSheetsError::ElementsCount)?;
-        let json_general = encode_part_sheet_for_db(saved_at, &machine_id, part_id, general)
-            .map_err(SavePartSheetsError::GeneralSerialization)?;
+        let json_general =
+            encode_part_sheet_for_db(saved_at, &machine_id, &mailbox, part_id, general)
+                .map_err(SavePartSheetsError::GeneralSerialization)?;
 
         // Encode operation part sheet for archiving.
-        let json_operation = encode_part_sheet_for_db(saved_at, &machine_id, part_id, operation)
-            .map_err(SavePartSheetsError::OperationSerialization)?;
+        let json_operation =
+            encode_part_sheet_for_db(saved_at, &machine_id, &mailbox, part_id, operation)
+                .map_err(SavePartSheetsError::OperationSerialization)?;
 
         // Write encoded part sheets to the cache and/or queues.
         let write_txn = self.redb.begin_write()?;
@@ -317,6 +320,7 @@ mod tests {
         cache
             .save_part_sheets(
                 "MAC1".into(),
+                "TestMailbox".into(),
                 part_id
                     .parse()
                     .expect("parsing part identifier should not fail"),
@@ -362,6 +366,7 @@ mod tests {
         cache
             .save_part_sheets(
                 "ID".into(),
+                "Mailbox".into(),
                 "00000000000000000000000".parse().unwrap(),
                 std::slice::from_ref(&part_sheet_item),
                 std::slice::from_ref(&part_sheet_item),
@@ -376,6 +381,7 @@ mod tests {
         cache
             .save_part_sheets(
                 "ID".into(),
+                "Mailbox".into(),
                 "00000000000000000000000".parse().unwrap(),
                 std::slice::from_ref(&part_sheet_item),
                 std::slice::from_ref(&part_sheet_item),
