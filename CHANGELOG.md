@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.0.0](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.4.11...v1.0.0) (2026-11-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* PLC programs must implement the new information model, with a machine object holding a heartbeat and mailboxes. The configuration identifies nodes by BrowseNames instead of node identifiers, a machine by its namespace URL and machine object node identifier, the line identifier is common to all machines, and the publish interval moves to the OPC-UA server configuration. Cached general part sheets are keyed by BrowseName, so existing cache files are not compatible. At each connection to a machine, a request code other than reset already set in a mailbox is refused with the 93 response code, instead of being handled unless already answered.
+
+### Features
+
+* allow handling multiple traceability mailboxes ([9c5aca2](https://github.com/cailloumajor/opcua-line-gateway/commit/9c5aca2d7bc87594a32045bcfed419779a38a137))
+
+
+### Bug Fixes
+
+* **deps:** update dependency jsonschema-markdown to v2026.11.0 ([eea7962](https://github.com/cailloumajor/opcua-line-gateway/commit/eea7962d3176b482f0a5f34af86fef73cb4058e3))
+* **deps:** update rust crate tick to 0.9.0 ([829d676](https://github.com/cailloumajor/opcua-line-gateway/commit/829d67647a2133c0d9daaa0b9d188a980d8ce839))
+* manage documentation generator dependencies with uv ([434e6e0](https://github.com/cailloumajor/opcua-line-gateway/commit/434e6e0bd2305f24bbf0e7c242590e2d1fa0bcdf))
+* refuse machines without traceability mailbox ([c4c351f](https://github.com/cailloumajor/opcua-line-gateway/commit/c4c351ff95525a9717b70d759f74c8790cd779df))
+* respond with an error code on invalid part ID read length ([db62c8e](https://github.com/cailloumajor/opcua-line-gateway/commit/db62c8e5fa8850d6dfeae7f10938a61da1eacfc9))
+
 ## [0.4.11](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.4.10...v0.4.11) (2026-10-28)
 
 
