@@ -153,6 +153,49 @@ sequenceDiagram
     us->>Data:Reset response code
 ```
 
+#### Request and response codes
+
+The machine program sets one of the following request codes:
+
+| Request code | Request |
+| --- | --- |
+| `0` | Reset: the gateway resets the response code |
+| `1` | Create: generate the part ID and write it to the general part sheet |
+| `2` | Load: write the general part sheet cached for the part ID to the machine |
+| `3` | Save: save the part sheets to the cache and to the database |
+
+The gateway answers with one of the following response codes:
+
+| Response code | Request | Meaning |
+| --- | --- | --- |
+| `0` | Reset | Response code reset |
+| `1` | Create, Load, Save | Request succeeded |
+| `12` | Create | Raw part reference and raw material batch could not be read |
+| `13` | Create | Invalid raw part reference value (not a string) |
+| `14` | Create | Invalid raw material batch value (not a string of 2 digits or uppercase letters) |
+| `15` | Create | Next serial number could not be obtained from the cache |
+| `16` | Create | Part ID could not be generated (raw part reference format not recognized, or more than 99999 parts for the day) |
+| `17` | Create | Part ID could not be written |
+| `21` | Load | Part ID could not be read |
+| `22` | Load | Invalid part ID value (not a string of 23 digits or uppercase letters) |
+| `23` | Load | General part sheet could not be read from the cache |
+| `24` | Load | No general part sheet cached for the part ID |
+| `25` | Load | General part sheet could not be written, some of its variables may have been written |
+| `31` | Save | Part sheets could not be read |
+| `32` | Save | Invalid part sheet variable value |
+| `33` | Save | Invalid part ID (format, date or serial number) |
+| `34` | Save | Part sheets could not be saved to the cache |
+| `35` | Save | Too many part sheets waiting to be written to the database, nothing was read or saved |
+| `91` | Any | Invalid request code value (not a byte) |
+| `92` | Any | Unknown request code |
+| `93` | Any but Reset | Request refused at connection, see [below](#request-code-at-connection) |
+
+Details on each error are given in the gateway logs.
+
+Code `35` means the part sheets saved earlier are not being written to the
+database fast enough, for example because the database cannot be reached. The
+threshold is set by `queues_not_draining_threshold` in the configuration.
+
 #### Request code at connection
 
 Each time the gateway connects to a machine, at startup or after a connection
