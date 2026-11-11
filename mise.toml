@@ -49,10 +49,6 @@ cargo deb \
 [tasks.build-test-deb.tools]
 "cargo:cargo-deb" = "latest"
 
-[tasks.start-test-db]
-description = "Start the database for integration tests"
-run = "clickhousectl local server start integration-tests --version \"$CLICKHOUSE_VERSION\""
-
 [tasks."test:nextest-ci"]
 description = "Run tests with cargo-nextest and generate code coverage"
 depends = ["start-test-db"]

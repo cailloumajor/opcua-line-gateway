@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+#MISE description="Start the database for integration tests"
+#MISE tools={gh="latest"}
+
+if [[ ! ${CLICKHOUSE_VERSION:-} =~ ^[0-9]+\.[0-9]+$ ]]; then
+    echo "CLICKHOUSE_VERSION must be a series such as 26.10" >&2
+    exit 1
+fi
+
+# An exact stable/LTS tag selects a release package in clickhousectl.
+# Passing the series directly would select a potentially large branch build.
+version=$(gh api "repos/ClickHouse/ClickHouse/git/matching-refs/tags/v${CLICKHOUSE_VERSION}." --jq '
+    [.[] | .ref
+    | select(test("^refs/tags/v[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+-(stable|lts)$"))
+    | ltrimstr("refs/tags/v")
+    | sub("-(stable|lts)$"; "")]
+    | sort_by(split(".") | map(tonumber))
+    | last // empty
+')
+
+if [[ -z $version ]]; then
+    echo "No stable or LTS release found for ClickHouse $CLICKHOUSE_VERSION" >&2
+    exit 1
+fi
+
+echo "Starting integration tests database with ClickHouse $version"
+exec clickhousectl local server start integration-tests --version "$version"
