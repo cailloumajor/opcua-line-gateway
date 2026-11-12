@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.0](https://github.com/cailloumajor/opcua-line-gateway/compare/v1.0.0...v1.1.0) (2026-11-12)
+
+
+### Features
+
+* add mailbox name to the part sheet tables ([ffbe795](https://github.com/cailloumajor/opcua-line-gateway/commit/ffbe79589703f70991010f8a57431c37ec2f4a41))
+
+
+### Bug Fixes
+
+* add mailbox name logging where it is relevant ([b1aab9b](https://github.com/cailloumajor/opcua-line-gateway/commit/b1aab9b7cc1b001b574e0c781922cfd8de0c43bc))
+
 ## [1.0.0](https://github.com/cailloumajor/opcua-line-gateway/compare/v0.4.11...v1.0.0) (2026-11-10)
 
 
