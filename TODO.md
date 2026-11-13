@@ -7,6 +7,9 @@ names reference is the ClickHouse `data` subcolumns
 - [ ] Migrate or clear the existing redb cache when deploying the new cache format
 - [ ] Verify NodeId preservation on SINUMERIK ONE for imported companion
 specifications
+- [ ] Reject a mailbox with several operation part sheets at initialization:
+`find_mailbox_children` currently keeps the last one found silently, while the
+[information model](docs/information-model.md) requires exactly one
 
 ## DONE
 
