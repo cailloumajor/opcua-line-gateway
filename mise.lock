@@ -702,13 +702,13 @@ url = "https://nodejs.org/dist/v26.13.1/node-v26.13.1-win-x64.zip"
 
 [[tools."npm:bash-language-server"]]
 version = "5.8.1"
-aube = { path = ".mise/locks/npm-bash-language-server/5.8.1", digest = "sha256:04a8ed32e542efcdb8eec68c26ea939f6758453310d97b30d314da36841ef79f" }
+aube = { path = ".mise/locks/npm-bash-language-server/5.8.1", digest = "sha256:c211b6123e6e8967e02b459ea1721e5bb36cd9f4c200f2523ae1339118087bfa" }
 backend = "npm:bash-language-server"
 specifiers = ["latest"]
 
 [[tools."npm:yaml-language-server"]]
 version = "2.0.0"
-aube = { path = ".mise/locks/npm-yaml-language-server/2.0.0", digest = "sha256:f14f9558f1769c0512641de8d5616c039d5428aa64c46fdf60f0082e960a60b8" }
+aube = { path = ".mise/locks/npm-yaml-language-server/2.0.0", digest = "sha256:d02e1ea379d5d5dd4489ae6f5a60e7f7148856c223ce22a1748a0b1ad7e75eaf" }
 backend = "npm:yaml-language-server"
 specifiers = ["latest"]
 
