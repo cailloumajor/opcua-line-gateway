@@ -11,59 +11,59 @@ of part sheets: the general part sheet and the operation part sheet.
 * Machine OP10
   * TraceabilityHeartbeat (boolean)
   * TraceabilityMailboxOP10 (object)
-    * TraceabilityRequest (byte)
-    * TraceabilityResponse (byte)
-    * TraceabilityPartSheetGeneral (object)
+    * MailboxRequest (byte)
+    * MailboxResponse (byte)
+    * PartSheetGeneral (object)
       * ...general part sheet variables (mixed variable types)
-    * TraceabilityPartSheetOP10
+    * PartSheetOP10
       * ...OP10 part sheet variables (mixed variable types)
 * Machine OP20
   * TraceabilityHeartbeat (boolean)
   * TraceabilityMailboxOP20In (object)
-    * TraceabilityRequest (byte)
-    * TraceabilityResponse (byte)
-    * TraceabilityPartSheetGeneral (object)
+    * MailboxRequest (byte)
+    * MailboxResponse (byte)
+    * PartSheetGeneral (object)
       * ...general part sheet variables (mixed variable types)
-    * TraceabilityPartSheetOP20
+    * PartSheetOP20
       * ...OP20 part sheet variables (mixed variable types)
   * TraceabilityMailboxOP20Out (object)
-    * TraceabilityRequest (byte)
-    * TraceabilityResponse (byte)
-    * TraceabilityPartSheetGeneral (object)
+    * MailboxRequest (byte)
+    * MailboxResponse (byte)
+    * PartSheetGeneral (object)
       * ...general part sheet variables (mixed variable types)
-    * TraceabilityPartSheetOP20
+    * PartSheetOP20
       * ...OP20 part sheet variables (mixed variable types)
 * Machine OP30
   * TraceabilityHeartbeat (boolean)
   * TraceabilityMailboxOP30In (object)
-    * TraceabilityRequest (byte)
-    * TraceabilityResponse (byte)
-    * TraceabilityPartSheetGeneral (object)
+    * MailboxRequest (byte)
+    * MailboxResponse (byte)
+    * PartSheetGeneral (object)
       * ...general part sheet variables (mixed variable types)
-    * TraceabilityPartSheetOP30
+    * PartSheetOP30
       * ...OP30 part sheet variables (mixed variable types)
   * TraceabilityMailboxOP30OkOut (object)
-    * TraceabilityRequest (byte)
-    * TraceabilityResponse (byte)
-    * TraceabilityPartSheetGeneral (object)
+    * MailboxRequest (byte)
+    * MailboxResponse (byte)
+    * PartSheetGeneral (object)
       * ...general part sheet variables (mixed variable types)
-    * TraceabilityPartSheetOP30
+    * PartSheetOP30
       * ...OP30 part sheet variables (mixed variable types)
   * TraceabilityMailboxOP30ScrapOut (object)
-    * TraceabilityRequest (byte)
-    * TraceabilityResponse (byte)
-    * TraceabilityPartSheetGeneral (object)
+    * MailboxRequest (byte)
+    * MailboxResponse (byte)
+    * PartSheetGeneral (object)
       * ...general part sheet variables (mixed variable types)
-    * TraceabilityPartSheetOP30
+    * PartSheetOP30
       * ...OP30 part sheet variables (mixed variable types)
 * Machine OP40
   * TraceabilityHeartbeat (boolean)
   * TraceabilityMailboxOP40 (object)
-    * TraceabilityRequest (byte)
-    * TraceabilityResponse (byte)
-    * TraceabilityPartSheetGeneral (object)
+    * MailboxRequest (byte)
+    * MailboxResponse (byte)
+    * PartSheetGeneral (object)
       * ...general part sheet variables (mixed variable types)
-    * TraceabilityPartSheetOP40
+    * PartSheetOP40
       * ...OP40 part sheet variables (mixed variable types)
 
 ### Simplified view
@@ -158,9 +158,9 @@ no instances):
   * `TraceabilityPartSheetOperationType`, abstract and without variables, base of
   the operation part sheets types;
   * `TraceabilityMailboxType`, with:
-    * `TraceabilityRequest` (`Byte`, read only);
-    * `TraceabilityResponse` (`Byte`, read and write);
-    * `TraceabilityPartSheetGeneral`, a mandatory component of
+    * `MailboxRequest` (`Byte`, read only);
+    * `MailboxResponse` (`Byte`, read and write);
+    * `PartSheetGeneral`, a mandatory component of
     `TraceabilityPartSheetGeneralType`;
   * `TraceabilityMachineType`, with:
     * `TraceabilityHeartbeat` (`Boolean`, read and write);
@@ -173,7 +173,7 @@ it, which defines (e.g. for OP30):
   `TraceabilityPartSheetOperationType`, with the operation part sheet variables;
   * the mailbox type (`TraceabilityMailboxOP30Type`), subtype of
   `TraceabilityMailboxType`, adding the operation part sheet as a component
-  (`TraceabilityPartSheetOP30`);
+  (`PartSheetOP30`);
   * the machine instance (`OP30`), of `TraceabilityMachineType`, organized in the
   `Objects` folder, with its mailboxes as components of the operation mailbox type
   (e.g. `TraceabilityMailboxOP30In`).
@@ -196,8 +196,8 @@ classDiagram
     +Boolean TraceabilityHeartbeat
   }
   class TraceabilityMailboxType {
-    +Byte TraceabilityRequest
-    +Byte TraceabilityResponse
+    +Byte MailboxRequest
+    +Byte MailboxResponse
   }
   class TraceabilityPartSheetGeneralType {
     ...general part sheet variables
@@ -207,7 +207,7 @@ classDiagram
   }
 
   TraceabilityMachineType *-- "1..*" TraceabilityMailboxType : Mailbox (MandatoryPlaceholder)
-  TraceabilityMailboxType *-- "1" TraceabilityPartSheetGeneralType : TraceabilityPartSheetGeneral
+  TraceabilityMailboxType *-- "1" TraceabilityPartSheetGeneralType : PartSheetGeneral
 ```
 
 Example of the OP30 operation namespace (names of operation-specific types are
@@ -242,7 +242,7 @@ classDiagram
   OP30 *-- TraceabilityMailboxOP30Type : TraceabilityMailboxOP30In
   OP30 *-- TraceabilityMailboxOP30Type : TraceabilityMailboxOP30OkOut
   OP30 *-- TraceabilityMailboxOP30Type : TraceabilityMailboxOP30ScrapOut
-  TraceabilityMailboxOP30Type *-- "1" TraceabilityPartSheetOP30Type : TraceabilityPartSheetOP30
+  TraceabilityMailboxOP30Type *-- "1" TraceabilityPartSheetOP30Type : PartSheetOP30
 ```
 
 Legend: links with a filled diamond are `HasComponent` references (labelled with
@@ -278,7 +278,7 @@ response, the general part sheet and its variables thus have BrowseNames in the
 common namespace, identical on all machines, whatever the namespace of the
 machine instance. This is what allows resolving nodes by BrowseName.
 * The operation part sheet is found by its type rather than by its BrowseName,
-which can then be specific to each operation (e.g. `TraceabilityPartSheetOP30`).
+which can then be specific to each operation (e.g. `PartSheetOP30`).
 
 ### Node identifiers stability
 
@@ -365,7 +365,7 @@ For example, with the three mailboxes of OP30:
 | # | Nodes browsed | Nodes found |
 | --- | --- | --- |
 | 1 | `OP30` | `TraceabilityHeartbeat`, `TraceabilityMailboxOP30In`, `TraceabilityMailboxOP30OkOut`, `TraceabilityMailboxOP30ScrapOut` |
-| 2 | The three mailboxes, `TraceabilityMailboxOP30Type` | For each mailbox: `TraceabilityRequest`, `TraceabilityResponse`, `TraceabilityPartSheetGeneral`, `TraceabilityPartSheetOP30`; the supertype `TraceabilityMailboxType` |
+| 2 | The three mailboxes, `TraceabilityMailboxOP30Type` | For each mailbox: `MailboxRequest`, `MailboxResponse`, `PartSheetGeneral`, `PartSheetOP30`; the supertype `TraceabilityMailboxType` |
 | 3 | The six part sheets, `TraceabilityPartSheetGeneralType`, `TraceabilityPartSheetOP30Type` | The variables of the part sheets; the supertypes `BaseObjectType` and `TraceabilityPartSheetOperationType` |
 
 The browser returns a stream of results, one for each node browsed, holding its

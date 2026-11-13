@@ -36,17 +36,17 @@ queues_not_draining_threshold = 50
 [traceability.opc_ua]
 namespace_url = "urn:ORG:traceability:LINE:common"
 # Types, from which the machines nodes are discovered.
-mailbox_type = "MailboxType"
-operation_part_sheet_type = "OperationPartSheetType"
+mailbox_type = "TraceabilityMailboxType"
+operation_part_sheet_type = "TraceabilityPartSheetOperationType"
 # Nodes of the machine object, and of each mailbox.
-heartbeat_node = "Heartbeat"
-request_node = "Request"
-response_node = "Response"
-general_part_sheet_node = "GeneralPartSheet"
+heartbeat_node = "TraceabilityHeartbeat"
+request_node = "MailboxRequest"
+response_node = "MailboxResponse"
+general_part_sheet_node = "PartSheetGeneral"
 # Variables of the general part sheet.
-part_id_node = "PartId"
-raw_part_ref_node = "RawPartRef"
-raw_batch_node = "RawBatch"
+part_id_node = "NumeUniq"
+raw_part_ref_node = "RefePiecForg"
+raw_batch_node = "LotMati"
 # Variables of the general part sheet not to be read.
 excluded_read_nodes = []
 
