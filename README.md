@@ -100,18 +100,21 @@ on one side, OPC-UA servers it connects to, and on the other side, an in-memory
 disk-persisted cache and a ClickHouse database.
 
 The data consists of groups of OPC-UA variables, which can be scalars or arrays
-of scalars. Grouping is achieved by organizing variables in a group as properties
-of an OPC-UA object. In this project's terminology, some groups are called
-"part sheets".
+of scalars. Grouping is achieved by organizing variables in a group as data
+variables (components) of an OPC-UA object. In this project's terminology, some
+groups are called "part sheets".
 
-OPC-UA server data is organised in three groups:
+Each machine exposes a heartbeat, changed regularly by the gateway, and one or
+more mailboxes. Each mailbox handles its requests independently, and holds:
 
-* The "traceability protocol" group, which includes the request code, the response
-code, and the OPC-UA client heartbeat;
-* The "general part sheet" group, which includes data that is common to all OPC-UA
+* The traceability protocol variables: the request code and the response code;
+* The "general part sheet", which includes data that is common to all OPC-UA
 servers;
-* The "operation part sheet" group, which includes data that is specific for each
+* The "operation part sheet", which includes data that is specific for each
 operation on the production line.
+
+The [information model documentation](docs/information-model.md) describes the
+model the machines must implement, and how the gateway resolves its nodes.
 
 ### Protocol
 

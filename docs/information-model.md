@@ -1,8 +1,4 @@
-# Target OPC-UA information model
-
-> [!NOTE]
-> This model is not implemented yet, see the [TO-DO list](../TODO.md). The
-> [README](../README.md) describes the model currently handled.
+# OPC-UA information model
 
 ## Overview
 
