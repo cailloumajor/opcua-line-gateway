@@ -18,7 +18,7 @@ node = "lts"
 "npm:yaml-language-server" = "latest"
 pkl = "latest"
 rumdl = "latest"
-rust = { version = "1.99.1", components = "rust-analyzer", profile = "default" }
+rust = { version = "1.100.0", components = "rust-analyzer", profile = "default" }
 shellcheck = "latest"
 shfmt = "latest"
 tombi = "latest"
