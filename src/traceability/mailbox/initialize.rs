@@ -520,40 +520,37 @@ mod tests {
             assert_eq!(got.excluded_read_nodes, [name("Excluded")]);
         }
 
-        macro_rules! missing_test {
-            ($name:ident, $node:literal, $err:pat) => {
-                #[test]
-                fn $name() {
-                    let mut part_sheet = general_part_sheet();
-                    part_sheet.remove($node);
-
-                    let result = find_general_part_sheet_nodes(&part_sheet, &config());
-
-                    assert_matches!(result, Err($err));
-                }
-            };
+        #[test]
+        fn part_id_missing() {
+            let mut part_sheet = general_part_sheet();
+            part_sheet.remove("PartId");
+            let result = find_general_part_sheet_nodes(&part_sheet, &config());
+            assert_matches!(result, Err(MailboxInitializeError::PartIdMissing));
         }
 
-        missing_test!(
-            part_id_missing,
-            "PartId",
-            MailboxInitializeError::PartIdMissing
-        );
-        missing_test!(
-            raw_part_ref_missing,
-            "RawPartRef",
-            MailboxInitializeError::RawPartRefMissing
-        );
-        missing_test!(
-            raw_batch_missing,
-            "RawBatch",
-            MailboxInitializeError::RawBatchMissing
-        );
-        missing_test!(
-            excluded_missing,
-            "Excluded",
-            MailboxInitializeError::ExcludedNodeMissing(_)
-        );
+        #[test]
+        fn raw_part_ref_missing() {
+            let mut part_sheet = general_part_sheet();
+            part_sheet.remove("RawPartRef");
+            let result = find_general_part_sheet_nodes(&part_sheet, &config());
+            assert_matches!(result, Err(MailboxInitializeError::RawPartRefMissing));
+        }
+
+        #[test]
+        fn raw_batch_missing() {
+            let mut part_sheet = general_part_sheet();
+            part_sheet.remove("RawBatch");
+            let result = find_general_part_sheet_nodes(&part_sheet, &config());
+            assert_matches!(result, Err(MailboxInitializeError::RawBatchMissing));
+        }
+
+        #[test]
+        fn excluded_missing() {
+            let mut part_sheet = general_part_sheet();
+            part_sheet.remove("Excluded");
+            let result = find_general_part_sheet_nodes(&part_sheet, &config());
+            assert_matches!(result, Err(MailboxInitializeError::ExcludedNodeMissing(_)));
+        }
     }
 
     mod collect_part_sheet_nodes {
