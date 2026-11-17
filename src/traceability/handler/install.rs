@@ -2,7 +2,7 @@ use std::pin::pin;
 use std::sync::Arc;
 use std::time::Duration;
 
-use futures_util::StreamExt;
+use futures_util::{StreamExt, stream};
 use opcua::client::DataChangeCallback;
 use opcua::types::{
     MonitoredItemCreateRequest, MonitoringMode, MonitoringParameters, NodeId, StatusCode,
@@ -117,21 +117,17 @@ impl TraceabilityHandler<HandlerContext> {
             async move {
                 info!(msg = "heartbeat handler started");
 
-                // Heartbeat write value.
-                let mut hb_value = true;
-
                 let mut hb_interval = interval(HEARTBEAT_INTERVAL);
                 hb_interval.set_missed_tick_behavior(MissedTickBehavior::Delay);
-                let stream =
-                    IntervalStream::new(hb_interval).take_until(heartbeat_shutdown.cancelled());
+                let stream = IntervalStream::new(hb_interval)
+                    .take_until(heartbeat_shutdown.cancelled())
+                    .zip(stream::iter([true, false]).cycle())
+                    .map(|(_, v)| WriteValue::value_attr(heartbeat_node.clone(), v.into()));
                 let mut pinned_stream = pin!(stream);
-                while pinned_stream.next().await.is_some() {
-                    let write_value =
-                        WriteValue::value_attr(heartbeat_node.clone(), hb_value.into());
-                    hb_value = !hb_value;
+                while let Some(hb_value) = pinned_stream.next().await {
                     // Ignore the result, as error logging is handled by the function
                     // `instrument` attribute.
-                    let _ = sent_session.write_checked(&[write_value]).await;
+                    let _ = sent_session.write_checked(&[hb_value]).await;
                 }
 
                 info!(msg = "heartbeat handler terminated");
