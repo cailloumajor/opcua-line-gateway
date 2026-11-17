@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.1](https://github.com/cailloumajor/opcua-line-gateway/compare/v1.1.0...v1.1.1) (2026-11-17)
+
+
+### Bug Fixes
+
+* **deps:** update dependency rust to v1.100.0 ([34ab1a6](https://github.com/cailloumajor/opcua-line-gateway/commit/34ab1a623757752800e50efe807d66fb242c077b))
+* disallow more than one operation part sheet per mailbox ([d391c50](https://github.com/cailloumajor/opcua-line-gateway/commit/d391c507e0d07645b89a5e04ea8b8e685bc75029))
+
 ## [1.1.0](https://github.com/cailloumajor/opcua-line-gateway/compare/v1.0.0...v1.1.0) (2026-11-12)
 
 
