@@ -22,6 +22,8 @@ pub(crate) enum MailboxInitializeError {
     NullBrowseName,
     #[error("mailbox node {0} not found in browsed nodes")]
     MailboxMissing(NodeId),
+    #[error("other operation part sheet found: {1}, already have {0}")]
+    SeveralOperationPartSheets(NodeId, NodeId),
     #[error("request node not found")]
     RequestMissing,
     #[error("response node not found")]
@@ -179,6 +181,11 @@ fn find_mailbox_children(
                 general_part_sheet_nid = Some(node_id);
             }
             NodeClass::Object if is_operation_part_sheet() => {
+                if let Some(existing) = operation_part_sheet_nid {
+                    return Err(MailboxInitializeError::SeveralOperationPartSheets(
+                        existing, node_id,
+                    ));
+                }
                 operation_part_sheet_nid = Some(node_id);
             }
             _ => {
@@ -494,6 +501,44 @@ mod tests {
                 result,
                 Err(MailboxInitializeError::OperationPartSheetMissing)
             );
+        }
+
+        /// Another operation part sheet, with the same machine specific type.
+        fn other_operation_part_sheet_ref(browse_name: &str, id: u32) -> ReferenceDescription {
+            ReferenceDescription {
+                type_definition: op_type_id().into(),
+                ..node_ref(NodeClass::Object, 3, browse_name, NodeId::new(3, id))
+            }
+        }
+
+        #[test]
+        fn several_operation_part_sheets() {
+            let mut refs = children();
+            refs.push(other_operation_part_sheet_ref("OP20", 7));
+
+            let result = find_mailbox_children(refs, NS, &config(), &supertypes());
+
+            assert_matches!(
+                result,
+                Err(MailboxInitializeError::SeveralOperationPartSheets(first, second))
+                    if first == NodeId::new(3, 4) && second == NodeId::new(3, 7)
+            );
+        }
+
+        #[test]
+        fn operation_part_sheet_object_with_other_type_ignored() {
+            // An object component of another type is not an operation part
+            // sheet, so it does not count as a duplicate.
+            let mut refs = children();
+            refs.push(ReferenceDescription {
+                type_definition: NodeId::new(3, 2000).into(),
+                ..node_ref(NodeClass::Object, 3, "Other", NodeId::new(3, 9))
+            });
+
+            let got =
+                find_mailbox_children(refs, NS, &config(), &supertypes()).expect("should succeed");
+
+            assert_eq!(got.operation_part_sheet_nid, NodeId::new(3, 4));
         }
     }
 
