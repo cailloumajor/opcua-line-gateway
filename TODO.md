@@ -7,9 +7,6 @@ names reference is the ClickHouse `data` subcolumns
 - [ ] Migrate or clear the existing redb cache when deploying the new cache format
 - [ ] Verify NodeId preservation on SINUMERIK ONE for imported companion
 specifications
-- [ ] Reject a mailbox with several operation part sheets at initialization:
-`find_mailbox_children` currently keeps the last one found silently, while the
-[information model](docs/information-model.md) requires exactly one
 
 ## DONE
 
@@ -43,3 +40,6 @@ target mailbox: the item is skipped
 - [x] Replace `part_id_nid`, `raw_part_ref_nid`, `raw_batch_nid` and
 `excluded_read_nids` configuration by BrowseNames of the common namespace
 - [x] Keep the non-numeric NodeId check
+- [X] Reject a mailbox with several operation part sheets at initialization:
+`find_mailbox_children` currently keeps the last one found silently, while the
+[information model](docs/information-model.md) requires exactly one
