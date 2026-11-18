@@ -41,13 +41,11 @@ regex = "1.13.1"
 reopen = "1.0.3"
 serde.workspace = true
 serde_json.workspace = true
-signal-hook = { version = "0.4.4", default-features = false }
-signal-hook-tokio = { version = "0.4.0", features = ["futures-v0_3"] }
 strum = { version = "0.28.0", features = ["derive"] }
 thiserror.workspace = true
 tick = "0.9.0"
-tokio = { version = "1.52.3", features = ["macros", "rt-multi-thread", "time"] }
-tokio-stream = "0.1.18"
+tokio = { version = "1.52.3", features = ["macros", "rt-multi-thread", "signal", "time"] }
+tokio-stream = { version = "0.1.18", features = ["signal"] }
 tokio-util = { version = "0.7.18", features = ["rt"] }
 tracing = "0.1.44"
 tracing-appender = { version = "0.2.5", features = ["parking_lot"] }

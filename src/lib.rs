@@ -7,10 +7,12 @@ use tokio_util::sync::CancellationToken;
 use tracing::info;
 
 use self::opcua::{create_client, sessions_manager};
+pub use self::signals::spawn_signals_handler;
 pub use self::time::TimeProvider;
 use self::traceability::{TraceabilityCache, TraceabilityDatabase};
 
 mod opcua;
+mod signals;
 mod time;
 mod traceability;
 

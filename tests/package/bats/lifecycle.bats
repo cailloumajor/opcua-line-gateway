@@ -75,7 +75,7 @@ load helpers
     logrotate --force "$LOGROTATE_FILE"
 
     assert_file_exists "${LOG_FILE}.1"
-    wait_log "${LOG_FILE}" "received SIGHUP signal"
+    wait_log "${LOG_FILE}" "received signal, reopening log file"
 }
 
 @test "recreated log file is readable by everyone" {
