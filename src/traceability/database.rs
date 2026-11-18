@@ -4,7 +4,8 @@ use std::time::Duration;
 
 use clickhouse::{Client, Compression};
 use futures_util::StreamExt;
-use opcua_line_gateway_config::{Credential, TraceabilityDatabaseConfig};
+use opcua_line_gateway_config::{TraceabilityDatabaseConfig, UserPass};
+use secrecy::ExposeSecret;
 use thiserror::Error;
 use tokio::sync::oneshot;
 use tokio::task::{JoinError, JoinHandle};
@@ -53,13 +54,13 @@ impl TraceabilityDatabase {
     /// An error is returned if reading the password from the configured file fails.
     pub(crate) fn new(
         config: &TraceabilityDatabaseConfig,
-        credential: Credential,
+        credential: UserPass,
         cache: Arc<TraceabilityCache>,
     ) -> Self {
         let client = Client::default()
             .with_url(&config.url)
             .with_user(&credential.user)
-            .with_password(&credential.password)
+            .with_password(credential.password.expose_secret())
             .with_database(&config.default_database);
 
         let general_part_sheet_table = config.general_part_sheet_table.clone();
