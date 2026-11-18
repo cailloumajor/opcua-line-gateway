@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use duct::cmd;
 use indoc::formatdoc;
-use opcua_line_gateway_config::{Credential, TraceabilityDatabaseConfig};
+use opcua_line_gateway_config::{TraceabilityDatabaseConfig, UserPass};
 use rand::distr::{Alphanumeric, SampleString};
 use serde::Deserialize;
 use serde_json::Value;
@@ -28,7 +28,7 @@ struct Server {
 /// to the test name.
 ///
 /// Return the database configuration and database credentials.
-pub fn init_database() -> (TraceabilityDatabaseConfig, Credential) {
+pub fn init_database() -> (TraceabilityDatabaseConfig, UserPass) {
     let test_name = env::var("NEXTEST_TEST_NAME")
         .expect("NEXTEST_TEST_NAME environment variable should be set");
     let database = format!("traceability_it_{test_name}");
@@ -113,7 +113,10 @@ pub fn init_database() -> (TraceabilityDatabaseConfig, Credential) {
         operation_part_sheet_table: "part_sheet_operation".into(),
     };
 
-    let credential = Credential { user, password };
+    let credential = UserPass {
+        user,
+        password: password.into(),
+    };
 
     (config, credential)
 }

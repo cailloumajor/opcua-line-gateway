@@ -10,7 +10,7 @@ use serde::Deserialize;
 use thiserror::Error;
 
 pub use self::ascii_text::{AsciiDigitsOrUpper, AsciiDigitsOrUpperError};
-pub use self::credentials::{Credential, Credentials};
+pub use self::credentials::{Credentials, UserPass};
 pub use self::node_name::{NodeName, NodeNameError};
 
 mod ascii_text;
