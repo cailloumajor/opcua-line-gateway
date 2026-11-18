@@ -4,58 +4,18 @@ use std::path::{Path, PathBuf};
 use std::{env, io};
 
 use anyhow::{Context as _, anyhow};
-use futures_util::StreamExt;
 use jiff::tz::TimeZone;
-use opcua_line_gateway::{TimeProvider, run_main};
+use opcua_line_gateway::{TimeProvider, run_main, spawn_signals_handler};
 use opcua_line_gateway_config::{Credentials, LineGatewayConfig};
 use reopen::{Handle as ReopenHandle, Reopen};
-use signal_hook::consts::{SIGHUP, TERM_SIGNALS};
-use signal_hook::low_level::signal_name;
-use signal_hook_tokio::Signals;
 use tick::SimpleClock;
 use tokio_util::sync::CancellationToken;
-use tracing::{error, info, instrument};
+use tracing::info;
 use tracing_appender::non_blocking::{NonBlockingBuilder, WorkerGuard};
 use tracing_subscriber::EnvFilter;
 
 /// Log file name.
 const LOG_FILE: &str = concat!(env!("CARGO_PKG_NAME"), ".log");
-
-/// Handle signals as they are caught.
-#[instrument(skip_all)]
-async fn handle_signals(
-    mut signals: Signals,
-    shutdown_token: CancellationToken,
-    log_reopen_handle: ReopenHandle,
-) {
-    info!(msg = "started signals handler");
-
-    while let Some(signal) = signals.next().await {
-        match signal {
-            SIGHUP => {
-                info!(msg = "received SIGHUP signal, triggering log file reopening");
-                log_reopen_handle.reopen();
-            }
-            term_signal if TERM_SIGNALS.contains(&term_signal) => {
-                let signal_name = signal_name(term_signal).unwrap_or("unknown");
-                info!(
-                    msg = "received termination signal, shutting down",
-                    signal_name
-                );
-                shutdown_token.cancel();
-            }
-            _ => unreachable!(),
-        }
-    }
-
-    // If we got here, we expect shutdown to have been triggered.
-    if !shutdown_token.is_cancelled() {
-        error!(msg = "signals stream exhausted unexpectedly, shutting down");
-        shutdown_token.cancel();
-    }
-
-    info!(msg = "signals handler terminated");
-}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -80,20 +40,10 @@ async fn main() -> anyhow::Result<()> {
 
     let shutdown_token = CancellationToken::new();
 
-    let mut handled_signals = vec![SIGHUP];
-    handled_signals.extend(TERM_SIGNALS);
-    let signals = Signals::new(handled_signals).context("Failed to register signals")?;
-    let signals_handle = signals.handle();
-    let signals_task = tokio::spawn(handle_signals(
-        signals,
-        shutdown_token.clone(),
-        log_reopen_handle,
-    ));
+    spawn_signals_handler(shutdown_token.clone(), log_reopen_handle.clone())
+        .context("Failed to start signals handling task")?;
 
     run_main(config, credentials, time_provider, shutdown_token).await?;
-
-    signals_handle.close();
-    signals_task.await.context("failed to join signals task")?;
 
     Ok(())
 }
