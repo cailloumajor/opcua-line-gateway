@@ -5,8 +5,8 @@ use opcua::crypto::CertificateStore;
 use opcua::types::{ApplicationDescription, ApplicationType};
 use opcua_line_gateway::{TimeProvider, run_main};
 use opcua_line_gateway_config::{
-    Credential, Credentials, LineGatewayConfig, MachineConfig, TraceabilityCommonConfig,
-    TraceabilityDatabaseConfig,
+    Credentials, LineGatewayConfig, MachineConfig, TraceabilityCommonConfig,
+    TraceabilityDatabaseConfig, UserPass,
 };
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
@@ -64,7 +64,7 @@ impl TestGateway {
         temp_dir: &Path,
         time_provider: TimeProvider,
         db_config: TraceabilityDatabaseConfig,
-        db_creds: Credential,
+        db_creds: UserPass,
         servers: &[&OpcUaTestServer],
     ) -> Self {
         let machines = servers
