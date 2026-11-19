@@ -7,6 +7,9 @@ set -euo pipefail
 pc="podman compose --project-directory tests/package"
 
 function teardown {
+    # Best-effort: a cleanup error (e.g. rootless Podman failing to tear down
+    # the network namespace) must not override the tests outcome.
+    set +e
     $pc stop
     $pc logs --timestamps
     $pc down --volumes
