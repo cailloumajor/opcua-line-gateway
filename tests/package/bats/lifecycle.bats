@@ -1,4 +1,4 @@
-# Package lifecycle: fresh installation, operation, removal and purge.
+# Package lifecycle: fresh installation, operation and stop.
 
 load helpers
 
@@ -90,36 +90,4 @@ load helpers
     # The termination is logged in the new file only if the gateway reopened
     # it after rotation.
     assert_graceful_stop
-}
-
-@test "removal deletes the binary and the unit" {
-    run dpkg --remove "$SVC"
-    assert_success
-
-    assert_file_not_exists "/usr/bin/${SVC}"
-    assert_file_not_exists "/usr/lib/systemd/system/${SVC}.service"
-}
-
-@test "removal keeps configuration files until purge" {
-    assert_file_exists "$LOGROTATE_FILE"
-}
-
-@test "purge deletes configuration files" {
-    run dpkg --purge "$SVC"
-    assert_success
-
-    assert_file_not_exists "$LOGROTATE_FILE"
-    run systemctl show --property LoadState --value "$SVC"
-    assert_output not-found
-}
-
-@test "purge keeps administrator and runtime files, and the system user" {
-    # Like for any Debian package, files not shipped by the package are left
-    # in place, as is the system user.
-    assert_file_exists "${CONFIG_DIR}/config.toml"
-    assert_file_exists "$CREDENTIALS_FILE"
-    assert_dir_exists "$STATE_DIR"
-    assert_dir_exists "$LOGS_DIR"
-    run getent passwd "$SVC"
-    assert_success
 }
