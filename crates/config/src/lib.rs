@@ -12,11 +12,13 @@ use thiserror::Error;
 pub use self::ascii_text::{AsciiDigitsOrUpper, AsciiDigitsOrUpperError};
 pub use self::credentials::{Credentials, UserPass};
 pub use self::node_name::{NodeName, NodeNameError};
+pub use self::opcua_url::OpcUaEndpointUrl;
 
 mod ascii_text;
 mod credentials;
 mod foreign;
 mod node_name;
+mod opcua_url;
 
 /// Represents errors that can be encountered with configuration.
 #[derive(Debug, Error)]
@@ -145,8 +147,8 @@ pub struct MachineConfig {
 #[serde(deny_unknown_fields)]
 pub struct OpcUaServerConfig {
     /// OPC-UA server URL.
-    #[schemars(url)]
-    pub url: String,
+    #[schemars(with = "url::Url")]
+    pub url: OpcUaEndpointUrl,
     /// OPC-UA security policy.
     #[serde(with = "foreign::SecurityPolicy")]
     pub security_policy: SecurityPolicy,
