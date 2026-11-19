@@ -116,6 +116,8 @@ pub struct TraceabilityDatabaseConfig {
     /// URL of the ClickHouse HTTP(S) endpoint.
     #[schemars(url)]
     pub url: String,
+    /// Database username.
+    pub user: String,
     /// Default database to use.
     pub default_database: String,
     /// Part sheets draining task execution period.

@@ -107,6 +107,7 @@ ClickHouse database configuration for traceability.
 | operation_part_sheet_table | `string` | ✅ | string | Table to use for operation part sheet. |
 | part_sheets_drain_period | `string` | ✅ | string | Part sheets draining task execution period. |
 | url | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | URL of the ClickHouse HTTP(S) endpoint. |
+| user | `string` | ✅ | string | Database username. |
 
 ## TraceabilityMachineConfig
 
