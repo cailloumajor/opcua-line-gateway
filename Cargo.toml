@@ -31,7 +31,7 @@ profile = "deb"
 [dependencies]
 anyhow.workspace = true
 async-opcua = { workspace = true, features = ["client"] }
-clickhouse = { version = "0.15.2", features = ["opentelemetry", "rustls-tls-native-roots"] }
+clickhouse = { version = "0.15.2", default-features = false, features = ["opentelemetry"] }
 futures-util = "0.3.32"
 jiff.workspace = true
 opcua-line-gateway-config = { path = "crates/config" }

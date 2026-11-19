@@ -2,7 +2,7 @@ use std::pin::pin;
 use std::sync::Arc;
 use std::time::Duration;
 
-use clickhouse::{Client, Compression};
+use clickhouse::Client;
 use futures_util::StreamExt;
 use opcua_line_gateway_config::TraceabilityDatabaseConfig;
 use secrecy::{ExposeSecret, SecretString};
@@ -163,13 +163,8 @@ impl TraceabilityDatabase {
             "INSERT INTO {} FORMAT JSONEachRow",
             self.part_sheet_table(queue_table)
         );
-        // Disable compression if body to send is empty, preventing server errors.
-        let client = if !body.is_empty() {
-            &self.client
-        } else {
-            &self.client.clone().with_compression(Compression::None)
-        };
-        let mut inserter = client
+        let mut inserter = self
+            .client
             .insert_formatted_with(query)
             .with_timeouts(SEND_TIMEOUT, END_TIMEOUT);
         inserter
