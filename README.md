@@ -79,6 +79,19 @@ The OPC-UA certificate and private key are expected at
 `pki_dir/private/opcua-line-gateway-key.pem`. Servers' certificates to trust go
 into `pki_dir/trusted`.
 
+### Database
+
+The gateway inserts into ClickHouse as the user set in `config.toml`, which
+needs the `traceability_gateway` role defined in the
+[schema](clickhouse/tables/traceability.sql).
+
+Inserts are synchronous: the gateway sets `async_insert=0` on every query, so
+that a successful response means the rows are written before they are removed
+from the local cache. Rows are already batched by the gateway, which drains its
+queues periodically, so asynchronous inserts would bring nothing. The user's
+settings profile must therefore allow this setting: if a constraint forces
+`async_insert`, every insert fails and the service exits on the first draining.
+
 ### Operation
 
 Logs are written in files in `/var/log/opcua-line-gateway/` directory, rotated and
