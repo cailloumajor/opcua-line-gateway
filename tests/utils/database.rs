@@ -107,7 +107,7 @@ pub fn init_database() -> (TraceabilityDatabaseConfig, SecretString) {
         .expect("executing user creation query should not fail");
 
     let config = TraceabilityDatabaseConfig {
-        url: format!("http://127.0.0.1:{port}"),
+        url: format!("http://127.0.0.1:{port}").parse().unwrap(),
         user,
         default_database: database,
         part_sheets_drain_period: Duration::from_millis(100),
