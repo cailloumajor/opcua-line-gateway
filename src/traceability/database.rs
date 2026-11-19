@@ -61,7 +61,11 @@ impl TraceabilityDatabase {
             .with_url(config.url.as_str())
             .with_user(&config.user)
             .with_password(password.expose_secret())
-            .with_database(&config.default_database);
+            .with_database(&config.default_database)
+            // Rows are batched by the gateway already. Synchronous inserts make
+            // a successful response mean the rows are written, before removing
+            // them from the cache, whatever the server-side user profile.
+            .with_setting("async_insert", "0");
 
         let general_part_sheet_table = config.general_part_sheet_table.clone();
         let operation_part_sheet_table = config.operation_part_sheet_table.clone();
