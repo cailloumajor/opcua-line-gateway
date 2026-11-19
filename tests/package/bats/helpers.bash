@@ -29,7 +29,7 @@ LOGROTATE_FILE=/etc/logrotate.d/${SVC}
 # Logged once the gateway has written to the database, i.e. it is fully
 # operational.
 # shellcheck disable=SC2034  # Constant is used by the test files.
-READY_MSG="first draining task run was successful"
+READY_MSG="part sheets draining task started"
 # Logged when the gateway handles a termination signal.
 TERMINATION_MSG="received termination signal, shutting down"
 
