@@ -154,7 +154,7 @@ impl TraceabilityHandler<()> {
     }
 }
 
-/// Build the [`NodeDescription`] to browse the components (objects and variables)
+/// Build the [`BrowseDescription`] to browse the components (objects and variables)
 /// of a node.
 fn components_of(node_id: NodeId) -> BrowseDescription {
     let node_class_mask = NodeClassMask::OBJECT | NodeClassMask::VARIABLE;
@@ -173,7 +173,7 @@ fn components_of(node_id: NodeId) -> BrowseDescription {
     }
 }
 
-/// Build the [`NodeDescription`] to browse the direct supertype of a type.
+/// Build the [`BrowseDescription`] to browse the direct supertype of a type.
 fn supertype_of(type_id: NodeId) -> BrowseDescription {
     BrowseDescription {
         node_id: type_id,

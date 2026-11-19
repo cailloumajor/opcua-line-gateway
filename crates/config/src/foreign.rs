@@ -22,7 +22,7 @@ pub(crate) enum SecurityPolicy {
     Basic256,
 }
 
-/// A copy of [`opcua::crypto::MessageSecurityMode`] to allow using serde remote functionality.
+/// A copy of [`opcua::types::MessageSecurityMode`] to allow using serde remote functionality.
 ///
 /// The schema is inlined so that the possible values are documented directly on the
 /// configuration member instead of a reference to a separate definition.

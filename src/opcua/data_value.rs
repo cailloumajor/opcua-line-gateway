@@ -87,7 +87,7 @@ impl<const LENGTH: usize> TryFromVariant for AsciiDigitsOrUpper<LENGTH> {
 /// Extension trait adding ergonomic conversion methods to [`DataValue`].
 pub(crate) trait DataValueExt {
     /// Validates the status and extracts the `Variant` payload, common to
-    /// every [`TryFromDataValue`] impl generated below.
+    /// every [`TryFromVariant`] impl generated above.
     fn try_into_variant(self) -> Result<Variant, TryFromOpcUaValueError>;
 
     /// Try to convert this [`DataValue`] into `T`.

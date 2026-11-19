@@ -8,6 +8,13 @@ steps {
     env { ["BETTERLEAKS_CONFIG"] = ".betterleaks.toml" }
   }
   ["cargo-clippy"] = Builtins.cargo_clippy
+  ["cargo-doc"] {
+    glob = "**/*.rs"
+    workspace_indicator = "Cargo.toml"
+    // Warnings (e.g. broken intra-doc links) are turned into errors by CARGO_BUILD_WARNINGS below.
+    check =
+      "cargo doc --manifest-path {{workspace_indicator}} --no-deps --document-private-items --quiet"
+  }
   ["cargo-fmt"] = Builtins.cargo_fmt
   ["config-schema"] {
     check_diff = "mise run config-schema --diff"
