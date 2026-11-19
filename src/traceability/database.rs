@@ -2,12 +2,12 @@ use std::pin::pin;
 use std::sync::Arc;
 use std::time::Duration;
 
+use anyhow::Context as _;
 use clickhouse::Client;
 use futures_util::StreamExt;
 use opcua_line_gateway_config::TraceabilityDatabaseConfig;
 use secrecy::{ExposeSecret, SecretString};
 use thiserror::Error;
-use tokio::sync::oneshot;
 use tokio::task::{JoinError, JoinHandle};
 use tokio::time::{MissedTickBehavior, interval};
 use tokio_stream::wrappers::IntervalStream;
@@ -77,22 +77,25 @@ impl TraceabilityDatabase {
     /// Start a task to periodically drain the part sheets to the database, according
     /// to provided period. Runs forever until provided shutdown is triggered.
     ///
-    /// Returns the receiver side of a channel where the result (successful or not)
-    /// of the first run will be sent.
-    pub(crate) fn drain_part_sheets_task(
+    /// Performs an initial drain of each queue before spawning the task, returning
+    /// an error if it fails.
+    pub(crate) async fn drain_part_sheets_task(
         self,
         period: Duration,
         shutdown: CancellationToken,
-    ) -> (oneshot::Receiver<bool>, JoinHandle<()>) {
-        // Create the channel for reporting first task run status.
-        let (tx, rx) = oneshot::channel();
+    ) -> anyhow::Result<JoinHandle<()>> {
+        // Drain each queue and insert in database, even with no data, to test
+        // the connection.
+        self.drain_part_sheet_queue(QueueTable::General, false)
+            .await
+            .context("Initial drain of general part sheet queue failed")?;
+        self.drain_part_sheet_queue(QueueTable::Operation, false)
+            .await
+            .context("Initial drain of operation part sheet queue failed")?;
 
         let task = tokio::spawn(
             async move {
                 info!(msg = "part sheets draining task started");
-
-                // Wrap the sender in an `Option`, allowing to use it only once.
-                let mut first_run_tx = Some(tx);
 
                 // Build a stream producing periodically until shutdown is triggered.
                 let mut interval = interval(period);
@@ -103,19 +106,10 @@ impl TraceabilityDatabase {
                 while pinned_stream.next().await.is_some() {
                     debug!(msg = "draining part sheets rows from queues to the database");
 
-                    let skip_if_empty = first_run_tx.is_none();
-                    let drain_general_fut =
-                        self.drain_part_sheet_queue(QueueTable::General, skip_if_empty);
-                    let drain_operation_fut =
-                        self.drain_part_sheet_queue(QueueTable::Operation, skip_if_empty);
-                    let (general_result, operation_result) =
-                        tokio::join!(drain_general_fut, drain_operation_fut);
-
-                    // Send the status of the first run to the channel.
-                    if let Some(tx) = first_run_tx.take() {
-                        tx.send(general_result.is_ok() && operation_result.is_ok())
-                            .expect("sending the first run outcome should not fail");
-                    }
+                    let (general_result, operation_result) = tokio::join!(
+                        self.drain_part_sheet_queue(QueueTable::General, true),
+                        self.drain_part_sheet_queue(QueueTable::Operation, true)
+                    );
 
                     if general_result.is_err() {
                         error!(msg = "error draining general part sheet queue");
@@ -130,7 +124,7 @@ impl TraceabilityDatabase {
             .instrument(info_span!(parent: None, "part_sheets_drain_task")),
         );
 
-        (rx, task)
+        Ok(task)
     }
 
     /// Drain part sheet queues to the database, provided the table to act on and
