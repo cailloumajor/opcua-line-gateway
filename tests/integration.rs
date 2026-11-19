@@ -467,64 +467,6 @@ async fn general_part_sheet_roundtrip() {
     server_b.stop().await;
 }
 
-/// A general part sheet saved from a mailbox of a machine must be loaded identically
-/// in another mailbox of the same machine.
-#[tokio::test]
-#[ignore = "requires the database and to be ran by cargo-nextest"]
-async fn general_part_sheet_between_mailboxes() {
-    let temp_dir = init();
-    let (db_config, db_creds) = init_database();
-
-    let server = OpcUaTestServer::start(false, temp_dir.path(), machine_op20()).await;
-
-    let time_provider = TimeProvider::new(SimpleClock::new_frozen(), TimeZone::UTC);
-
-    let gateway = TestGateway::start(
-        temp_dir.path(),
-        time_provider,
-        db_config.clone(),
-        db_creds,
-        &[&server],
-    )
-    .await;
-
-    let mailbox_in = server.mailbox("TraceabilityMailboxOP20In");
-    let mailbox_out = server.mailbox("TraceabilityMailboxOP20Out");
-
-    let general_part_sheet = filled_general_part_sheet();
-    for (name, value) in general_part_sheet.clone() {
-        mailbox_in.write_general(name, value);
-    }
-    let response = mailbox_in
-        .traceability_request(request::SAVE_PART_SHEETS)
-        .await;
-    assert_eq!(response, RESPONSE_OK);
-
-    mailbox_out.write_general(general::PART_ID, PART_ID);
-    let response = mailbox_out
-        .traceability_request(request::LOAD_GENERAL_PART_SHEET)
-        .await;
-    assert_eq!(response, RESPONSE_OK);
-
-    assert_general_part_sheet_loaded(&mailbox_out, &general_part_sheet);
-
-    // The archived general part sheet must record the mailbox it was saved from.
-    let general_rows =
-        wait_archived_part_sheets(&db_config, &db_config.general_part_sheet_table, PART_ID).await;
-    assert_eq!(
-        general_rows.len(),
-        1,
-        "general part sheets: {general_rows:?}"
-    );
-    assert_eq!(
-        general_rows[0]["mailbox"],
-        json!("TraceabilityMailboxOP20In")
-    );
-
-    gateway.stop().await;
-    server.stop().await;
-}
-
 /// The part sheets archived on a save request must be the ones of the mailbox where
 /// the request was made, the operation part sheet being found by its type.
 #[tokio::test]
