@@ -35,7 +35,7 @@ pub async fn run_main(
     let db_config = &config.traceability.database;
     let db_cache = Arc::clone(&traceability_cache);
     let traceability_database =
-        TraceabilityDatabase::new(db_config, credentials.database, db_cache);
+        TraceabilityDatabase::new(db_config, credentials.database_password, db_cache);
 
     // Start part sheets draining task.
     let (first_drain_status_rx, draining_task) = traceability_database.drain_part_sheets_task(

@@ -29,6 +29,7 @@ excluded_read_nodes = []
 
 [traceability.database]
 url = "http://clickhouse:8123"
+user = "default"
 default_database = "traceability"
 # Short, as tests wait for the first successful run.
 part_sheets_drain_period = "1s"

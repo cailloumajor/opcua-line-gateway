@@ -30,8 +30,8 @@ pub struct UserPass {
 /// Credentials used through the application.
 #[derive(Deserialize)]
 pub struct Credentials {
-    /// Database credential.
-    pub database: UserPass,
+    /// Database password. Only required if using HTTP mode.
+    pub database_password: SecretString,
     /// OPC-UA servers credentials, mapping server identifier to credential.
     #[serde(default)]
     pub opc_ua: BTreeMap<String, UserPass>,

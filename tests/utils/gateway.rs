@@ -6,8 +6,9 @@ use opcua::types::{ApplicationDescription, ApplicationType};
 use opcua_line_gateway::{TimeProvider, run_main};
 use opcua_line_gateway_config::{
     Credentials, LineGatewayConfig, MachineConfig, TraceabilityCommonConfig,
-    TraceabilityDatabaseConfig, UserPass,
+    TraceabilityDatabaseConfig,
 };
+use secrecy::SecretString;
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 use tracing::instrument;
@@ -64,7 +65,7 @@ impl TestGateway {
         temp_dir: &Path,
         time_provider: TimeProvider,
         db_config: TraceabilityDatabaseConfig,
-        db_creds: UserPass,
+        db_password: SecretString,
         servers: &[&OpcUaTestServer],
     ) -> Self {
         let machines = servers
@@ -103,7 +104,7 @@ impl TestGateway {
             .collect();
 
         let credentials = Credentials {
-            database: db_creds,
+            database_password: db_password,
             opc_ua: opcua_creds,
         };
 
