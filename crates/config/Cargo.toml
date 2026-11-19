@@ -8,10 +8,11 @@ publish.workspace = true
 [dependencies]
 async-opcua.workspace = true
 jiff = { workspace = true, features = ["serde"] }
-schemars.workspace = true
+schemars = { workspace = true, features = ["url2"] }
 secrecy = { workspace = true, features = ["serde"] }
 serde.workspace = true
 thiserror.workspace = true
+url = { version = "2.5.8", features = ["serde"] }
 
 [dependencies.toml]
 version = "1.1.2"
