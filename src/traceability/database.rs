@@ -58,7 +58,7 @@ impl TraceabilityDatabase {
         cache: Arc<TraceabilityCache>,
     ) -> Self {
         let client = Client::default()
-            .with_url(&config.url)
+            .with_url(config.url.as_str())
             .with_user(&config.user)
             .with_password(password.expose_secret())
             .with_database(&config.default_database);

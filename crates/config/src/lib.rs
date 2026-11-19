@@ -8,6 +8,7 @@ use opcua::types::MessageSecurityMode;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use thiserror::Error;
+use url::Url;
 
 pub use self::ascii_text::{AsciiDigitsOrUpper, AsciiDigitsOrUpperError};
 pub use self::credentials::{Credentials, UserPass};
@@ -116,8 +117,7 @@ pub struct TraceabilityCommonOpcUaConfig {
 #[serde(deny_unknown_fields)]
 pub struct TraceabilityDatabaseConfig {
     /// URL of the ClickHouse HTTP(S) endpoint.
-    #[schemars(url)]
-    pub url: String,
+    pub url: Url,
     /// Database username.
     pub user: String,
     /// Default database to use.
