@@ -754,7 +754,7 @@ impl OpcUaTestServer {
         };
 
         OpcUaServerConfig {
-            url: self.url.clone(),
+            url: self.url.to_owned().try_into().unwrap(),
             security_policy,
             security_mode,
             publish_interval: PUBLISH_INTERVAL,
