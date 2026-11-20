@@ -101,6 +101,29 @@
         "publish_interval"
       ]
     },
+    "TlsConfig": {
+      "description": "TLS-related configuration.",
+      "type": "object",
+      "properties": {
+        "ca_file": {
+          "description": "Path to the CA certificate file.",
+          "type": "string"
+        },
+        "cert_file": {
+          "description": "Path to the client certificate file.",
+          "type": "string"
+        },
+        "key_file": {
+          "description": "Path to the client private key file.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ca_file",
+        "cert_file",
+        "key_file"
+      ]
+    },
     "TraceabilityCommonConfig": {
       "description": "Traceability configuration for all machines.",
       "type": "object",
@@ -227,6 +250,17 @@
         "part_sheets_drain_period": {
           "description": "Part sheets draining task execution period.",
           "type": "string"
+        },
+        "tls": {
+          "description": "mTLS configuration for connecting to the database.\nIf not set, the password from credentials file will be used.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TlsConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "url": {
           "description": "URL of the ClickHouse HTTP(S) endpoint.",

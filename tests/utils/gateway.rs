@@ -104,7 +104,7 @@ impl TestGateway {
             .collect();
 
         let credentials = Credentials {
-            database_password: db_password,
+            database_password: Some(db_password),
             opc_ua: opcua_creds,
         };
 

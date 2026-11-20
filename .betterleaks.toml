@@ -12,3 +12,8 @@ condition = "AND"
 paths = ['''^debian/credentials\.toml$''']
 regexTarget = "secret"
 regexes = ['''^change-me$''']
+
+# Throwaway private keys of the test PKI used by the database TLS unit tests.
+[[allowlists]]
+description = "Test PKI private keys of the database TLS unit tests"
+paths = ['''^src/traceability/testdata/([^/]+-)?key\.pem$''']

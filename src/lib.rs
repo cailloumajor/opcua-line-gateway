@@ -34,7 +34,8 @@ pub async fn run_main(
     let db_config = &config.traceability.database;
     let db_cache = Arc::clone(&traceability_cache);
     let traceability_database =
-        TraceabilityDatabase::new(db_config, credentials.database_password, db_cache);
+        TraceabilityDatabase::from_config(db_config, credentials.database_password, db_cache)
+            .context("Failed to initialize traceability database client")?;
 
     // Start part sheets draining task, failing if initial drain and insertion fails.
     let draining_task = traceability_database
