@@ -23,7 +23,7 @@ use opcua::types::{
     TimestampsToReturn, VariableTypeId, Variant,
 };
 use opcua_line_gateway_config::{
-    Credential, OpcUaServerConfig, TraceabilityCommonOpcUaConfig, TraceabilityMachineConfig,
+    OpcUaServerConfig, TraceabilityCommonOpcUaConfig, TraceabilityMachineConfig, UserPass,
 };
 use tokio::net::TcpListener;
 use tokio::task::JoinHandle;
@@ -754,7 +754,7 @@ impl OpcUaTestServer {
         };
 
         OpcUaServerConfig {
-            url: self.url.clone(),
+            url: self.url.to_owned().try_into().unwrap(),
             security_policy,
             security_mode,
             publish_interval: PUBLISH_INTERVAL,
@@ -771,8 +771,8 @@ impl OpcUaTestServer {
     }
 
     /// Return the credentials to use for authenticating with this server.
-    pub fn opcua_credentials(&self) -> Option<Credential> {
-        self.secured.then_some(Credential {
+    pub fn opcua_credentials(&self) -> Option<UserPass> {
+        self.secured.then_some(UserPass {
             user: "testuser".into(),
             password: "testpassword".into(),
         })

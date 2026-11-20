@@ -52,10 +52,17 @@ excluded_read_nodes = []
 
 # ClickHouse database archiving the part sheets.
 [traceability.database]
+# URL of the ClickHouse HTTP(S) endpoint.
 url = "http://localhost:8123"
+# Database username.
+user = "line_gateway"
+# Default database to use.
 default_database = "traceability"
+# Part sheets draining task execution period.
 part_sheets_drain_period = "10s"
+# Table to use for general part sheet.
 general_part_sheet_table = "part_sheet_general"
+# Table to use for operation part sheet.
 operation_part_sheet_table = "part_sheet_operation"
 
 # Connected machines, keyed by an identifier also used in the credentials file

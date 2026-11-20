@@ -53,6 +53,18 @@ Connected OPC-UA server configuration.
 | security_policy | `string` | ✅ | `None` `Aes128Sha256RsaOaep` `Basic256Sha256` `Aes256Sha256RsaPss` `Basic128Rsa15` `Basic256` | OPC-UA security policy. |
 | url | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | OPC-UA server URL. |
 
+## TlsConfig
+
+TLS-related configuration.
+
+#### Type: `object`
+
+| Property | Type | Required | Possible values | Description |
+| -------- | ---- | -------- | --------------- | ----------- |
+| ca_file | `string` | ✅ | string | Path to the CA certificate file. |
+| cert_file | `string` | ✅ | string | Path to the client certificate file. |
+| key_file | `string` | ✅ | string | Path to the client private key file. |
+
 ## TraceabilityCommonConfig
 
 Traceability configuration for all machines.
@@ -107,6 +119,8 @@ ClickHouse database configuration for traceability.
 | operation_part_sheet_table | `string` | ✅ | string | Table to use for operation part sheet. |
 | part_sheets_drain_period | `string` | ✅ | string | Part sheets draining task execution period. |
 | url | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | URL of the ClickHouse HTTP(S) endpoint. |
+| user | `string` | ✅ | string | Database username. |
+| tls | `object` or `null` |  | [TlsConfig](#tlsconfig) | mTLS configuration for connecting to the database.<br />If not set, the password from credentials file will be used. |
 
 ## TraceabilityMachineConfig
 

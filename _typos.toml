@@ -1,0 +1,3 @@
+[files]
+# Base64 content of the test PKI is reported as typos.
+extend-exclude = ["src/traceability/testdata/*.pem"]

@@ -1,10 +1,9 @@
 use std::sync::Arc;
 
-use anyhow::{Context as _, anyhow};
+use anyhow::Context as _;
 use opcua_line_gateway_config::{Credentials, LineGatewayConfig};
 use redb::Database;
 use tokio_util::sync::CancellationToken;
-use tracing::info;
 
 use self::opcua::{create_client, sessions_manager};
 pub use self::signals::spawn_signals_handler;
@@ -35,24 +34,17 @@ pub async fn run_main(
     let db_config = &config.traceability.database;
     let db_cache = Arc::clone(&traceability_cache);
     let traceability_database =
-        TraceabilityDatabase::new(db_config, credentials.database, db_cache);
+        TraceabilityDatabase::from_config(db_config, credentials.database_password, db_cache)
+            .context("Failed to initialize traceability database client")?;
 
-    // Start part sheets draining task.
-    let (first_drain_status_rx, draining_task) = traceability_database.drain_part_sheets_task(
-        config.traceability.database.part_sheets_drain_period,
-        shutdown.clone(),
-    );
-
-    // Wait for the result of the first draining task run, and exit with error
-    // if unsuccessful.
-    let first_drain_successful = first_drain_status_rx
+    // Start part sheets draining task, failing if initial drain and insertion fails.
+    let draining_task = traceability_database
+        .drain_part_sheets_task(
+            config.traceability.database.part_sheets_drain_period,
+            shutdown.clone(),
+        )
         .await
-        .context("Failed to get the first draining task run status")?;
-    if first_drain_successful {
-        info!(msg = "first draining task run was successful");
-    } else {
-        return Err(anyhow!("First run of draining task was not successful"));
-    }
+        .context("Failed to start draining task")?;
 
     // Create OPC-UA client.
     let client = create_client(&config).context("Failed to create OPC-UA client")?;

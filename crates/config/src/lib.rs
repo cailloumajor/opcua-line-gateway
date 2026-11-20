@@ -8,15 +8,18 @@ use opcua::types::MessageSecurityMode;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use thiserror::Error;
+use url::Url;
 
 pub use self::ascii_text::{AsciiDigitsOrUpper, AsciiDigitsOrUpperError};
-pub use self::credentials::{Credential, Credentials};
+pub use self::credentials::{Credentials, UserPass};
 pub use self::node_name::{NodeName, NodeNameError};
+pub use self::opcua_url::OpcUaEndpointUrl;
 
 mod ascii_text;
 mod credentials;
 mod foreign;
 mod node_name;
+mod opcua_url;
 
 /// Represents errors that can be encountered with configuration.
 #[derive(Debug, Error)]
@@ -114,8 +117,9 @@ pub struct TraceabilityCommonOpcUaConfig {
 #[serde(deny_unknown_fields)]
 pub struct TraceabilityDatabaseConfig {
     /// URL of the ClickHouse HTTP(S) endpoint.
-    #[schemars(url)]
-    pub url: String,
+    pub url: Url,
+    /// Database username.
+    pub user: String,
     /// Default database to use.
     pub default_database: String,
     /// Part sheets draining task execution period.
@@ -126,6 +130,20 @@ pub struct TraceabilityDatabaseConfig {
     pub general_part_sheet_table: String,
     /// Table to use for operation part sheet.
     pub operation_part_sheet_table: String,
+    /// mTLS configuration for connecting to the database.
+    /// If not set, the password from credentials file will be used.
+    pub tls: Option<TlsConfig>,
+}
+
+/// TLS-related configuration.
+#[derive(Clone, Deserialize, JsonSchema)]
+pub struct TlsConfig {
+    /// Path to the CA certificate file.
+    pub ca_file: PathBuf,
+    /// Path to the client certificate file.
+    pub cert_file: PathBuf,
+    /// Path to the client private key file.
+    pub key_file: PathBuf,
 }
 
 /// Connected machine configuration.
@@ -143,8 +161,8 @@ pub struct MachineConfig {
 #[serde(deny_unknown_fields)]
 pub struct OpcUaServerConfig {
     /// OPC-UA server URL.
-    #[schemars(url)]
-    pub url: String,
+    #[schemars(with = "url::Url")]
+    pub url: OpcUaEndpointUrl,
     /// OPC-UA security policy.
     #[serde(with = "foreign::SecurityPolicy")]
     pub security_policy: SecurityPolicy,

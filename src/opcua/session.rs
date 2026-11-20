@@ -4,8 +4,9 @@ use std::sync::Arc;
 use opcua::client::transport::TcpConnector;
 use opcua::client::{Client, IdentityToken, Session, SessionEventLoop};
 use opcua::types::{EndpointDescription, StatusCode};
-use opcua_line_gateway_config::{Credential, MachineConfig, TraceabilityCommonConfig};
+use opcua_line_gateway_config::{MachineConfig, TraceabilityCommonConfig, UserPass};
 use parking_lot::Mutex;
+use secrecy::ExposeSecret;
 use thiserror::Error;
 use tokio::task::{JoinHandle, JoinSet};
 use tokio_util::sync::CancellationToken;
@@ -101,7 +102,7 @@ pub(super) struct SessionStartConfig {
     pub(super) time_provider: TimeProvider,
     pub(super) server_id: String,
     pub(super) machine_config: MachineConfig,
-    pub(super) credential: Option<Credential>,
+    pub(super) credential: Option<UserPass>,
     pub(super) traceability_common: TraceabilityCommonConfig,
     pub(super) traceability_cache: Arc<TraceabilityCache>,
     pub(super) registry: Arc<Mutex<BTreeMap<String, OpcUaSession>>>,
@@ -131,7 +132,7 @@ pub(super) async fn start_session(config: SessionStartConfig) -> Result<(), Crea
         machine_config.opc_ua_server.security_mode,
     ));
     let user_identity_token = credential
-        .map(|cred| IdentityToken::new_user_name(&cred.user, &cred.password))
+        .map(|cred| IdentityToken::new_user_name(&cred.user, cred.password.expose_secret()))
         .unwrap_or(IdentityToken::new_anonymous());
     let (session, event_loop) =
         connect_to_matching_endpoint(&client, endpoint, user_identity_token).await?;

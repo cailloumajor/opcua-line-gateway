@@ -4,8 +4,9 @@ use std::time::Duration;
 
 use duct::cmd;
 use indoc::formatdoc;
-use opcua_line_gateway_config::{Credential, TraceabilityDatabaseConfig};
+use opcua_line_gateway_config::TraceabilityDatabaseConfig;
 use rand::distr::{Alphanumeric, SampleString};
+use secrecy::SecretString;
 use serde::Deserialize;
 use serde_json::Value;
 
@@ -27,8 +28,8 @@ struct Server {
 /// Initialize the database, i.e. creates a database (a.k.a. schema) according
 /// to the test name.
 ///
-/// Return the database configuration and database credentials.
-pub fn init_database() -> (TraceabilityDatabaseConfig, Credential) {
+/// Return the database configuration and password.
+pub fn init_database() -> (TraceabilityDatabaseConfig, SecretString) {
     let test_name = env::var("NEXTEST_TEST_NAME")
         .expect("NEXTEST_TEST_NAME environment variable should be set");
     let database = format!("traceability_it_{test_name}");
@@ -106,16 +107,16 @@ pub fn init_database() -> (TraceabilityDatabaseConfig, Credential) {
         .expect("executing user creation query should not fail");
 
     let config = TraceabilityDatabaseConfig {
-        url: format!("http://127.0.0.1:{port}"),
+        url: format!("http://127.0.0.1:{port}").parse().unwrap(),
+        user,
         default_database: database,
         part_sheets_drain_period: Duration::from_millis(100),
         general_part_sheet_table: "part_sheet_general".into(),
         operation_part_sheet_table: "part_sheet_operation".into(),
+        tls: None,
     };
 
-    let credential = Credential { user, password };
-
-    (config, credential)
+    (config, password.into())
 }
 
 /// Wait for the part sheets of the given part to have been archived in the given

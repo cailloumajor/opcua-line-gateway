@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::{env, fs, io};
 
+use secrecy::SecretString;
 use serde::Deserialize;
 use thiserror::Error;
 
@@ -21,19 +22,19 @@ pub enum CredentialsFromFileError {
 
 /// A credential, i.e. username and password.
 #[derive(Clone, Deserialize)]
-pub struct Credential {
+pub struct UserPass {
     pub user: String,
-    pub password: String,
+    pub password: SecretString,
 }
 
 /// Credentials used through the application.
 #[derive(Deserialize)]
 pub struct Credentials {
-    /// Database credential.
-    pub database: Credential,
+    /// Database password. Only required if using HTTP mode.
+    pub database_password: Option<SecretString>,
     /// OPC-UA servers credentials, mapping server identifier to credential.
     #[serde(default)]
-    pub opc_ua: BTreeMap<String, Credential>,
+    pub opc_ua: BTreeMap<String, UserPass>,
 }
 
 impl Credentials {
