@@ -50,6 +50,12 @@
       "groupName": "ClickHouse"
     },
     {
+      "description": "Update the clickhouse crate together with its HTTP stack crates, whose versions must match the ones it uses for the custom HTTP client to implement its HttpClient trait",
+      "matchManagers": ["cargo"],
+      "matchPackageNames": ["clickhouse", "hyper-rustls", "hyper-util", "rustls"],
+      "groupName": "clickhouse crate HTTP stack"
+    },
+    {
       "matchDepNames": ["rust"],
       "matchManagers": ["mise"],
       "semanticCommitType": "fix"

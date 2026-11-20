@@ -113,6 +113,7 @@ pub fn init_database() -> (TraceabilityDatabaseConfig, SecretString) {
         part_sheets_drain_period: Duration::from_millis(100),
         general_part_sheet_table: "part_sheet_general".into(),
         operation_part_sheet_table: "part_sheet_operation".into(),
+        tls: None,
     };
 
     (config, password.into())

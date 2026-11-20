@@ -130,6 +130,20 @@ pub struct TraceabilityDatabaseConfig {
     pub general_part_sheet_table: String,
     /// Table to use for operation part sheet.
     pub operation_part_sheet_table: String,
+    /// mTLS configuration for connecting to the database.
+    /// If not set, the password from credentials file will be used.
+    pub tls: Option<TlsConfig>,
+}
+
+/// TLS-related configuration.
+#[derive(Clone, Deserialize, JsonSchema)]
+pub struct TlsConfig {
+    /// Path to the CA certificate file.
+    pub ca_file: PathBuf,
+    /// Path to the client certificate file.
+    pub cert_file: PathBuf,
+    /// Path to the client private key file.
+    pub key_file: PathBuf,
 }
 
 /// Connected machine configuration.
