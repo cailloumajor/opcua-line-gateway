@@ -36,7 +36,7 @@ futures-util = "0.3.32"
 jiff.workspace = true
 opcua-line-gateway-config = { path = "crates/config" }
 parking_lot = "0.13.0"
-redb = { version = "4.2.0", features = ["logging"] }
+redb = { version = "5.0.0", features = ["logging"] }
 regex = "1.13.1"
 reopen = "1.0.3"
 serde.workspace = true
