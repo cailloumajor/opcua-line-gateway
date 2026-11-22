@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "expect": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 1, "maximum": 65535 }
+    },
+    "bump": {
+      "type": ["boolean", "integer"],
+      "minimum": 0
+    }
+  },
+  "additionalProperties": false
+}

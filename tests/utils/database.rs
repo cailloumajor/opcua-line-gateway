@@ -1,28 +1,11 @@
 use std::env;
-use std::path::Path;
 use std::time::Duration;
 
 use duct::cmd;
 use indoc::formatdoc;
 use opcua_line_gateway_config::{Credential, TraceabilityDatabaseConfig};
 use rand::distr::{Alphanumeric, SampleString};
-use serde::Deserialize;
 use serde_json::Value;
-
-/// Name of the CLickHouse server testing instance.
-const CH_SERVER_NAME: &str = "integration-tests";
-
-/// Partially represents the output of local servers list from `clickhousectl`.
-#[derive(Deserialize)]
-struct ChctlServerList {
-    servers: Vec<Server>,
-}
-
-#[derive(Deserialize)]
-struct Server {
-    name: String,
-    http_port: Option<u16>,
-}
 
 /// Initialize the database, i.e. creates a database (a.k.a. schema) according
 /// to the test name.
@@ -33,31 +16,19 @@ pub fn init_database() -> (TraceabilityDatabaseConfig, Credential) {
         .expect("NEXTEST_TEST_NAME environment variable should be set");
     let database = format!("traceability_it_{test_name}");
 
-    let raw_json = cmd!("clickhousectl", "local", "server", "list", "--json")
-        .read()
-        .expect("running clickhousectl local servers listing command should not fail");
-    let list: ChctlServerList = serde_json::from_str(&raw_json)
-        .expect("deserializing clickhousectl JSON output should not fail");
-    let port = list
-        .servers
-        .into_iter()
-        .find_map(|server| {
-            if server.name.eq(CH_SERVER_NAME) {
-                server.http_port
-            } else {
-                None
-            }
-        })
-        .expect("there should be a local ClickHouse test server");
+    let http_port = env::var("CLICKHOUSE_TEST_HTTP_PORT")
+        .expect("CLICKHOUSE_TEST_HTTP_PORT should be set by the Nextest task");
+    let tcp_port = env::var("CLICKHOUSE_TEST_TCP_PORT")
+        .expect("CLICKHOUSE_TEST_TCP_PORT should be set by the Nextest task");
 
     // Drop the testing database.
     let drop_cmd = cmd!(
-        "clickhousectl",
-        "local",
+        "clickhouse",
         "client",
-        "--name",
-        CH_SERVER_NAME,
-        "--",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        &tcp_port,
         "--query",
         format!("DROP DATABASE IF EXISTS {database}")
     );
@@ -66,14 +37,17 @@ pub fn init_database() -> (TraceabilityDatabaseConfig, Credential) {
         .expect("dropping the traceability database should not fail");
 
     // Create database and tables for traceability tests.
-    let sql_path = Path::new(env!("CARGO_MANIFEST_DIR")).join("clickhouse/tables/traceability.sql");
+    let sql_path = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/clickhouse/tables/traceability.sql"
+    );
     let tables_create_cmd = cmd!(
-        "clickhousectl",
-        "local",
+        "clickhouse",
         "client",
-        "--name",
-        CH_SERVER_NAME,
-        "--",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        &tcp_port,
         format!("--param_database={database}"),
         "--queries-file",
         sql_path
@@ -90,13 +64,12 @@ pub fn init_database() -> (TraceabilityDatabaseConfig, Credential) {
         GRANT traceability_gateway TO {user};
     "};
     let user_create_cmd = cmd!(
-        "clickhousectl",
-        "local",
+        "clickhouse",
         "client",
-        "--name",
-        CH_SERVER_NAME,
-        "--",
-        format!("--param_user={user}"),
+        "--host",
+        "127.0.0.1",
+        "--port",
+        &tcp_port,
         format!("--param_password={password}"),
         "--query",
         query
@@ -106,7 +79,7 @@ pub fn init_database() -> (TraceabilityDatabaseConfig, Credential) {
         .expect("executing user creation query should not fail");
 
     let config = TraceabilityDatabaseConfig {
-        url: format!("http://127.0.0.1:{port}"),
+        url: format!("http://127.0.0.1:{http_port}"),
         default_database: database,
         part_sheets_drain_period: Duration::from_millis(100),
         general_part_sheet_table: "part_sheet_general".into(),
@@ -133,15 +106,18 @@ pub async fn wait_archived_part_sheets(
         FORMAT JSONEachRow
     "};
 
+    let tcp_port = env::var("CLICKHOUSE_TEST_TCP_PORT")
+        .expect("CLICKHOUSE_TEST_TCP_PORT should be set by the Nextest task");
+
     tokio::time::timeout(Duration::from_secs(5), async {
         loop {
             let output = cmd!(
-                "clickhousectl",
-                "local",
+                "clickhouse",
                 "client",
-                "--name",
-                CH_SERVER_NAME,
-                "--",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                &tcp_port,
                 format!("--param_part_id={part_id}"),
                 "--query",
                 &query

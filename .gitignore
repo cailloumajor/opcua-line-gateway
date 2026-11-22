@@ -30,7 +30,7 @@ mise.local.lock
 # Python documentation generator environment
 .config/config-doc/.venv/
 
-# clickhousectl project storage
+# Local ClickHouse data
 .clickhouse/
 
 # Development files
