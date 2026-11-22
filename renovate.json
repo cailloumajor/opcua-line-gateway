@@ -22,31 +22,11 @@
   },
   "semanticCommits": "enabled",
   "minimumReleaseAge": "3 days",
-  "customManagers": [
-    {
-      "description": "Update versions annotated with a renovate comment in mise.toml",
-      "customType": "regex",
-      "managerFilePatterns": ["/^mise\\.toml$/"],
-      "matchStrings": [
-        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+\\w+\\s*=\\s*\"(?<currentValue>[^\"]+)\""
-      ]
-    }
-  ],
   "packageRules": [
     {
-      "description": "Track ClickHouse YY.MM release lines from tags like v26.8.3.77-lts",
-      "matchDatasources": ["github-releases"],
-      "matchDepNames": ["ClickHouse/ClickHouse"],
-      "extractVersion": "^v(?<version>\\d+\\.\\d+)\\.\\d+\\.\\d+-(?:lts|stable)$"
-    },
-    {
-      "description": "Do not require Minimum Release Age for ClickHouse: the timestamp of a YY.MM line is the one of its latest patch, which is released almost daily",
-      "matchDepNames": ["ClickHouse/ClickHouse", "clickhouse/clickhouse-server"],
-      "minimumReleaseAge": null
-    },
-    {
       "description": "Update the ClickHouse version of the integration tests (mise) and of the package tests (Docker image) together",
-      "matchDepNames": ["ClickHouse/ClickHouse", "clickhouse/clickhouse-server"],
+      "matchManagers": ["mise", "docker-compose"],
+      "matchDepNames": ["clickhouse", "clickhouse/clickhouse-server"],
       "groupName": "ClickHouse"
     },
     {

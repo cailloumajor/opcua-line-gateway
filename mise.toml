@@ -3,9 +3,9 @@
 "aqua:quarylabs/sqruff" = "latest"
 "aqua:taiki-e/cargo-llvm-cov" = "latest"
 betterleaks = "latest"
+clickhouse = "26.10"
 cocogitto = "latest"
 editorconfig-checker = "latest"
-"github:ClickHouse/clickhousectl" = "latest"
 "github:JFRyy/systemd-lsp" = "latest"
 "github:docker/docker-language-server" = "latest"
 "github:mhersson/mpls" = "latest"
@@ -26,12 +26,27 @@ typos = "latest"
 usage = "latest"
 uv = "latest"
 
-[env]
-# renovate: datasource=github-releases depName=ClickHouse/ClickHouse
-CLICKHOUSE_VERSION = "26.10"
+[daemons.clickhouse-dev]
+init = [
+  'export CLICKHOUSE_CONFIG="$PWD/clickhouse/server.xml"',
+  "mkdir -p .clickhouse/dev",
+  "cd .clickhouse/dev",
+]
+port = { expect = [8123, 9000], bump = true }
+run = 'exec clickhouse server --config-file="$CLICKHOUSE_CONFIG"'
+ready_cmd = "clickhouse client --host 127.0.0.1 --port \"$PORT1\" --query 'SELECT 1'"
+
+[daemons.clickhouse-integration]
+init = [
+  'export CLICKHOUSE_CONFIG="$PWD/clickhouse/server.xml"',
+  "mkdir -p .clickhouse/integration",
+  "cd .clickhouse/integration",
+]
+port = { expect = [8123, 9000], bump = true }
+run = 'exec clickhouse server --config-file="$CLICKHOUSE_CONFIG"'
+ready_cmd = "clickhouse client --host 127.0.0.1 --port \"$PORT1\" --query 'SELECT 1'"
 
 [shell_alias]
-chctl = "clickhousectl"
 # podman compose for package tests
 pcpt = 'podman compose --project-directory {{ [config_root, "tests/package"] | join_path | quote }}'
 
@@ -51,8 +66,28 @@ cargo deb \
 
 [tasks."test:nextest-ci"]
 description = "Run tests with cargo-nextest and generate code coverage"
-depends = ["start-test-db"]
-run = "cargo llvm-cov nextest --profile ci --run-ignored all --workspace --lcov --output-path lcov.info"
+daemons = "clickhouse-integration"
+run = """
+set -e
+status=$(mise daemons status clickhouse-integration --json)
+ports=$(node -e '
+  const { status, port } = JSON.parse(require("node:fs").readFileSync(0, "utf8"));
+  if (status !== "running" || !Array.isArray(port) || port.length !== 2 ||
+      !port.every(value => Number.isInteger(value) && value > 0 && value <= 65535)) {
+    console.error("The ClickHouse integration daemon must be running with HTTP and TCP ports");
+    process.exit(1);
+  }
+  console.log(port.join(" "));
+' <<EOF
+$status
+EOF
+)
+read -r CLICKHOUSE_TEST_HTTP_PORT CLICKHOUSE_TEST_TCP_PORT <<EOF
+$ports
+EOF
+export CLICKHOUSE_TEST_HTTP_PORT CLICKHOUSE_TEST_TCP_PORT
+exec cargo llvm-cov nextest --profile ci --run-ignored all --workspace --lcov --output-path lcov.info
+"""
 
 # llvm-cov doesn't run doc tests, so run them separately
 [tasks."test:doc"]
@@ -67,3 +102,6 @@ run = "hk check --all"
 description = "Run CI related tasks"
 depends = ["lint", "test:*"]
 run = "echo 'CI completed successfully'"
+
+[settings]
+experimental = true

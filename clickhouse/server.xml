@@ -1,0 +1,25 @@
+<clickhouse>
+    <logger>
+        <level>information</level>
+        <console>true</console>
+    </logger>
+    <path>./</path>
+    <access_control_path>access/</access_control_path>
+    <listen_host>127.0.0.1</listen_host>
+    <http_port from_env="PORT"/>
+    <tcp_port from_env="PORT1"/>
+    <users_config>server.xml</users_config>
+    <profiles>
+        <default/>
+    </profiles>
+    <users>
+        <default>
+            <password/>
+            <networks>
+                <ip>127.0.0.1</ip>
+            </networks>
+            <profile>default</profile>
+            <access_management>1</access_management>
+        </default>
+    </users>
+</clickhouse>

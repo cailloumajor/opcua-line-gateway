@@ -4,3 +4,9 @@ line-width = 100
 [[schemas]]
 path = "schema/config.schema.json"
 include = ["debian/config.toml"]
+
+# Validate the Pitchfork port syntax accepted by mise for these two daemons.
+[[schemas]]
+root = "daemons.*.port"
+path = "schema/pitchfork-port.schema.json"
+include = ["mise.toml"]
