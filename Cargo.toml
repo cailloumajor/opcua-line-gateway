@@ -41,7 +41,11 @@ parking_lot = "0.13.0"
 redb = { version = "5.0.0", features = ["logging"] }
 regex = "1.13.1"
 reopen = "1.0.3"
-rustls = { version = "0.23.46", default-features = false, features = ["aws-lc-rs", "std"] }
+rustls = {
+  version = "0.23.46",
+  default-features = false,
+  features = ["aws-lc-rs", "logging", "std"]
+}
 secrecy.workspace = true
 serde.workspace = true
 serde_json.workspace = true
