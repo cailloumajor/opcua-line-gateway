@@ -196,37 +196,37 @@ backend = "cargo:cargo-deb"
 specifiers = ["latest"]
 
 [[tools.clickhouse]]
-version = "26.10.9.12-stable"
+version = "26.10.10.3-stable"
 backend = "vfox:jdx/vfox-clickhouse"
 specifiers = ["26.10"]
 
 [tools.clickhouse."platforms.linux-arm64"]
-checksum = "sha256:e20286a25eef8cb184d3dc1a27a1d0f1e27b7e50cfc1d8438ce7c3ff899b7ae0"
-url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.9.12-stable/clickhouse-common-static-26.10.9.12-amd64.tgz"
+checksum = "sha256:88d35f681f1c91bc44188e0ca3c892a8f2d464a7441b4cb0346c5134e2ff55ef"
+url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.10.3-stable/clickhouse-common-static-26.10.10.3-amd64.tgz"
 
 [tools.clickhouse."platforms.linux-arm64-musl"]
-checksum = "sha256:e20286a25eef8cb184d3dc1a27a1d0f1e27b7e50cfc1d8438ce7c3ff899b7ae0"
-url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.9.12-stable/clickhouse-common-static-26.10.9.12-amd64.tgz"
+checksum = "sha256:88d35f681f1c91bc44188e0ca3c892a8f2d464a7441b4cb0346c5134e2ff55ef"
+url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.10.3-stable/clickhouse-common-static-26.10.10.3-amd64.tgz"
 
 [tools.clickhouse."platforms.linux-x64"]
-checksum = "sha256:e20286a25eef8cb184d3dc1a27a1d0f1e27b7e50cfc1d8438ce7c3ff899b7ae0"
-url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.9.12-stable/clickhouse-common-static-26.10.9.12-amd64.tgz"
+checksum = "sha256:88d35f681f1c91bc44188e0ca3c892a8f2d464a7441b4cb0346c5134e2ff55ef"
+url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.10.3-stable/clickhouse-common-static-26.10.10.3-amd64.tgz"
 
 [tools.clickhouse."platforms.linux-x64-musl"]
-checksum = "sha256:e20286a25eef8cb184d3dc1a27a1d0f1e27b7e50cfc1d8438ce7c3ff899b7ae0"
-url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.9.12-stable/clickhouse-common-static-26.10.9.12-amd64.tgz"
+checksum = "sha256:88d35f681f1c91bc44188e0ca3c892a8f2d464a7441b4cb0346c5134e2ff55ef"
+url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.10.3-stable/clickhouse-common-static-26.10.10.3-amd64.tgz"
 
 [tools.clickhouse."platforms.macos-arm64"]
-checksum = "sha256:03d48e4cacc165bf379ef0212bebc19b8f7550a088cd3a70cffed2a8d7891be1"
-url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.9.12-stable/clickhouse-macos"
+checksum = "sha256:77288bb27d4792e0ce11e3e7d25fddfa811f784d8eddc33fd11a3b04134449fb"
+url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.10.3-stable/clickhouse-macos"
 
 [tools.clickhouse."platforms.macos-x64"]
-checksum = "sha256:03d48e4cacc165bf379ef0212bebc19b8f7550a088cd3a70cffed2a8d7891be1"
-url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.9.12-stable/clickhouse-macos"
+checksum = "sha256:77288bb27d4792e0ce11e3e7d25fddfa811f784d8eddc33fd11a3b04134449fb"
+url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.10.3-stable/clickhouse-macos"
 
 [tools.clickhouse."platforms.windows-x64"]
-checksum = "sha256:e20286a25eef8cb184d3dc1a27a1d0f1e27b7e50cfc1d8438ce7c3ff899b7ae0"
-url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.9.12-stable/clickhouse-common-static-26.10.9.12-amd64.tgz"
+checksum = "sha256:88d35f681f1c91bc44188e0ca3c892a8f2d464a7441b4cb0346c5134e2ff55ef"
+url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.10.3-stable/clickhouse-common-static-26.10.10.3-amd64.tgz"
 
 [[tools.cocogitto]]
 version = "7.0.0"
