@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.2.0](https://github.com/cailloumajor/opcua-line-gateway/compare/v1.1.1...v1.2.0) (2026-11-24)
+
+
+### Features
+
+* implement reloadable mTLS for database connection ([0f13783](https://github.com/cailloumajor/opcua-line-gateway/commit/0f13783b4416b77f76b5d37013318b9e808e70b8))
+* move database user configuration out of credentials ([c18b12f](https://github.com/cailloumajor/opcua-line-gateway/commit/c18b12ff80d3782099e55ae19b61dc30053fc9a2))
+
+
+### Bug Fixes
+
+* **deps:** update rust crate redb to v5 ([57311df](https://github.com/cailloumajor/opcua-line-gateway/commit/57311df387b91c803a31714dbdc6061439e0191b))
+* force synchronous inserts into the database ([04e7f02](https://github.com/cailloumajor/opcua-line-gateway/commit/04e7f02d14fc77a6be0485a852de0c4c98948767))
+* protect passwords from configuration ([c9987e1](https://github.com/cailloumajor/opcua-line-gateway/commit/c9987e1f9351ab10ec1de60ac0e0cc4e0a78b204))
+* remove ClickHouse client features ([0625915](https://github.com/cailloumajor/opcua-line-gateway/commit/0625915661caf2597bbe7360a6b9292f97395f64))
+* simplify first draining to database ([4c88df1](https://github.com/cailloumajor/opcua-line-gateway/commit/4c88df1bc626952ddad74d5d48d033315884c097))
+* use Url type for database server configuration ([422f6fb](https://github.com/cailloumajor/opcua-line-gateway/commit/422f6fb98303ec177867cfdc6faa635501e75bfb))
+* validate OPC-UA servers URLs at configuration parsing time ([d44e216](https://github.com/cailloumajor/opcua-line-gateway/commit/d44e216bcaf87b80083a8a84f7c79eb34ef45d86))
+
 ## [1.1.1](https://github.com/cailloumajor/opcua-line-gateway/compare/v1.1.0...v1.1.1) (2026-11-17)
 
 
