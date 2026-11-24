@@ -1,6 +1,5 @@
 <clickhouse>
     <logger>
-        <level>information</level>
         <console>true</console>
     </logger>
     <path>./</path>
@@ -8,7 +7,16 @@
     <listen_host>127.0.0.1</listen_host>
     <http_port from_env="PORT"/>
     <tcp_port from_env="PORT1"/>
-    <users_config>server.xml</users_config>
+    <https_port from_env="PORT2"/>
+    <openSSL>
+      <server>
+        <caConfig>certs/ca.crt</caConfig>
+        <certificateFile>certs/server.crt</certificateFile>
+        <privateKeyFile>certs/server.key</privateKeyFile>
+        <loadDefaultCAFile>false</loadDefaultCAFile>
+        <verificationMode>strict</verificationMode>
+      </server>
+    </openSSL>
     <profiles>
         <default/>
     </profiles>
