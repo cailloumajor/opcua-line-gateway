@@ -32,7 +32,7 @@ init = [
   "mkdir -p .clickhouse/dev",
   "cd .clickhouse/dev",
 ]
-port = { expect = [8123, 9000], bump = true }
+port = { expect = [8123, 9000, 8443], bump = true }
 run = 'exec clickhouse server --config-file="$CLICKHOUSE_CONFIG"'
 ready_cmd = "clickhouse client --host 127.0.0.1 --port \"$PORT1\" --query 'SELECT 1'"
 
