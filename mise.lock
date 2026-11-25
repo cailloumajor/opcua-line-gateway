@@ -196,37 +196,37 @@ backend = "cargo:cargo-deb"
 specifiers = ["latest"]
 
 [[tools.clickhouse]]
-version = "26.10.10.3-stable"
+version = "26.10.11.12-stable"
 backend = "vfox:jdx/vfox-clickhouse"
 specifiers = ["26.10"]
 
 [tools.clickhouse."platforms.linux-arm64"]
-checksum = "sha256:88d35f681f1c91bc44188e0ca3c892a8f2d464a7441b4cb0346c5134e2ff55ef"
-url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.10.3-stable/clickhouse-common-static-26.10.10.3-amd64.tgz"
+checksum = "sha256:ab37203c29d7753006f9ae2632cca7bcb258f601b63f74b3e25f28c57e97eafc"
+url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.11.12-stable/clickhouse-common-static-26.10.11.12-amd64.tgz"
 
 [tools.clickhouse."platforms.linux-arm64-musl"]
-checksum = "sha256:88d35f681f1c91bc44188e0ca3c892a8f2d464a7441b4cb0346c5134e2ff55ef"
-url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.10.3-stable/clickhouse-common-static-26.10.10.3-amd64.tgz"
+checksum = "sha256:ab37203c29d7753006f9ae2632cca7bcb258f601b63f74b3e25f28c57e97eafc"
+url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.11.12-stable/clickhouse-common-static-26.10.11.12-amd64.tgz"
 
 [tools.clickhouse."platforms.linux-x64"]
-checksum = "sha256:88d35f681f1c91bc44188e0ca3c892a8f2d464a7441b4cb0346c5134e2ff55ef"
-url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.10.3-stable/clickhouse-common-static-26.10.10.3-amd64.tgz"
+checksum = "sha256:ab37203c29d7753006f9ae2632cca7bcb258f601b63f74b3e25f28c57e97eafc"
+url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.11.12-stable/clickhouse-common-static-26.10.11.12-amd64.tgz"
 
 [tools.clickhouse."platforms.linux-x64-musl"]
-checksum = "sha256:88d35f681f1c91bc44188e0ca3c892a8f2d464a7441b4cb0346c5134e2ff55ef"
-url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.10.3-stable/clickhouse-common-static-26.10.10.3-amd64.tgz"
+checksum = "sha256:ab37203c29d7753006f9ae2632cca7bcb258f601b63f74b3e25f28c57e97eafc"
+url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.11.12-stable/clickhouse-common-static-26.10.11.12-amd64.tgz"
 
 [tools.clickhouse."platforms.macos-arm64"]
-checksum = "sha256:77288bb27d4792e0ce11e3e7d25fddfa811f784d8eddc33fd11a3b04134449fb"
-url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.10.3-stable/clickhouse-macos"
+checksum = "sha256:b4755bd33d115e59b1bf604b0fd589ecbf606511129aab880e7d0a09663ba73e"
+url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.11.12-stable/clickhouse-macos"
 
 [tools.clickhouse."platforms.macos-x64"]
-checksum = "sha256:77288bb27d4792e0ce11e3e7d25fddfa811f784d8eddc33fd11a3b04134449fb"
-url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.10.3-stable/clickhouse-macos"
+checksum = "sha256:b4755bd33d115e59b1bf604b0fd589ecbf606511129aab880e7d0a09663ba73e"
+url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.11.12-stable/clickhouse-macos"
 
 [tools.clickhouse."platforms.windows-x64"]
-checksum = "sha256:88d35f681f1c91bc44188e0ca3c892a8f2d464a7441b4cb0346c5134e2ff55ef"
-url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.10.3-stable/clickhouse-common-static-26.10.10.3-amd64.tgz"
+checksum = "sha256:ab37203c29d7753006f9ae2632cca7bcb258f601b63f74b3e25f28c57e97eafc"
+url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.11.12-stable/clickhouse-common-static-26.10.11.12-amd64.tgz"
 
 [[tools.cocogitto]]
 version = "7.0.0"
@@ -489,44 +489,44 @@ url_api = "https://api.github.com/repos/hadolint/hadolint/releases/assets/496546
 provenance = "github-attestations"
 
 [[tools.hk]]
-version = "2.13.0"
+version = "2.14.0"
 backend = "packslip:github.com/jdx/hk"
 specifiers = ["latest"]
 unsupported_platforms = ["macos-x64"]
 
 [tools.hk."platforms.linux-arm64"]
-checksum = "sha256:490196a4e638991c671f42941d72ade4d00b14750145f34fc64377b49fc070bb"
-url = "https://github.com/jdx/hk/releases/download/v2.13.0/hk-aarch64-unknown-linux-gnu.tar.gz"
+checksum = "sha256:a5503bc4a6cef77697aed92c966f7b444b3fdea4b62b63d9fb0b2b1af7f08c83"
+url = "https://github.com/jdx/hk/releases/download/v2.14.0/hk-aarch64-unknown-linux-gnu.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 repository_ids = { repository = "922514152" }
 
 [tools.hk."platforms.linux-arm64-musl"]
-checksum = "sha256:cff2d433a82104ace7084a23970ff05b0bf3ca529e00c61da20780104106a3dd"
-url = "https://github.com/jdx/hk/releases/download/v2.13.0/hk-aarch64-unknown-linux-musl.tar.gz"
+checksum = "sha256:d9e0cca380e87a175fa2b18738af3e03cbd4109f9105e1ede60ebb3238d09a16"
+url = "https://github.com/jdx/hk/releases/download/v2.14.0/hk-aarch64-unknown-linux-musl.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 repository_ids = { repository = "922514152" }
 
 [tools.hk."platforms.linux-x64"]
-checksum = "sha256:8ff0b29c9925d73df9b14af7fc43ace86de03db73eafa3046750fce5c39e1955"
-url = "https://github.com/jdx/hk/releases/download/v2.13.0/hk-x86_64-unknown-linux-gnu.tar.gz"
+checksum = "sha256:230e89eaa3bf78aea23ac1584c8de9dd49141487f6067083003d8bdb38fa6c34"
+url = "https://github.com/jdx/hk/releases/download/v2.14.0/hk-x86_64-unknown-linux-gnu.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 repository_ids = { repository = "922514152" }
 
 [tools.hk."platforms.linux-x64-musl"]
-checksum = "sha256:3d5ae62e2befe95fa6fc7ffd63a0876c3efe3409634fbd6561b8bb0be787eeae"
-url = "https://github.com/jdx/hk/releases/download/v2.13.0/hk-x86_64-unknown-linux-musl.tar.gz"
+checksum = "sha256:49b9238317fa6f047f66b93cc1a150efaeb9790063ae44aa5de9cc3d59d709c1"
+url = "https://github.com/jdx/hk/releases/download/v2.14.0/hk-x86_64-unknown-linux-musl.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 repository_ids = { repository = "922514152" }
 
 [tools.hk."platforms.macos-arm64"]
-checksum = "sha256:64efc441dc0858a175909fd6253ddd6c540da80e7d1bd2a2ad0ec9c0cdab3d97"
-url = "https://github.com/jdx/hk/releases/download/v2.13.0/hk-aarch64-apple-darwin.tar.gz"
+checksum = "sha256:82a6ceb4a69bcf9667502f5bdf487a7d1a3aa5078197e981cf0538086d90b778"
+url = "https://github.com/jdx/hk/releases/download/v2.14.0/hk-aarch64-apple-darwin.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 repository_ids = { repository = "922514152" }
 
 [tools.hk."platforms.windows-x64"]
-checksum = "sha256:2908de6281368b8128f1d4d7a03905d3ab0eb86a82641d6055be88806bf9ffac"
-url = "https://github.com/jdx/hk/releases/download/v2.13.0/hk-x86_64-pc-windows-msvc.zip"
+checksum = "sha256:750e1ccaca97b4c33f9b709e4beea9da5de98c7bb3f175cbbe59c05b5a6e365b"
+url = "https://github.com/jdx/hk/releases/download/v2.14.0/hk-x86_64-pc-windows-msvc.zip"
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 repository_ids = { repository = "922514152" }
 
@@ -652,7 +652,7 @@ url = "https://nodejs.org/dist/v26.13.1/node-v26.13.1-win-x64.zip"
 
 [[tools."npm:bash-language-server"]]
 version = "5.8.1"
-aube = { path = ".mise/locks/npm-bash-language-server/5.8.1", digest = "sha256:c211b6123e6e8967e02b459ea1721e5bb36cd9f4c200f2523ae1339118087bfa" }
+aube = { path = ".mise/locks/npm-bash-language-server/5.8.1", digest = "sha256:9e8fffaea0a01ba848d779bd0030cb45a455de7e28b83bc5d2b01f17a47e2ac2" }
 backend = "npm:bash-language-server"
 specifiers = ["latest"]
 
@@ -934,49 +934,49 @@ url = "https://github.com/crate-ci/typos/releases/download/v1.52.2/typos-v1.52.2
 url_api = "https://api.github.com/repos/crate-ci/typos/releases/assets/733790297"
 
 [[tools.usage]]
-version = "7.4.0"
+version = "7.4.1"
 backend = "packslip:github.com/jdx/usage"
 specifiers = ["latest"]
 
 [tools.usage."platforms.linux-arm64"]
-checksum = "sha256:63ec67fd6bc8c54ad9e2775e95d6eea565565a30568d65c75be8423b3dd842ea"
-url = "https://github.com/jdx/usage/releases/download/v7.4.0/usage-aarch64-unknown-linux-gnu.tar.gz"
+checksum = "sha256:c2a8631b5c0601580a3d0908ac1dfddcee5e45f27f35981bf9f09c653c7608cd"
+url = "https://github.com/jdx/usage/releases/download/v7.4.1/usage-aarch64-unknown-linux-gnu.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/usage/.github/workflows/publish-cli.yml"
 repository_ids = { repository = "677629099" }
 
 [tools.usage."platforms.linux-arm64-musl"]
-checksum = "sha256:2b522480691d6af6bb2a96de28cf9edbd90af3a52195cefe0d19217c18652c4a"
-url = "https://github.com/jdx/usage/releases/download/v7.4.0/usage-aarch64-unknown-linux-musl.tar.gz"
+checksum = "sha256:9683435e8c77ed19413e10556e2ad4e97a2e780c59ef7408992eba4b631c3403"
+url = "https://github.com/jdx/usage/releases/download/v7.4.1/usage-aarch64-unknown-linux-musl.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/usage/.github/workflows/publish-cli.yml"
 repository_ids = { repository = "677629099" }
 
 [tools.usage."platforms.linux-x64"]
-checksum = "sha256:c66011f163619cf3946182498eedd16966bf3d32a6c6cf28c73c8034dfe467d6"
-url = "https://github.com/jdx/usage/releases/download/v7.4.0/usage-x86_64-unknown-linux-gnu.tar.gz"
+checksum = "sha256:4d21ce353b671d4aa4bbf4bb2719ae15c9a82d6d2268516d24f7eb5dd061533d"
+url = "https://github.com/jdx/usage/releases/download/v7.4.1/usage-x86_64-unknown-linux-gnu.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/usage/.github/workflows/publish-cli.yml"
 repository_ids = { repository = "677629099" }
 
 [tools.usage."platforms.linux-x64-musl"]
-checksum = "sha256:223f8819cc26543ffcc11161659497450c6bdbe947ad8580b70183dac4c9d182"
-url = "https://github.com/jdx/usage/releases/download/v7.4.0/usage-x86_64-unknown-linux-musl.tar.gz"
+checksum = "sha256:5b2ff85406de4a7e13ccac16f26a40df86b9e85ab6d96b098a4b725eeef889d7"
+url = "https://github.com/jdx/usage/releases/download/v7.4.1/usage-x86_64-unknown-linux-musl.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/usage/.github/workflows/publish-cli.yml"
 repository_ids = { repository = "677629099" }
 
 [tools.usage."platforms.macos-arm64"]
-checksum = "sha256:606dbdda615111940c6b39e1cb64dbf4871839304146e8e40e7302312be095d6"
-url = "https://github.com/jdx/usage/releases/download/v7.4.0/usage-universal-apple-darwin.tar.gz"
+checksum = "sha256:c10054cc2649a25c9a88522f8c891166f3a3151fe2cd1b20ebde3194a938ae91"
+url = "https://github.com/jdx/usage/releases/download/v7.4.1/usage-universal-apple-darwin.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/usage/.github/workflows/publish-cli.yml"
 repository_ids = { repository = "677629099" }
 
 [tools.usage."platforms.macos-x64"]
-checksum = "sha256:606dbdda615111940c6b39e1cb64dbf4871839304146e8e40e7302312be095d6"
-url = "https://github.com/jdx/usage/releases/download/v7.4.0/usage-universal-apple-darwin.tar.gz"
+checksum = "sha256:c10054cc2649a25c9a88522f8c891166f3a3151fe2cd1b20ebde3194a938ae91"
+url = "https://github.com/jdx/usage/releases/download/v7.4.1/usage-universal-apple-darwin.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/usage/.github/workflows/publish-cli.yml"
 repository_ids = { repository = "677629099" }
 
 [tools.usage."platforms.windows-x64"]
-checksum = "sha256:a0bc6718039bbb4289e19981a2cf82a7e1d8509eb426cb27fcb90c0dc34d8b66"
-url = "https://github.com/jdx/usage/releases/download/v7.4.0/usage-x86_64-pc-windows-msvc.zip"
+checksum = "sha256:ee863aa1a1173fa84dbaa9707f52c14fcc3115e283eb6b842979cc5a38ba6fc8"
+url = "https://github.com/jdx/usage/releases/download/v7.4.1/usage-x86_64-pc-windows-msvc.zip"
 signer = "sigstore-oidc:https://github.com/jdx/usage/.github/workflows/publish-cli.yml"
 repository_ids = { repository = "677629099" }
 
