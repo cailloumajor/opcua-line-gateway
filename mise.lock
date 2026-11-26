@@ -196,37 +196,37 @@ backend = "cargo:cargo-deb"
 specifiers = ["latest"]
 
 [[tools.clickhouse]]
-version = "26.10.11.12-stable"
+version = "26.10.12.13-stable"
 backend = "vfox:jdx/vfox-clickhouse"
 specifiers = ["26.10"]
 
 [tools.clickhouse."platforms.linux-arm64"]
-checksum = "sha256:ab37203c29d7753006f9ae2632cca7bcb258f601b63f74b3e25f28c57e97eafc"
-url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.11.12-stable/clickhouse-common-static-26.10.11.12-amd64.tgz"
+checksum = "sha256:c1e318fa19e64a67fc9124477269302ba2b1f67018c2551f421fec56aacabf5a"
+url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.12.13-stable/clickhouse-common-static-26.10.12.13-amd64.tgz"
 
 [tools.clickhouse."platforms.linux-arm64-musl"]
-checksum = "sha256:ab37203c29d7753006f9ae2632cca7bcb258f601b63f74b3e25f28c57e97eafc"
-url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.11.12-stable/clickhouse-common-static-26.10.11.12-amd64.tgz"
+checksum = "sha256:c1e318fa19e64a67fc9124477269302ba2b1f67018c2551f421fec56aacabf5a"
+url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.12.13-stable/clickhouse-common-static-26.10.12.13-amd64.tgz"
 
 [tools.clickhouse."platforms.linux-x64"]
-checksum = "sha256:ab37203c29d7753006f9ae2632cca7bcb258f601b63f74b3e25f28c57e97eafc"
-url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.11.12-stable/clickhouse-common-static-26.10.11.12-amd64.tgz"
+checksum = "sha256:c1e318fa19e64a67fc9124477269302ba2b1f67018c2551f421fec56aacabf5a"
+url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.12.13-stable/clickhouse-common-static-26.10.12.13-amd64.tgz"
 
 [tools.clickhouse."platforms.linux-x64-musl"]
-checksum = "sha256:ab37203c29d7753006f9ae2632cca7bcb258f601b63f74b3e25f28c57e97eafc"
-url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.11.12-stable/clickhouse-common-static-26.10.11.12-amd64.tgz"
+checksum = "sha256:c1e318fa19e64a67fc9124477269302ba2b1f67018c2551f421fec56aacabf5a"
+url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.12.13-stable/clickhouse-common-static-26.10.12.13-amd64.tgz"
 
 [tools.clickhouse."platforms.macos-arm64"]
-checksum = "sha256:b4755bd33d115e59b1bf604b0fd589ecbf606511129aab880e7d0a09663ba73e"
-url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.11.12-stable/clickhouse-macos"
+checksum = "sha256:3693ed248a80fadb2b7b7e7f03b5ebbf89cc02f962fd1b4a22b8803784d2e6fb"
+url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.12.13-stable/clickhouse-macos"
 
 [tools.clickhouse."platforms.macos-x64"]
-checksum = "sha256:b4755bd33d115e59b1bf604b0fd589ecbf606511129aab880e7d0a09663ba73e"
-url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.11.12-stable/clickhouse-macos"
+checksum = "sha256:3693ed248a80fadb2b7b7e7f03b5ebbf89cc02f962fd1b4a22b8803784d2e6fb"
+url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.12.13-stable/clickhouse-macos"
 
 [tools.clickhouse."platforms.windows-x64"]
-checksum = "sha256:ab37203c29d7753006f9ae2632cca7bcb258f601b63f74b3e25f28c57e97eafc"
-url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.11.12-stable/clickhouse-common-static-26.10.11.12-amd64.tgz"
+checksum = "sha256:c1e318fa19e64a67fc9124477269302ba2b1f67018c2551f421fec56aacabf5a"
+url = "https://github.com/ClickHouse/ClickHouse/releases/download/v26.10.12.13-stable/clickhouse-common-static-26.10.12.13-amd64.tgz"
 
 [[tools.cocogitto]]
 version = "7.0.0"
@@ -402,44 +402,51 @@ url = "https://github.com/docker/docker-language-server/releases/download/v0.20.
 url_api = "https://api.github.com/repos/docker/docker-language-server/releases/assets/767505641"
 
 [[tools."github:mhersson/mpls"]]
-version = "0.23.0"
+version = "0.24.0"
 backend = "github:mhersson/mpls"
 specifiers = ["latest"]
 
 [tools."github:mhersson/mpls"."platforms.linux-arm64"]
-checksum = "sha256:57de8e1d6f6695329e1a641df9beb404cc6218ad6b30f3c6efb86186eb491b57"
-url = "https://github.com/mhersson/mpls/releases/download/v0.23.0/mpls_0.23.0_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/mhersson/mpls/releases/assets/574698500"
+checksum = "sha256:d77b5224d5145f72273f8c7cc4da4cbfd9100e3d1494dd7c47f8396c49060367"
+checksum_source = "mise-versions"
+url = "https://github.com/mhersson/mpls/releases/download/v0.24.0/mpls_0.24.0_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/mhersson/mpls/releases/assets/788117712"
 
 [tools."github:mhersson/mpls"."platforms.linux-arm64-musl"]
-checksum = "sha256:57de8e1d6f6695329e1a641df9beb404cc6218ad6b30f3c6efb86186eb491b57"
-url = "https://github.com/mhersson/mpls/releases/download/v0.23.0/mpls_0.23.0_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/mhersson/mpls/releases/assets/574698500"
+checksum = "sha256:d77b5224d5145f72273f8c7cc4da4cbfd9100e3d1494dd7c47f8396c49060367"
+checksum_source = "mise-versions"
+url = "https://github.com/mhersson/mpls/releases/download/v0.24.0/mpls_0.24.0_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/mhersson/mpls/releases/assets/788117712"
 
 [tools."github:mhersson/mpls"."platforms.linux-x64"]
-checksum = "sha256:83887b4df42e7e37a651c258b42345264c6a9f16be39849b454e68dbdb1f02df"
-url = "https://github.com/mhersson/mpls/releases/download/v0.23.0/mpls_0.23.0_linux_amd64.tar.gz"
-url_api = "https://api.github.com/repos/mhersson/mpls/releases/assets/574698501"
+checksum = "sha256:5ed9a4030527eb677a58c65891fedbf15cc1c1afd10adf457ef962ee00521bf6"
+checksum_source = "mise-versions"
+url = "https://github.com/mhersson/mpls/releases/download/v0.24.0/mpls_0.24.0_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/mhersson/mpls/releases/assets/788117717"
 
 [tools."github:mhersson/mpls"."platforms.linux-x64-musl"]
-checksum = "sha256:83887b4df42e7e37a651c258b42345264c6a9f16be39849b454e68dbdb1f02df"
-url = "https://github.com/mhersson/mpls/releases/download/v0.23.0/mpls_0.23.0_linux_amd64.tar.gz"
-url_api = "https://api.github.com/repos/mhersson/mpls/releases/assets/574698501"
+checksum = "sha256:5ed9a4030527eb677a58c65891fedbf15cc1c1afd10adf457ef962ee00521bf6"
+checksum_source = "mise-versions"
+url = "https://github.com/mhersson/mpls/releases/download/v0.24.0/mpls_0.24.0_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/mhersson/mpls/releases/assets/788117717"
 
 [tools."github:mhersson/mpls"."platforms.macos-arm64"]
-checksum = "sha256:7ab02679638e9ca6b951cfc9c9bfa1f1e716728a3a04eebfe7dcb624fd3ad334"
-url = "https://github.com/mhersson/mpls/releases/download/v0.23.0/mpls_0.23.0_darwin_arm64.tar.gz"
-url_api = "https://api.github.com/repos/mhersson/mpls/releases/assets/574698498"
+checksum = "sha256:40b416431eb4c28931fd892f104268c5d5f5d76e2030386b5de79945ef141059"
+checksum_source = "mise-versions"
+url = "https://github.com/mhersson/mpls/releases/download/v0.24.0/mpls_0.24.0_darwin_arm64.tar.gz"
+url_api = "https://api.github.com/repos/mhersson/mpls/releases/assets/788117766"
 
 [tools."github:mhersson/mpls"."platforms.macos-x64"]
-checksum = "sha256:9091141b87f7dee5b8f5b56213a328c22b414c0b27cd90a5e86b3d6acee50ca1"
-url = "https://github.com/mhersson/mpls/releases/download/v0.23.0/mpls_0.23.0_darwin_amd64.tar.gz"
-url_api = "https://api.github.com/repos/mhersson/mpls/releases/assets/574698499"
+checksum = "sha256:ebf3abd9998086f7a61510013f049398de2ca29b5438bb443c038f0ff392d3cd"
+checksum_source = "mise-versions"
+url = "https://github.com/mhersson/mpls/releases/download/v0.24.0/mpls_0.24.0_darwin_amd64.tar.gz"
+url_api = "https://api.github.com/repos/mhersson/mpls/releases/assets/788117718"
 
 [tools."github:mhersson/mpls"."platforms.windows-x64"]
-checksum = "sha256:522292b04773a8141e4ad533df3a8a83ed0eaa528ab944110a1f72732443ef91"
-url = "https://github.com/mhersson/mpls/releases/download/v0.23.0/mpls_0.23.0_windows_amd64.zip"
-url_api = "https://api.github.com/repos/mhersson/mpls/releases/assets/574698529"
+checksum = "sha256:e87c80042b25772c6807e37ba26bc32c530967b98316a63bed01188e39b462f7"
+checksum_source = "mise-versions"
+url = "https://github.com/mhersson/mpls/releases/download/v0.24.0/mpls_0.24.0_windows_amd64.zip"
+url_api = "https://api.github.com/repos/mhersson/mpls/releases/assets/788117770"
 
 [[tools.hadolint]]
 version = "2.15.1"
@@ -704,50 +711,50 @@ url = "https://github.com/apple/pkl/releases/download/0.33.1/pkl-windows-amd64.e
 url_api = "https://api.github.com/repos/apple/pkl/releases/assets/764390372"
 
 [[tools.rumdl]]
-version = "0.3.5"
+version = "0.3.6"
 backend = "aqua:rvben/rumdl"
 specifiers = ["latest"]
 
 [tools.rumdl."platforms.linux-arm64"]
-checksum = "sha256:3adec6780fe6e2295d634ff06601104e3e775005cdf98dd19b1817711f801502"
-url = "https://github.com/rvben/rumdl/releases/download/v0.3.5/rumdl-v0.3.5-aarch64-unknown-linux-gnu.tar.gz"
-url_api = "https://api.github.com/repos/rvben/rumdl/releases/assets/764100346"
+checksum = "sha256:e03b97d17ffb28c13dc077416dd39d57c10dddfe6cedb8169764987af0fbcfcd"
+url = "https://github.com/rvben/rumdl/releases/download/v0.3.6/rumdl-v0.3.6-aarch64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/rvben/rumdl/releases/assets/788018558"
 provenance = "github-attestations"
 
 [tools.rumdl."platforms.linux-arm64-musl"]
-checksum = "sha256:1f6b8198ce688f6f7db8c9bae2ea0ae13b93af445473e16c60e4579809121931"
-url = "https://github.com/rvben/rumdl/releases/download/v0.3.5/rumdl-v0.3.5-aarch64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/rvben/rumdl/releases/assets/764100336"
+checksum = "sha256:6c18087963f88f9d7d923d8e77d68b29fc9d12f384bf49790c0213b574b8e84a"
+url = "https://github.com/rvben/rumdl/releases/download/v0.3.6/rumdl-v0.3.6-aarch64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/rvben/rumdl/releases/assets/788018557"
 provenance = "github-attestations"
 
 [tools.rumdl."platforms.linux-x64"]
-checksum = "sha256:1f7f569ce1978ec1ed21528234d01c9bd2041ed7265d2677f4d845177114f452"
-url = "https://github.com/rvben/rumdl/releases/download/v0.3.5/rumdl-v0.3.5-x86_64-unknown-linux-gnu.tar.gz"
-url_api = "https://api.github.com/repos/rvben/rumdl/releases/assets/764100348"
+checksum = "sha256:dceca66687b4ae5bc129f34378268f329f830b9d736cd34b8c515790dc6347ee"
+url = "https://github.com/rvben/rumdl/releases/download/v0.3.6/rumdl-v0.3.6-x86_64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/rvben/rumdl/releases/assets/788018556"
 provenance = "github-attestations"
 
 [tools.rumdl."platforms.linux-x64-musl"]
-checksum = "sha256:47acba7706ff7a57aa38ecacde5953dacd411feca4d36e2d6c994b1a33253ec4"
-url = "https://github.com/rvben/rumdl/releases/download/v0.3.5/rumdl-v0.3.5-x86_64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/rvben/rumdl/releases/assets/764100349"
+checksum = "sha256:a50fe06c5a878b81d617cbf1cb98c3c245ebf7fef1fb1463345d85922e7e1c32"
+url = "https://github.com/rvben/rumdl/releases/download/v0.3.6/rumdl-v0.3.6-x86_64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/rvben/rumdl/releases/assets/788018561"
 provenance = "github-attestations"
 
 [tools.rumdl."platforms.macos-arm64"]
-checksum = "sha256:7caeb6c0264970479c0c0185c936463255b7b6048e675a647dfbebab337f91fe"
-url = "https://github.com/rvben/rumdl/releases/download/v0.3.5/rumdl-v0.3.5-aarch64-apple-darwin.tar.gz"
-url_api = "https://api.github.com/repos/rvben/rumdl/releases/assets/764100347"
+checksum = "sha256:9689d82616a08593fc6203a3d73c8cc9d4663f5745e55b0d7410de824c451ebd"
+url = "https://github.com/rvben/rumdl/releases/download/v0.3.6/rumdl-v0.3.6-aarch64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/rvben/rumdl/releases/assets/788018560"
 provenance = "github-attestations"
 
 [tools.rumdl."platforms.macos-x64"]
-checksum = "sha256:a7f4afebf8079b387efc7aae5aedde2f9d2274e9762d4f7a099d701b5005c082"
-url = "https://github.com/rvben/rumdl/releases/download/v0.3.5/rumdl-v0.3.5-x86_64-apple-darwin.tar.gz"
-url_api = "https://api.github.com/repos/rvben/rumdl/releases/assets/764100343"
+checksum = "sha256:6f6f68999f8e2b77175728b22738888c9297db35430a21ed89d4a2d8ac2cc1a0"
+url = "https://github.com/rvben/rumdl/releases/download/v0.3.6/rumdl-v0.3.6-x86_64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/rvben/rumdl/releases/assets/788018559"
 provenance = "github-attestations"
 
 [tools.rumdl."platforms.windows-x64"]
-checksum = "sha256:ff40c7b64f8c67e5a39d5734837d2fc9984c0da436e4cc79bb72a08cea413b2d"
-url = "https://github.com/rvben/rumdl/releases/download/v0.3.5/rumdl-v0.3.5-x86_64-pc-windows-msvc.zip"
-url_api = "https://api.github.com/repos/rvben/rumdl/releases/assets/764100352"
+checksum = "sha256:9efb4f038fcf4b85d3ed6a23783ad3b223ac12296d1c9305607ddb692dbed545"
+url = "https://github.com/rvben/rumdl/releases/download/v0.3.6/rumdl-v0.3.6-x86_64-pc-windows-msvc.zip"
+url_api = "https://api.github.com/repos/rvben/rumdl/releases/assets/788018553"
 provenance = "github-attestations"
 
 [[tools.rust]]
@@ -981,48 +988,48 @@ signer = "sigstore-oidc:https://github.com/jdx/usage/.github/workflows/publish-c
 repository_ids = { repository = "677629099" }
 
 [[tools.uv]]
-version = "0.13.9"
+version = "0.13.10"
 backend = "aqua:astral-sh/uv"
 specifiers = ["latest"]
 
 [tools.uv."platforms.linux-arm64"]
-checksum = "sha256:0797542018e541a9288855df555c8077eed06f7a47d206362030480e8ecc9f3d"
-url = "https://github.com/astral-sh/uv/releases/download/0.13.9/uv-aarch64-unknown-linux-gnu.tar.gz"
-url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/758513657"
+checksum = "sha256:14590f644805a6234ffe071154340669e38137f38e60aa9629690119704107d2"
+url = "https://github.com/astral-sh/uv/releases/download/0.13.10/uv-aarch64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/788884668"
 provenance = "github-attestations"
 
 [tools.uv."platforms.linux-arm64-musl"]
-checksum = "sha256:37fbb7c5bc66cf99c12aa881949d216181e201dec449772c4329e56487d61179"
-url = "https://github.com/astral-sh/uv/releases/download/0.13.9/uv-aarch64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/758513671"
+checksum = "sha256:68174084fe40b6300361c5b2038066120dc62c92920c22a0f31f6fc74b066b57"
+url = "https://github.com/astral-sh/uv/releases/download/0.13.10/uv-aarch64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/788884695"
 provenance = "github-attestations"
 
 [tools.uv."platforms.linux-x64"]
-checksum = "sha256:a7fbaff2b9a271d85c1bdb540941090fd1ce011797b4abeb48e4dcd39c2471d5"
-url = "https://github.com/astral-sh/uv/releases/download/0.13.9/uv-x86_64-unknown-linux-gnu.tar.gz"
-url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/758513954"
+checksum = "sha256:bf65ac1a0af10f92c522d91ac096c7c0a39657647b155577e7836c2cbbb4526c"
+url = "https://github.com/astral-sh/uv/releases/download/0.13.10/uv-x86_64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/788885027"
 provenance = "github-attestations"
 
 [tools.uv."platforms.linux-x64-musl"]
-checksum = "sha256:58ccf5f1792b8a5a88d01bc910ea131a8b3db4a319a17ad5fad75e0845a3e271"
-url = "https://github.com/astral-sh/uv/releases/download/0.13.9/uv-x86_64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/758513984"
+checksum = "sha256:5597970380083a340b7983af05a84824b4db1c62b7059c796935b7fd6dc95fd2"
+url = "https://github.com/astral-sh/uv/releases/download/0.13.10/uv-x86_64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/788885050"
 provenance = "github-attestations"
 
 [tools.uv."platforms.macos-arm64"]
-checksum = "sha256:5aeca67f2283f75235de40d0bd9c0a5bbc5fce23b6d48b3bf9fa1b2db08382ca"
-url = "https://github.com/astral-sh/uv/releases/download/0.13.9/uv-aarch64-apple-darwin.tar.gz"
-url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/758513631"
+checksum = "sha256:e419bf07533bdbf48795fc793601c834dd79db57a8c49ce8e25cfe3a8639958d"
+url = "https://github.com/astral-sh/uv/releases/download/0.13.10/uv-aarch64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/788884643"
 provenance = "github-attestations"
 
 [tools.uv."platforms.macos-x64"]
-checksum = "sha256:617a3211261b0fc739562f0071aa34e9739797c510208ede8e2977c30903d041"
-url = "https://github.com/astral-sh/uv/releases/download/0.13.9/uv-x86_64-apple-darwin.tar.gz"
-url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/758513912"
+checksum = "sha256:153e03197588204c04fc4c81cc4bafbfa4280222a385e4ee36a87aeec0ae63b4"
+url = "https://github.com/astral-sh/uv/releases/download/0.13.10/uv-x86_64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/788884988"
 provenance = "github-attestations"
 
 [tools.uv."platforms.windows-x64"]
-checksum = "sha256:edd61f7f5728a56cc62455386661860bdfc7bab65872f39b0c25bdcc1d8e1beb"
-url = "https://github.com/astral-sh/uv/releases/download/0.13.9/uv-x86_64-pc-windows-msvc.zip"
-url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/758513940"
+checksum = "sha256:297b3881fe1adfb922becc2c1613202abb41dc83ea5ff43d472aa087ca1f8683"
+url = "https://github.com/astral-sh/uv/releases/download/0.13.10/uv-x86_64-pc-windows-msvc.zip"
+url_api = "https://api.github.com/repos/astral-sh/uv/releases/assets/788885003"
 provenance = "github-attestations"
